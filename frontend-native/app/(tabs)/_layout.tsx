@@ -76,6 +76,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => renderIcon('profile', focused, color),
         }}
       />
+      <Tabs.Screen
+        name="edit-profile"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

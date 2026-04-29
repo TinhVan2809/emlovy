@@ -63,6 +63,11 @@ const config = Object.freeze({
       .map((origin) => origin.trim())
       .filter(Boolean),
   }),
+  upload: Object.freeze({
+    avatarMaxFileSize: readInteger("AVATAR_MAX_FILE_SIZE", 2 * 1024 * 1024, {
+      min: 100 * 1024,
+    }),
+  }),
   database: Object.freeze({
     host: readRequiredString("DB_HOST"),
     port: readInteger("DB_PORT", 3306, { min: 1, max: 65535 }),

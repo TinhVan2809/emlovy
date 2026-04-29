@@ -6,10 +6,21 @@ export type User = {
   gender: '0' | '1' | '2' | null;
   phone: string | null;
   avata: string | null;
+  avatar_url: string | null;
   email: string | null;
   role: 'admin' | 'customer';
   status: number;
   created_at: string;
+};
+
+export type ProfileStats = {
+  posts: number;
+  followers: number;
+  following: number;
+};
+
+export type Profile = User & {
+  stats: ProfileStats;
 };
 
 export type AuthPayload = {
@@ -28,6 +39,21 @@ export type RegisterInput = {
   email?: string;
   phone?: string;
   password: string;
+};
+
+export type UpdateProfileInput = {
+  name?: string;
+  username?: string;
+  birthday?: string | null;
+  gender?: '0' | '1' | '2' | null;
+  phone?: string | null;
+  email?: string | null;
+};
+
+export type AvatarUploadInput = {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
 };
 
 export type ApiResponse<T> = {

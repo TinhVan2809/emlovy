@@ -13,7 +13,9 @@ type AuthContextValue = {
   user: User | null;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
+  refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
+  updateUser: (nextUser: User) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -90,6 +92,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [persistSession],
   );
 
+  const refreshUser = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+
+    const response = await authApi.me(token);
+    setUser(response.data.user);
+  }, [token]);
+
+  const updateUser = useCallback((nextUser: User) => {
+    setUser(nextUser);
+  }, []);
+
   const signOut = useCallback(async () => {
     await clearSession();
     router.replace(Routes.login);
@@ -101,11 +116,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isLoading,
       login,
       register,
+      refreshUser,
       signOut,
       token,
+      updateUser,
       user,
     }),
-    [isLoading, login, register, signOut, token, user],
+    [isLoading, login, refreshUser, register, signOut, token, updateUser, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

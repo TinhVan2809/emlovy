@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const config = require("./config/env");
 const {
@@ -7,6 +8,7 @@ const {
   closeDatabaseConnection,
 } = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
+const profileRoutes = require("./routes/profileRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const notFound = require("./middlewares/notFound");
 
@@ -21,6 +23,7 @@ const createApp = () => {
   );
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use("/uploads", express.static(path.resolve(__dirname, "uploads")));
 
   app.get("/", (req, res) => {
     res.status(200).json({
@@ -54,6 +57,7 @@ const createApp = () => {
   });
 
   app.use("/api/auth", authRoutes);
+  app.use("/api/profile", profileRoutes);
   app.use(notFound);
   app.use(errorHandler);
 

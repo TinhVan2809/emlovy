@@ -1,22 +1,53 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ScreenShell } from '@/components/screen-shell';
+import { UserAvatar } from '@/components/user-avatar';
 import { VisualTile } from '@/components/visual-tile';
-import { useAuth } from '@/contexts/auth-context';
+import { Routes } from '@/constants/routes';
 import { profileGrid, profileHighlights } from '@/constants/mock-content';
 import { AppColors, AppFonts } from '@/constants/theme';
-
-const stats = [
-  { label: 'Posts', value: '128' },
-  { label: 'Followers', value: '24.8k' },
-  { label: 'Following', value: '320' },
-];
+import { useAuth } from '@/contexts/auth-context';
+import { profileApi, resolveMediaUrl } from '@/services/api';
+import type { Profile } from '@/types/auth';
 
 export default function ProfileScreen() {
-  const { signOut, user } = useAuth();
-  const displayName = user?.name || 'Emlovy User';
-  const displayHandle = user?.username ? `@${user.username}` : '@emlovy';
+  const { signOut, token, user } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState('');
+
+  const loadProfile = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await profileApi.getMe(token);
+      setProfile(response.data.profile);
+      setError('');
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Khong the tai profile.');
+    }
+  }, [token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [loadProfile]),
+  );
+
+  const displayUser = profile || user;
+  const displayName = displayUser?.name || 'Emlovy User';
+  const displayHandle = displayUser?.username ? `@${displayUser.username}` : '@emlovy';
+  const avatarUrl = resolveMediaUrl(displayUser?.avatar_url || displayUser?.avata);
+  const stats = [
+    { label: 'Posts', value: String(profile?.stats.posts ?? 0) },
+    { label: 'Followers', value: String(profile?.stats.followers ?? 0) },
+    { label: 'Following', value: String(profile?.stats.following ?? 0) },
+  ];
 
   return (
     <ScreenShell
@@ -37,11 +68,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard}>
           <View style={styles.topRow}>
-            <View style={styles.avatarRing}>
-              <View style={styles.avatarCore}>
-                <Text style={styles.avatarText}>E</Text>
-              </View>
-            </View>
+            <UserAvatar imageUrl={avatarUrl} name={displayName} />
 
             <View style={styles.statsRow}>
               {stats.map((stat) => (
@@ -55,17 +82,28 @@ export default function ProfileScreen() {
 
           <Text style={styles.profileName}>{displayName}</Text>
           <Text style={styles.profileBio}>
-            {user?.email || user?.phone || 'Curated moments, soft palettes, and a daily moodboard.'}
+            {displayUser?.email ||
+              displayUser?.phone ||
+              'Curated moments, soft palettes, and a daily moodboard.'}
           </Text>
-          {/* <Text style={styles.profileLink}>{user?.role === 'admin' ? 'Admin' : 'Customer'}</Text> */}
+          <Text style={styles.profileLink}>
+            {displayUser?.role === 'admin' ? 'Admin' : 'Customer'}
+          </Text>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <View style={styles.buttonRow}>
-            <View style={[styles.actionButton, styles.actionButtonPrimary]}>
+            <Pressable
+              onPress={() => router.push(Routes.editProfile)}
+              style={({ pressed }) => [
+                styles.actionButton,
+                styles.actionButtonPrimary,
+                pressed ? styles.actionButtonPressed : null,
+              ]}>
               <Text style={styles.actionButtonPrimaryText}>Edit profile</Text>
-            </View>
-            <View style={styles.actionButton}>
+            </Pressable>
+            <Pressable style={({ pressed }) => [styles.actionButton, pressed ? styles.actionButtonPressed : null]}>
               <Text style={styles.actionButtonText}>Share profile</Text>
-            </View>
+            </Pressable>
           </View>
         </View>
 
@@ -130,6 +168,9 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.text,
     borderColor: AppColors.text,
   },
+  actionButtonPressed: {
+    opacity: 0.86,
+  },
   actionButtonPrimaryText: {
     color: AppColors.surface,
     fontFamily: AppFonts.heading,
@@ -139,28 +180,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 13,
-  },
-  avatarCore: {
-    alignItems: 'center',
-    backgroundColor: AppColors.accentSoft,
-    borderColor: AppColors.surface,
-    borderRadius: 46,
-    borderWidth: 3,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  avatarRing: {
-    backgroundColor: AppColors.accent,
-    borderRadius: 52,
-    height: 104,
-    justifyContent: 'center',
-    padding: 3,
-    width: 104,
-  },
-  avatarText: {
-    color: AppColors.text,
-    fontFamily: AppFonts.heading,
-    fontSize: 34,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -172,6 +191,13 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     paddingHorizontal: 18,
     paddingTop: 18,
+  },
+  errorText: {
+    color: AppColors.accent,
+    fontFamily: AppFonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+    paddingTop: 10,
   },
   grid: {
     flexDirection: 'row',

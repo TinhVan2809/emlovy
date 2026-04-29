@@ -26,10 +26,23 @@ CREATE TABLE `comments` (
   `id` int NOT NULL AUTO_INCREMENT,
   `post_id` int NOT NULL,
   `user_id` int NOT NULL,
-  `parent_id` int DEFAULT NULL COMMENT '(nullable → reply comment)',
-  `content` text,
+  `parent_id` int DEFAULT NULL COMMENT 'NULL = comment gốc, NOT NULL = reply',
+  `content` text NOT NULL,
+  `like_count` int DEFAULT '0',
+  `is_edited` tinyint(1) DEFAULT '0',
+  `is_deleted` tinyint(1) DEFAULT '0',
+  `deleted_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_post_created` (`post_id`,`created_at`),
+  KEY `idx_user_post` (`user_id`,`post_id`),
+  KEY `idx_parent` (`parent_id`),
+  KEY `idx_created_at` (`created_at` DESC),
+  KEY `idx_is_deleted` (`is_deleted`),
+  CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE,
+  CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `comments_ibfk_3` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -43,6 +56,71 @@ LOCK TABLES `comments` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `conversation_participants`
+--
+
+DROP TABLE IF EXISTS `conversation_participants`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `conversation_participants` (
+  `conversation_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `role` enum('member','admin') DEFAULT 'member' COMMENT 'Dùng cho group chat',
+  `joined_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_muted` tinyint(1) DEFAULT '0' COMMENT 'Tắt thông báo',
+  `is_archived` tinyint(1) DEFAULT '0',
+  `last_read_message_id` int DEFAULT NULL COMMENT 'Tin nhắn cuối cùng người dùng đã đọc',
+  PRIMARY KEY (`conversation_id`,`user_id`),
+  KEY `user_id` (`user_id`),
+  KEY `last_read_message_id` (`last_read_message_id`),
+  CONSTRAINT `conversation_participants_ibfk_1` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`conversation_id`) ON DELETE CASCADE,
+  CONSTRAINT `conversation_participants_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `conversation_participants_ibfk_3` FOREIGN KEY (`last_read_message_id`) REFERENCES `messages` (`message_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `conversation_participants`
+--
+
+LOCK TABLES `conversation_participants` WRITE;
+/*!40000 ALTER TABLE `conversation_participants` DISABLE KEYS */;
+/*!40000 ALTER TABLE `conversation_participants` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `conversations`
+--
+
+DROP TABLE IF EXISTS `conversations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `conversations` (
+  `conversation_id` int NOT NULL AUTO_INCREMENT,
+  `type` enum('private','group') NOT NULL DEFAULT 'private',
+  `name` varchar(255) DEFAULT NULL COMMENT 'Tên nhóm nếu là group chat',
+  `avatar` varchar(255) DEFAULT NULL COMMENT 'Avatar nhóm',
+  `last_message_id` int DEFAULT NULL,
+  `last_message_at` timestamp NULL DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`conversation_id`),
+  KEY `last_message_id` (`last_message_id`),
+  CONSTRAINT `conversations_ibfk_1` FOREIGN KEY (`last_message_id`) REFERENCES `messages` (`message_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `conversations`
+--
+
+LOCK TABLES `conversations` WRITE;
+/*!40000 ALTER TABLE `conversations` DISABLE KEYS */;
+/*!40000 ALTER TABLE `conversations` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `follows`
 --
 
@@ -50,13 +128,14 @@ DROP TABLE IF EXISTS `follows`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `follows` (
-  `follower_id` int NOT NULL AUTO_INCREMENT,
+  `follower_id` int NOT NULL,
   `following_id` int NOT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`follower_id`),
-  KEY `following_id` (`following_id`),
-  CONSTRAINT `follows_ibfk_1` FOREIGN KEY (`follower_id`) REFERENCES `users` (`user_id`),
-  CONSTRAINT `follows_ibfk_2` FOREIGN KEY (`following_id`) REFERENCES `users` (`user_id`)
+  PRIMARY KEY (`follower_id`,`following_id`),
+  KEY `follows_ibfk_2` (`following_id`),
+  CONSTRAINT `follows_ibfk_1` FOREIGN KEY (`follower_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `follows_ibfk_2` FOREIGN KEY (`following_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `follows_no_self_check` CHECK ((`follower_id` <> `following_id`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -70,6 +149,141 @@ LOCK TABLES `follows` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `likes`
+--
+
+DROP TABLE IF EXISTS `likes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `likes` (
+  `like_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `post_id` int DEFAULT NULL,
+  `comment_id` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`like_id`),
+  UNIQUE KEY `unique_like` (`user_id`,`post_id`,`comment_id`),
+  KEY `post_id` (`post_id`),
+  KEY `comment_id` (`comment_id`),
+  CONSTRAINT `likes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
+  CONSTRAINT `likes_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`),
+  CONSTRAINT `likes_ibfk_3` FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `likes`
+--
+
+LOCK TABLES `likes` WRITE;
+/*!40000 ALTER TABLE `likes` DISABLE KEYS */;
+/*!40000 ALTER TABLE `likes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `message_attachments`
+--
+
+DROP TABLE IF EXISTS `message_attachments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `message_attachments` (
+  `attachment_id` int NOT NULL AUTO_INCREMENT,
+  `message_id` int NOT NULL,
+  `media_url` varchar(500) NOT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `file_size` bigint DEFAULT NULL COMMENT 'Đơn vị: bytes',
+  `mime_type` varchar(100) DEFAULT NULL,
+  `type` enum('image','video','audio','file','voice') NOT NULL,
+  `width` int DEFAULT NULL,
+  `height` int DEFAULT NULL,
+  `duration` int DEFAULT NULL COMMENT 'Thời lượng audio/video',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`attachment_id`),
+  KEY `message_id` (`message_id`),
+  CONSTRAINT `message_attachments_ibfk_1` FOREIGN KEY (`message_id`) REFERENCES `messages` (`message_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `message_attachments`
+--
+
+LOCK TABLES `message_attachments` WRITE;
+/*!40000 ALTER TABLE `message_attachments` DISABLE KEYS */;
+/*!40000 ALTER TABLE `message_attachments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `messages`
+--
+
+DROP TABLE IF EXISTS `messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `messages` (
+  `message_id` int NOT NULL AUTO_INCREMENT,
+  `conversation_id` int NOT NULL,
+  `sender_id` int NOT NULL,
+  `content` text,
+  `message_type` enum('text','image','video','file','sticker','voice','location') DEFAULT 'text',
+  `is_edited` tinyint(1) DEFAULT '0',
+  `is_deleted` tinyint(1) DEFAULT '0',
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  `reply_to_message_id` int DEFAULT NULL COMMENT 'Trả lời tin nhắn nào',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`message_id`),
+  KEY `conversation_id` (`conversation_id`),
+  KEY `reply_to_message_id` (`reply_to_message_id`),
+  KEY `idx_messages_sender` (`sender_id`,`created_at` DESC),
+  CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`conversation_id`) ON DELETE CASCADE,
+  CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`sender_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `messages_ibfk_3` FOREIGN KEY (`reply_to_message_id`) REFERENCES `messages` (`message_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `messages`
+--
+
+LOCK TABLES `messages` WRITE;
+/*!40000 ALTER TABLE `messages` DISABLE KEYS */;
+/*!40000 ALTER TABLE `messages` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `notifications`
+--
+
+DROP TABLE IF EXISTS `notifications`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `notifications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `actor_id` int NOT NULL,
+  `type` enum('like','comment','follow','mention','share','reaction') NOT NULL,
+  `post_id` int DEFAULT NULL,
+  `comment_id` int DEFAULT NULL,
+  `is_read` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `notifications`
+--
+
+LOCK TABLES `notifications` WRITE;
+/*!40000 ALTER TABLE `notifications` DISABLE KEYS */;
+/*!40000 ALTER TABLE `notifications` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `post_media`
 --
 
@@ -79,11 +293,15 @@ DROP TABLE IF EXISTS `post_media`;
 CREATE TABLE `post_media` (
   `post_media_id` int NOT NULL AUTO_INCREMENT,
   `post_id` int NOT NULL,
-  `media_url` varchar(255) DEFAULT NULL,
-  `type` enum('image','video') DEFAULT NULL,
+  `media_url` varchar(500) NOT NULL,
+  `type` enum('image','video') NOT NULL,
+  `sort_order` int DEFAULT '0' COMMENT 'Thứ tự hiển thị',
+  `width` int DEFAULT NULL,
+  `height` int DEFAULT NULL,
+  `duration` int DEFAULT NULL,
   PRIMARY KEY (`post_media_id`),
-  KEY `post_id` (`post_id`),
-  CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`)
+  KEY `idx_post_media` (`post_id`,`sort_order`),
+  CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -107,12 +325,27 @@ CREATE TABLE `posts` (
   `post_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `content` text,
-  `visibility` enum('public','private','friends') DEFAULT (_utf8mb4'public'),
+  `like_count` int DEFAULT '0',
+  `comment_count` int DEFAULT '0',
+  `share_count` int DEFAULT '0',
+  `view_count` int DEFAULT '0',
+  `save_count` int DEFAULT '0',
+  `visibility` enum('public','private','friends','followers') DEFAULT 'public',
+  `location` varchar(255) DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL,
+  `is_deleted` tinyint(1) DEFAULT '0' COMMENT 'Soft delete',
+  `is_edited` tinyint(1) DEFAULT '0',
+  `is_pinned` tinyint(1) DEFAULT '0' COMMENT 'Ghim bài viết',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`post_id`),
-  KEY `user_id` (`user_id`),
-  CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
+  KEY `idx_user_created` (`user_id`,`created_at` DESC),
+  KEY `idx_visibility` (`visibility`),
+  KEY `idx_created_at` (`created_at` DESC),
+  KEY `idx_is_deleted` (`is_deleted`),
+  KEY `idx_pinned` (`is_pinned`,`created_at` DESC),
+  CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -123,6 +356,71 @@ CREATE TABLE `posts` (
 LOCK TABLES `posts` WRITE;
 /*!40000 ALTER TABLE `posts` DISABLE KEYS */;
 /*!40000 ALTER TABLE `posts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `stories`
+--
+
+DROP TABLE IF EXISTS `stories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stories` (
+  `story_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `content` text COMMENT 'Nội dung text nếu có',
+  `background_color` varchar(20) DEFAULT '#000000' COMMENT 'Màu nền nếu là story text',
+  `music_url` varchar(255) DEFAULT NULL COMMENT 'Nhạc nền (nếu có)',
+  `expires_at` timestamp NOT NULL COMMENT 'Thời gian hết hạn (thường là 24h)',
+  `is_active` tinyint(1) DEFAULT '1' COMMENT '1: còn hiển thị, 0: đã hết hạn hoặc bị xóa',
+  `is_deleted` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`story_id`),
+  KEY `idx_user_active` (`user_id`,`is_active`),
+  KEY `idx_expires_at` (`expires_at`),
+  CONSTRAINT `stories_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `stories`
+--
+
+LOCK TABLES `stories` WRITE;
+/*!40000 ALTER TABLE `stories` DISABLE KEYS */;
+/*!40000 ALTER TABLE `stories` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `story_media`
+--
+
+DROP TABLE IF EXISTS `story_media`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `story_media` (
+  `story_media_id` int NOT NULL AUTO_INCREMENT,
+  `story_id` int NOT NULL,
+  `media_url` varchar(500) NOT NULL,
+  `type` enum('image','video') NOT NULL,
+  `duration` int DEFAULT NULL COMMENT 'Thời lượng video (giây)',
+  `position_x` decimal(5,2) DEFAULT NULL COMMENT 'Vị trí sticker/text (nếu cần mở rộng)',
+  `position_y` decimal(5,2) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`story_media_id`),
+  KEY `story_id` (`story_id`),
+  CONSTRAINT `story_media_ibfk_1` FOREIGN KEY (`story_id`) REFERENCES `stories` (`story_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `story_media`
+--
+
+LOCK TABLES `story_media` WRITE;
+/*!40000 ALTER TABLE `story_media` DISABLE KEYS */;
+/*!40000 ALTER TABLE `story_media` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -140,15 +438,16 @@ CREATE TABLE `users` (
   `birthday` date DEFAULT NULL,
   `gender` enum('0','1','2') DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
-  `avata` varchar(255) DEFAULT NULL,
+  `avata` varchar(500) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `role` enum('admin','customer') NOT NULL DEFAULT 'customer' COMMENT 'admin, người dùng',
   `status` tinyint DEFAULT '1' COMMENT '1 là đang hoạt động, 0 là block',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `users_username_unique` (`username`),
   UNIQUE KEY `users_email_unique` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -157,6 +456,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES (1,'Lữ Văn Tính','tinhlu','$2b$12$zngBXM86GWMgxaZjJ5TdxOHhXNBag22jjyW5q.E1fkZdklzgia0Aq',NULL,NULL,'0818177533',NULL,'tinhlu703@gmail.com','customer',1,'2026-04-29 11:42:33','2026-04-29 05:41:54');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -169,4 +469,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-29 11:27:50
+-- Dump completed on 2026-04-29 12:55:31

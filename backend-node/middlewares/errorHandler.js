@@ -21,12 +21,17 @@ const getErrorDetail = (error) => {
 };
 
 const errorHandler = (error, req, res, _next) => {
-  const statusCode = error.status || 500;
+  const statusCode = error.status || (error.name === "MulterError" ? 400 : 500);
   const isServerError = statusCode >= 500;
 
   const response = {
     success: false,
-    message: isServerError ? "Service unavailable" : error.message,
+    message:
+      error.code === "LIMIT_FILE_SIZE"
+        ? "Avatar vuot qua dung luong cho phep."
+        : isServerError
+          ? "Service unavailable"
+          : error.message,
   };
 
   if (!config.isProduction) {
