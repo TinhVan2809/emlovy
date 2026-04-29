@@ -1,0 +1,121 @@
+const express = require("express");
+const cors = require("cors");
+
+const config = require("./config/env");
+const {
+  checkDatabaseConnection,
+  closeDatabaseConnection,
+} = require("./config/database");
+const authRoutes = require("./routes/authRoutes");
+const errorHandler = require("./middlewares/errorHandler");
+const notFound = require("./middlewares/notFound");
+
+const createApp = () => {
+  const app = express();
+
+  app.use(
+    cors({
+      credentials: true,
+      origin: config.cors.origins.length > 0 ? config.cors.origins : true,
+    }),
+  );
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  app.get("/", (req, res) => {
+    res.status(200).json({
+      success: true,
+      message: "Emlovy API is running",
+    });
+  });
+
+  app.get("/health", (req, res) => {
+    res.status(200).json({
+      success: true,
+      status: "ok",
+    });
+  });
+
+  app.get("/health/db", async (req, res, next) => {
+    try {
+      await checkDatabaseConnection();
+
+      res.status(200).json({
+        success: true,
+        status: "ok",
+        database: "connected",
+      });
+    } catch (error) {
+      const databaseError = new Error("Database unavailable");
+      databaseError.status = 503;
+      databaseError.cause = error;
+      next(databaseError);
+    }
+  });
+
+  app.use("/api/auth", authRoutes);
+  app.use(notFound);
+  app.use(errorHandler);
+
+  return app;
+};
+
+const registerShutdownHandlers = (server) => {
+  let isShuttingDown = false;
+
+  const shutdown = (signal) => {
+    if (isShuttingDown) {
+      return;
+    }
+
+    isShuttingDown = true;
+    console.log(`${signal} received. Closing server...`);
+
+    server.close(async (serverError) => {
+      if (serverError) {
+        console.error("Error while closing HTTP server:", serverError);
+        process.exit(1);
+      }
+
+      try {
+        await closeDatabaseConnection();
+        console.log("Server closed successfully.");
+        process.exit(0);
+      } catch (databaseError) {
+        console.error("Error while closing database pool:", databaseError);
+        process.exit(1);
+      }
+    });
+  };
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+};
+
+const startServer = async () => {
+  try {
+    await checkDatabaseConnection();
+
+    const app = createApp();
+    const server = app.listen(config.app.port, () => {
+      console.log(`Server is running at ${config.app.port}`);
+      console.log(`http://localhost:${config.app.port}`);
+    });
+
+    registerShutdownHandlers(server);
+
+    return server;
+  } catch (error) {
+    console.error("Failed to start server:", error.code || error.message || error.name);
+    process.exit(1);
+  }
+};
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = {
+  createApp,
+  startServer,
+};
