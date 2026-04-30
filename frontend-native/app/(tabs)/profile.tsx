@@ -86,9 +86,6 @@ export default function ProfileScreen() {
               displayUser?.phone ||
               'Curated moments, soft palettes, and a daily moodboard.'}
           </Text>
-          <Text style={styles.profileLink}>
-            {displayUser?.role === 'admin' ? 'Admin' : 'Customer'}
-          </Text>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <View style={styles.buttonRow}>
