@@ -67,6 +67,10 @@ const config = Object.freeze({
     avatarMaxFileSize: readInteger("AVATAR_MAX_FILE_SIZE", 2 * 1024 * 1024, {
       min: 100 * 1024,
     }),
+    postMediaMaxFileSize: readInteger("POST_MEDIA_MAX_FILE_SIZE", 10 * 1024 * 1024, {
+      min: 100 * 1024,
+    }),
+    postMediaMaxFiles: readInteger("POST_MEDIA_MAX_FILES", 10, { min: 1, max: 50 }),
   }),
   database: Object.freeze({
     host: readRequiredString("DB_HOST"),

@@ -9,8 +9,12 @@ const {
 } = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
+const postRoutes = require("./routes/postRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const notFound = require("./middlewares/notFound");
+const { Server } = require("socket.io");
+const http = require("http");
+const { setIo } = require("./utils/socket");
 
 const createApp = () => {
   const app = express();
@@ -58,6 +62,7 @@ const createApp = () => {
 
   app.use("/api/auth", authRoutes);
   app.use("/api/profile", profileRoutes);
+  app.use("/api/posts", postRoutes);
   app.use(notFound);
   app.use(errorHandler);
 
@@ -101,7 +106,25 @@ const startServer = async () => {
     await checkDatabaseConnection();
 
     const app = createApp();
-    const server = app.listen(config.app.port, () => {
+
+    const httpServer = http.createServer(app);
+    const io = new Server(httpServer, {
+      cors: {
+        origin: config.cors.origins.length > 0 ? config.cors.origins : true,
+        methods: ["GET", "POST", "DELETE"],
+      },
+    });
+
+    setIo(io);
+
+    io.on("connection", (socket) => {
+      console.log("Socket connected:", socket.id);
+      socket.on("disconnect", () => {
+        // noop
+      });
+    });
+
+    const server = httpServer.listen(config.app.port, () => {
       console.log(`Server is running at ${config.app.port}`);
       console.log(`http://localhost:${config.app.port}`);
     });
