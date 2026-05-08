@@ -5,9 +5,14 @@ import type {
   ApiResponse,
   AuthPayload,
   AvatarUploadInput,
+  CreatePostInput,
   LoginInput,
+  Post,
+  PostMediaInput,
+  PostsPage,
   Profile,
   RegisterInput,
+  UpdatePostInput,
   UpdateProfileInput,
   User,
 } from '@/types/auth';
@@ -112,6 +117,62 @@ const getAvatarFileName = (input: AvatarUploadInput) => {
   return nameFromUri || `avatar-${Date.now()}.jpg`;
 };
 
+const getPostMediaFileName = (input: PostMediaInput, index: number) => {
+  if (input.fileName) {
+    return input.fileName;
+  }
+
+  const nameFromUri = input.uri.split('/').pop();
+  return nameFromUri || `post-media-${Date.now()}-${index}.jpg`;
+};
+
+const createPostFormData = (input: CreatePostInput | UpdatePostInput) => {
+  const formData = new FormData();
+
+  if (Object.prototype.hasOwnProperty.call(input, 'content')) {
+    formData.append('content', input.content ?? '');
+  }
+
+  if (Object.prototype.hasOwnProperty.call(input, 'location')) {
+    formData.append('location', input.location ?? '');
+  }
+
+  if (input.visibility) {
+    formData.append('visibility', input.visibility);
+  }
+
+  if ('replaceMedia' in input && input.replaceMedia !== undefined) {
+    formData.append('replaceMedia', input.replaceMedia ? 'true' : 'false');
+  }
+
+  input.media?.forEach((file, index) => {
+    formData.append('media', {
+      uri: file.uri,
+      name: getPostMediaFileName(file, index),
+      type: file.mimeType || 'image/jpeg',
+    } as unknown as Blob);
+  });
+
+  return formData;
+};
+
+const normalizePostsPage = (data: PostsPage | Post[], page: number, limit: number): PostsPage => {
+  if (!Array.isArray(data)) {
+    return data;
+  }
+
+  return {
+    items: data,
+    pagination: {
+      page,
+      limit,
+      total: data.length,
+      totalPages: 1,
+      hasMore: false,
+    },
+  };
+};
+
 export const authApi = {
   async login(input: LoginInput) {
     return request<AuthPayload>('/auth/login', {
@@ -162,6 +223,50 @@ export const profileApi = {
       method: 'POST',
       token,
       body: formData,
+    });
+  },
+};
+
+export const postApi = {
+  async getFeed({ page = 1, limit = 10 }: { page?: number; limit?: number } = {}) {
+    const response = await request<PostsPage | Post[]>(`/posts?page=${page}&limit=${limit}`, {
+      method: 'GET',
+    });
+
+    return {
+      ...response,
+      data: normalizePostsPage(response.data, page, limit),
+    };
+  },
+  async getMyPosts(token: string, { page = 1, limit = 12 }: { page?: number; limit?: number } = {}) {
+    const response = await request<PostsPage | Post[]>(`/posts/me?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      token,
+    });
+
+    return {
+      ...response,
+      data: normalizePostsPage(response.data, page, limit),
+    };
+  },
+  async create(token: string, input: CreatePostInput) {
+    return request<Post>('/posts', {
+      method: 'POST',
+      token,
+      body: createPostFormData(input),
+    });
+  },
+  async update(token: string, postId: number, input: UpdatePostInput) {
+    return request<Post>(`/posts/${postId}`, {
+      method: 'PATCH',
+      token,
+      body: createPostFormData(input),
+    });
+  },
+  async delete(token: string, postId: number) {
+    return request<null>(`/posts/${postId}`, {
+      method: 'DELETE',
+      token,
     });
   },
 };

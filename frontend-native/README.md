@@ -30,3 +30,7 @@ npx expo start
     tinhlu
     tinhemlovy@28092004
 ```
+```bash 
+    tinvan
+    11111111
+```

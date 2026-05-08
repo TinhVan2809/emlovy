@@ -54,12 +54,22 @@ export default function EditProfileScreen() {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.85,
-    });
+    let result: ImagePicker.ImagePickerResult;
+
+    try {
+      result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: Platform.OS !== 'android',
+        aspect: [1, 1],
+        legacy: Platform.OS === 'android',
+        mediaTypes: ['images'],
+        quality: Platform.OS === 'android' ? 1 : 0.85,
+      });
+    } catch (pickerError) {
+      setError(
+        pickerError instanceof Error ? pickerError.message : 'Khong the mo thu vien anh tren thiet bi nay.',
+      );
+      return;
+    }
 
     if (result.canceled || !result.assets[0]) {
       return;

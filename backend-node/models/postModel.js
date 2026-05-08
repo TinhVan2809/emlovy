@@ -8,135 +8,232 @@ const toPublicPost = (post) => {
     post_id: post.post_id,
     user_id: post.user_id,
     content: post.content,
-    like_count: post.like_count,
-    comment_count: post.comment_count,
-    share_count: post.share_count,
-    view_count: post.view_count,
-    save_count: post.save_count,
+    like_count: Number(post.like_count || 0),
+    comment_count: Number(post.comment_count || 0),
+    share_count: Number(post.share_count || 0),
+    view_count: Number(post.view_count || 0),
+    save_count: Number(post.save_count || 0),
     visibility: post.visibility,
     location: post.location,
     latitude: post.latitude,
     longitude: post.longitude,
-    is_deleted: post.is_deleted,
-    is_edited: post.is_edited,
-    is_pinned: post.is_pinned,
+    is_deleted: Boolean(post.is_deleted),
+    is_edited: Boolean(post.is_edited),
+    is_pinned: Boolean(post.is_pinned),
     created_at: post.created_at,
     updated_at: post.updated_at,
   };
 };
 
+const postSelectFields = `
+  p.*,
+  u.user_id AS author_user_id,
+  u.name AS author_name,
+  u.username AS author_username,
+  u.birthday AS author_birthday,
+  u.gender AS author_gender,
+  u.phone AS author_phone,
+  u.avata AS author_avata,
+  u.email AS author_email,
+  u.role AS author_role,
+  u.status AS author_status,
+  u.created_at AS author_created_at
+`;
+
+const toPostWithAuthor = (row) => {
+  const author = userModel.toPublicUser({
+    user_id: row.author_user_id,
+    name: row.author_name,
+    username: row.author_username,
+    birthday: row.author_birthday,
+    gender: row.author_gender,
+    phone: row.author_phone,
+    avata: row.author_avata,
+    email: row.author_email,
+    role: row.author_role,
+    status: row.author_status,
+    created_at: row.author_created_at,
+  });
+
+  const post = toPublicPost(row);
+  post.author = author;
+  post.media = [];
+  return post;
+};
+
+const attachMedia = async (posts) => {
+  if (!posts.length) {
+    return posts;
+  }
+
+  const postIds = posts.map((post) => post.post_id);
+  const placeholders = postIds.map(() => "?").join(", ");
+  const mediaRows = await query(
+    `
+      SELECT post_media_id, post_id, media_url, type, sort_order, width, height, duration
+      FROM post_media
+      WHERE post_id IN (${placeholders})
+      ORDER BY post_id ASC, sort_order ASC
+    `,
+    postIds,
+  );
+
+  const mediaByPostId = new Map();
+
+  for (const media of mediaRows) {
+    const current = mediaByPostId.get(media.post_id) || [];
+    current.push(media);
+    mediaByPostId.set(media.post_id, current);
+  }
+
+  return posts.map((post) => ({
+    ...post,
+    media: mediaByPostId.get(post.post_id) || [],
+  }));
+};
+
+const hydratePosts = async (rows) => attachMedia(rows.map(toPostWithAuthor));
+
 const findById = async (postId) => {
   const rows = await query(
     `
-      SELECT p.*, u.user_id as author_user_id, u.name as author_name, u.username as author_username, u.avata as author_avata
+      SELECT ${postSelectFields}
       FROM posts p
       JOIN users u ON u.user_id = p.user_id
-      WHERE p.post_id = :postId
+      WHERE p.post_id = :postId AND p.is_deleted = 0
       LIMIT 1
     `,
     { postId },
   );
 
-  const postRow = rows[0];
+  const posts = await hydratePosts(rows);
+  return posts[0] || null;
+};
 
-  if (!postRow) return null;
-
-  const media = await query(
-    `SELECT post_media_id, media_url, type, sort_order, width, height, duration FROM post_media WHERE post_id = :postId ORDER BY sort_order ASC`,
-    { postId },
-  );
-
-  const author = userModel.toPublicUser({
-    user_id: postRow.author_user_id,
-    name: postRow.author_name,
-    username: postRow.author_username,
-    avata: postRow.author_avata,
-    birthday: postRow.birthday,
-    gender: postRow.gender,
-    phone: postRow.phone,
-    email: postRow.email,
-    role: postRow.role,
-    status: postRow.status,
-    created_at: postRow.created_at,
-  });
-
-  const post = toPublicPost(postRow);
-  post.author = author;
-  post.media = media || [];
-
-  return post;
+const insertMedia = async (connection, postId, media = []) => {
+  for (let i = 0; i < (media || []).length; i++) {
+    const m = media[i];
+    await connection.execute(
+      `INSERT INTO post_media (post_id, media_url, type, sort_order, width, height, duration) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [postId, m.media_url, m.type || "image", m.sort_order ?? i, m.width ?? null, m.height ?? null, m.duration ?? null],
+    );
+  }
 };
 
 const createWithMedia = async ({ user_id, content = null, visibility = "public", location = null, latitude = null, longitude = null, media = [] }) => {
-  return withTransaction(async (connection) => {
+  const postId = await withTransaction(async (connection) => {
     const [result] = await connection.execute(
       `INSERT INTO posts (user_id, content, visibility, location, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)`,
       [user_id, content, visibility, location, latitude, longitude],
     );
 
-    const postId = result.insertId;
+    await insertMedia(connection, result.insertId, media);
 
-    for (let i = 0; i < (media || []).length; i++) {
-      const m = media[i];
-      await connection.execute(
-        `INSERT INTO post_media (post_id, media_url, type, sort_order, width, height, duration) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [postId, m.media_url, m.type || "image", m.sort_order ?? i, m.width ?? null, m.height ?? null, m.duration ?? null],
-      );
-    }
-
-    return findById(postId);
+    return result.insertId;
   });
+
+  return findById(postId);
 };
 
-const getFeed = async ({ page = 1, limit = 10 }) => {
-  const offset = (Math.max(1, page) - 1) * limit;
+const getFeed = async ({ page = 1, limit = 10, userId = null, includePrivate = false }) => {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(30, Math.max(1, Number(limit) || 10));
+  const offset = (safePage - 1) * safeLimit;
+  const where = ["p.is_deleted = 0"];
+  const params = {
+    limit: safeLimit,
+    offset,
+  };
+
+  if (userId) {
+    where.push("p.user_id = :userId");
+    params.userId = userId;
+  }
+
+  if (!includePrivate) {
+    where.push("p.visibility = 'public'");
+  }
+
+  const whereClause = where.join(" AND ");
+
+  const countRows = await query(
+    `
+      SELECT COUNT(*) AS total
+      FROM posts p
+      WHERE ${whereClause}
+    `,
+    params,
+  );
 
   const rows = await query(
     `
-      SELECT p.*, u.user_id as author_user_id, u.name as author_name, u.username as author_username, u.avata as author_avata
+      SELECT ${postSelectFields}
       FROM posts p
       JOIN users u ON u.user_id = p.user_id
-      WHERE p.is_deleted = 0
+      WHERE ${whereClause}
       ORDER BY p.is_pinned DESC, p.created_at DESC
       LIMIT :limit OFFSET :offset
     `,
-    { limit, offset },
+    params,
   );
 
-  const posts = [];
+  const total = Number(countRows[0]?.total || 0);
+  const items = await hydratePosts(rows);
 
-  for (const row of rows) {
-    const media = await query(
-      `SELECT post_media_id, media_url, type, sort_order, width, height, duration FROM post_media WHERE post_id = :postId ORDER BY sort_order ASC`,
-      { postId: row.post_id },
-    );
+  return {
+    items,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit),
+      hasMore: offset + items.length < total,
+    },
+  };
+};
 
-    const author = userModel.toPublicUser({
-      user_id: row.author_user_id,
-      name: row.author_name,
-      username: row.author_username,
-      avata: row.author_avata,
-      birthday: row.birthday,
-      gender: row.gender,
-      phone: row.phone,
-      email: row.email,
-      role: row.role,
-      status: row.status,
-      created_at: row.created_at,
-    });
+const updateWithMedia = async (postId, fields, media = [], replaceMedia = false) => {
+  await withTransaction(async (connection) => {
+    const allowedFields = ["content", "visibility", "location", "latitude", "longitude"];
+    const updates = [];
+    const values = [];
 
-    const post = toPublicPost(row);
-    post.author = author;
-    post.media = media || [];
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(fields, field)) {
+        updates.push(`${field} = ?`);
+        values.push(fields[field]);
+      }
+    }
 
-    posts.push(post);
-  }
+    if (updates.length > 0 || replaceMedia) {
+      if (!updates.includes("is_edited = 1")) {
+        updates.push("is_edited = 1");
+      }
+      await connection.execute(`UPDATE posts SET ${updates.join(", ")} WHERE post_id = ?`, [...values, postId]);
+    }
 
-  return posts;
+    if (replaceMedia) {
+      await connection.execute(`DELETE FROM post_media WHERE post_id = ?`, [postId]);
+      await insertMedia(connection, postId, media);
+    }
+  });
+
+  return findById(postId);
 };
 
 const softDelete = async (postId) => {
-  await execute(`UPDATE posts SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE post_id = :postId`, { postId });
+  try {
+    await execute(
+      `UPDATE posts SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE post_id = :postId AND is_deleted = 0`,
+      { postId },
+    );
+  } catch (error) {
+    if (error.code !== "ER_BAD_FIELD_ERROR") {
+      throw error;
+    }
+
+    await execute(`UPDATE posts SET is_deleted = 1 WHERE post_id = :postId AND is_deleted = 0`, { postId });
+  }
 
   return true;
 };
@@ -145,5 +242,6 @@ module.exports = {
   findById,
   createWithMedia,
   getFeed,
+  updateWithMedia,
   softDelete,
 };

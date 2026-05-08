@@ -335,6 +335,7 @@ CREATE TABLE `posts` (
   `latitude` decimal(10,8) DEFAULT NULL,
   `longitude` decimal(11,8) DEFAULT NULL,
   `is_deleted` tinyint(1) DEFAULT '0' COMMENT 'Soft delete',
+  `deleted_at` timestamp NULL DEFAULT NULL,
   `is_edited` tinyint(1) DEFAULT '0',
   `is_pinned` tinyint(1) DEFAULT '0' COMMENT 'Ghim bài viết',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -345,6 +346,8 @@ CREATE TABLE `posts` (
   KEY `idx_created_at` (`created_at` DESC),
   KEY `idx_is_deleted` (`is_deleted`),
   KEY `idx_pinned` (`is_pinned`,`created_at` DESC),
+  KEY `idx_feed_visible` (`is_deleted`,`visibility`,`is_pinned`,`created_at` DESC),
+  KEY `idx_user_deleted_created` (`user_id`,`is_deleted`,`created_at` DESC),
   CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

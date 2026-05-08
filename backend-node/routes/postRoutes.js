@@ -11,6 +11,12 @@ const router = express.Router();
 // Public feed
 router.get("/", asyncHandler(postController.getFeed));
 
+// Current user's posts
+router.get("/me", authenticate, asyncHandler(postController.getMyPosts));
+
+// Public posts by user
+router.get("/user/:userId", asyncHandler(postController.getUserPosts));
+
 // Create post (authenticated)
 router.post(
   "/",
@@ -18,6 +24,14 @@ router.post(
   rateLimitForCreatePost(),
   postUpload.array("media", config.upload.postMediaMaxFiles),
   asyncHandler(postController.createPost),
+);
+
+// Update post
+router.patch(
+  "/:id",
+  authenticate,
+  postUpload.array("media", config.upload.postMediaMaxFiles),
+  asyncHandler(postController.updatePost),
 );
 
 // Delete post

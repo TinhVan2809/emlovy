@@ -111,7 +111,7 @@ const startServer = async () => {
     const io = new Server(httpServer, {
       cors: {
         origin: config.cors.origins.length > 0 ? config.cors.origins : true,
-        methods: ["GET", "POST", "DELETE"],
+        methods: ["GET", "POST", "PATCH", "DELETE"],
       },
     });
 
