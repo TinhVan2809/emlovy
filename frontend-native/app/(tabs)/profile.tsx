@@ -186,7 +186,7 @@ export default function ProfileScreen() {
 
   const handleSubmitPost = async (input: CreatePostInput | UpdatePostInput) => {
     if (!token) {
-      setPostError('Ban can dang nhap de dang bai.');
+      setPostError('Bạn cần đăng nhập để đăng bài.');
       return;
     }
 

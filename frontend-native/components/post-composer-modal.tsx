@@ -165,8 +165,8 @@ export function PostComposerModal({
     await onSubmit(payload);
   };
 
-  const title = mode === 'edit' ? 'Chinh sua bai viet' : 'Tao bai viet';
-  const submitLabel = mode === 'edit' ? 'Luu' : 'Dang';
+  const title = mode === 'edit' ? 'Chỉnh sửa bài viết' : 'Tạo bài viết';
+  const submitLabel = mode === 'edit' ? 'Lưu' : 'Đăng';
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
@@ -197,7 +197,7 @@ export function PostComposerModal({
             <TextInput
               multiline
               onChangeText={setContent}
-              placeholder="Ban dang nghi gi?"
+              placeholder="Bạn đang nghỉ gì?"
               placeholderTextColor={AppColors.tabInactive}
               style={styles.contentInput}
               textAlignVertical="top"
@@ -210,7 +210,7 @@ export function PostComposerModal({
               </View>
               <TextInput
                 onChangeText={setLocation}
-                placeholder="Them vi tri"
+                placeholder="Thêm vị trí"
                 placeholderTextColor={AppColors.tabInactive}
                 style={styles.inlineInput}
                 value={location}
@@ -240,7 +240,7 @@ export function PostComposerModal({
                 <Pressable disabled={isSubmitting} onPress={handlePickImages} style={styles.mediaButton}>
                   <Ionicons color={AppColors.surface} name="images-outline" size={18} />
                   <Text style={styles.mediaButtonText}>
-                    {previewUris.length > 0 ? 'Doi anh' : 'Chon anh'}
+                    {previewUris.length > 0 ? 'Đổi ảnh' : 'Chọn ảnh'}
                   </Text>
                 </Pressable>
               </View>
@@ -267,7 +267,7 @@ export function PostComposerModal({
               ) : (
                 <Pressable onPress={handlePickImages} style={styles.emptyPicker}>
                   <Ionicons color={AppColors.muted} name="image-outline" size={24} />
-                  <Text style={styles.emptyPickerText}>Chon nhieu hinh cung luc</Text>
+                  <Text style={styles.emptyPickerText}>Chọn nhiều ảnh cùng lúc</Text>
                 </Pressable>
               )}
             </View>

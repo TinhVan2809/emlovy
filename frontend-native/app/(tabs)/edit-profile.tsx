@@ -121,7 +121,7 @@ export default function EditProfileScreen() {
       updateUser(response.data.user);
       router.back();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Cap nhat profile khong thanh cong.');
+      setError(saveError instanceof Error ? saveError.message : 'Cập nhật profile không thành công.');
     } finally {
       setIsSaving(false);
     }
@@ -162,7 +162,7 @@ export default function EditProfileScreen() {
               </View>
             </Pressable>
             <Pressable disabled={isUploadingAvatar} onPress={handlePickAvatar}>
-              <Text style={styles.avatarAction}>Doi avatar</Text>
+              <Text style={styles.avatarAction}>Đổi avatar</Text>
             </Pressable>
           </View>
 
@@ -183,12 +183,12 @@ export default function EditProfileScreen() {
             />
             <FormField
               keyboardType="phone-pad"
-              label="So dien thoai"
+              label="Số điện thoại"
               onChangeText={setPhone}
               value={phone}
             />
             <FormField
-              label="Ngay sinh"
+              label="Ngày sinh"
               onChangeText={setBirthday}
               placeholder="YYYY-MM-DD"
               value={birthday}

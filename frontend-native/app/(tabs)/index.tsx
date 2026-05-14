@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import { Routes } from '@/constants/routes';
 
 import { PostCard } from '@/components/post-card';
 import { PostComposerModal } from '@/components/post-composer-modal';
@@ -51,7 +53,7 @@ export default function HomeScreen() {
       setPosts((current) => (replace ? response.data.items : mergePosts(current, response.data.items)));
       setError('');
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Khong the tai feed.');
+      setError(loadError instanceof Error ? loadError.message : 'Không thể tải feed.');
     } finally {
       setIsInitialLoading(false);
       setIsLoadingMore(false);
@@ -113,7 +115,7 @@ export default function HomeScreen() {
 
   const handleDeletePost = async (post: Post) => {
     if (!token) {
-      setError('Ban can dang nhap de xoa bai viet.');
+      setError('Bạn cần đăng nhập để xóa bài viết.');
       return;
     }
 
@@ -122,7 +124,7 @@ export default function HomeScreen() {
     try {
       await postApi.delete(token, post.post_id);
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'Xoa bai viet khong thanh cong.');
+      setError(deleteError instanceof Error ? deleteError.message : 'Xóa bài viết thành công.');
       loadFeed(1, true);
     }
   };
@@ -141,7 +143,7 @@ export default function HomeScreen() {
       );
       setEditingPost(null);
     } catch (editError) {
-      setError(editError instanceof Error ? editError.message : 'Cap nhat bai viet khong thanh cong.');
+      setError(editError instanceof Error ? editError.message : 'Cập nhật bài viết không thành công.');
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -153,10 +155,12 @@ export default function HomeScreen() {
       right={
         <View style={styles.headerActions}>
           <Ionicons color={AppColors.text} name="heart-outline" size={24} />
-          <View>
-            <Ionicons color={AppColors.text} name="paper-plane-outline" size={24} />
-            <View style={styles.badge} />
-          </View>
+          <Pressable hitSlop={8} onPress={() => router.push(Routes.chat)}>
+            <View>
+              <Ionicons color={AppColors.text} name="paper-plane-outline" size={24} />
+              <View style={styles.badge} />
+            </View>
+          </Pressable>
         </View>
       }>
       <FlatList
@@ -164,7 +168,7 @@ export default function HomeScreen() {
           isInitialLoading ? (
             <ActivityIndicator color={AppColors.accent} style={styles.emptyState} />
           ) : (
-            <Text style={styles.emptyText}>Chua co bai viet nao.</Text>
+            <Text style={styles.emptyText}>Chưa có bài viết nào.</Text>
           )
         }
         ListFooterComponent={
@@ -235,7 +239,7 @@ function FeedHeader({ count, error }: { count: number; error: string }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.filterRow} horizontal showsHorizontalScrollIndicator={false}>
-        {['Danh cho ban', 'Following', 'Fresh drops', 'Saved'].map((filter, index) => (
+        {['Dành cho bạn', 'Following', 'Fresh drops', 'Saved'].map((filter, index) => (
           <View key={filter} style={[styles.filterChip, index === 0 ? styles.filterChipActive : null]}>
             <Text style={[styles.filterText, index === 0 ? styles.filterTextActive : null]}>{filter}</Text>
           </View>
@@ -244,7 +248,7 @@ function FeedHeader({ count, error }: { count: number; error: string }) {
 
       <View style={styles.feedHeader}>
         <Text style={styles.feedTitle}>New today</Text>
-        <Text style={styles.feedMeta}>{count} bai dang</Text>
+        <Text style={styles.feedMeta}>{count} bài đăng</Text>
       </View>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
