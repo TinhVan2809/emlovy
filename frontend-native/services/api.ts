@@ -9,6 +9,7 @@ import type {
   CommentMutationResult,
   CommentsPage,
   CreatePostInput,
+  CreateStoryInput,
   LoginInput,
   Post,
   PostLikeSummary,
@@ -16,8 +17,11 @@ import type {
   PostsPage,
   Profile,
   RegisterInput,
+  StoryGroup,
+  StoryItem,
   UpdatePostInput,
   UpdateProfileInput,
+  UpdateStoryInput,
   User,
 } from '@/types/auth';
 
@@ -130,6 +134,15 @@ const getPostMediaFileName = (input: PostMediaInput, index: number) => {
   return nameFromUri || `post-media-${Date.now()}-${index}.jpg`;
 };
 
+const getStoryMediaFileName = (input: PostMediaInput, index: number) => {
+  if (input.fileName) {
+    return input.fileName;
+  }
+
+  const nameFromUri = input.uri.split('/').pop();
+  return nameFromUri || `story-media-${Date.now()}-${index}.jpg`;
+};
+
 const createPostFormData = (input: CreatePostInput | UpdatePostInput) => {
   const formData = new FormData();
 
@@ -153,6 +166,36 @@ const createPostFormData = (input: CreatePostInput | UpdatePostInput) => {
     formData.append('media', {
       uri: file.uri,
       name: getPostMediaFileName(file, index),
+      type: file.mimeType || 'image/jpeg',
+    } as unknown as Blob);
+  });
+
+  return formData;
+};
+
+const createStoryFormData = (input: CreateStoryInput | UpdateStoryInput) => {
+  const formData = new FormData();
+
+  if (Object.prototype.hasOwnProperty.call(input, 'content')) {
+    formData.append('content', input.content ?? '');
+  }
+
+  if (Object.prototype.hasOwnProperty.call(input, 'background_color')) {
+    formData.append('background_color', input.background_color || '#FFE1D6');
+  }
+
+  if (Object.prototype.hasOwnProperty.call(input, 'music_url')) {
+    formData.append('music_url', input.music_url ?? '');
+  }
+
+  if ('replaceMedia' in input && input.replaceMedia !== undefined) {
+    formData.append('replaceMedia', input.replaceMedia ? 'true' : 'false');
+  }
+
+  input.media?.forEach((file, index) => {
+    formData.append('media', {
+      uri: file.uri,
+      name: getStoryMediaFileName(file, index),
       type: file.mimeType || 'image/jpeg',
     } as unknown as Blob);
   });
@@ -317,6 +360,41 @@ export const postApi = {
   },
   async unlikeComment(token: string, commentId: number) {
     return request<CommentLikeSummary>(`/posts/comments/${commentId}/like`, {
+      method: 'DELETE',
+      token,
+    });
+  },
+};
+
+export const storyApi = {
+  async getFollowing(token: string) {
+    return request<{ groups: StoryGroup[] }>('/stories', {
+      method: 'GET',
+      token,
+    });
+  },
+  async getMine(token: string) {
+    return request<{ stories: StoryItem[] }>('/stories/me', {
+      method: 'GET',
+      token,
+    });
+  },
+  async create(token: string, input: CreateStoryInput) {
+    return request<StoryItem>('/stories', {
+      method: 'POST',
+      token,
+      body: createStoryFormData(input),
+    });
+  },
+  async update(token: string, storyId: number, input: UpdateStoryInput) {
+    return request<StoryItem>(`/stories/${storyId}`, {
+      method: 'PATCH',
+      token,
+      body: createStoryFormData(input),
+    });
+  },
+  async delete(token: string, storyId: number) {
+    return request<null>(`/stories/${storyId}`, {
       method: 'DELETE',
       token,
     });

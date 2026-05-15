@@ -92,6 +92,40 @@ export type Post = {
   media: PostMedia[];
 };
 
+export type StoryMedia = {
+  story_media_id: number;
+  story_id: number;
+  media_url: string;
+  type: 'image' | 'video';
+  duration: number | null;
+  position_x: string | number | null;
+  position_y: string | number | null;
+  created_at: string;
+};
+
+export type StoryItem = {
+  story_id: number;
+  user_id: number;
+  content: string | null;
+  background_color: string;
+  music_url: string | null;
+  expires_at: string;
+  is_active: boolean;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at: string;
+  author: User;
+  media: StoryMedia[];
+};
+
+export type StoryGroup = {
+  user_id: number;
+  author: User;
+  is_own: boolean;
+  stories: StoryItem[];
+  latest_created_at: string;
+};
+
 export type PostComment = {
   id: number;
   post_id: number;
@@ -162,6 +196,23 @@ export type CreatePostInput = {
 };
 
 export type UpdatePostInput = CreatePostInput & {
+  replaceMedia?: boolean;
+};
+
+export type StoryMediaInput = {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+};
+
+export type CreateStoryInput = {
+  content?: string | null;
+  background_color?: string | null;
+  music_url?: string | null;
+  media?: StoryMediaInput[];
+};
+
+export type UpdateStoryInput = CreateStoryInput & {
   replaceMedia?: boolean;
 };
 

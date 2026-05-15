@@ -11,9 +11,10 @@ export default function ChatScreen() {
       <View style={styles.container}>
         <TextInput placeholder="Search Chat..." style={styles.input}/>
         <View style={styles.category}>
-          <Text>All</Text>
-          <Text>Chưa đọc</Text>
-          <Text>Nhóm</Text>
+          <Text style={styles.categoty_items}>All</Text>
+          <Text style={styles.categoty_items}>Chưa đọc</Text>
+          <Text style={styles.categoty_items}>Nhóm</Text>
+          <Text style={styles.categoty_items}>Khác</Text>
         </View>
       </View>
     </ScreenShell>
@@ -39,5 +40,11 @@ const styles = StyleSheet.create({
     gap: 20,
     width: '100%',
     marginTop: 10,
+    paddingLeft: 20,
+    paddingRight: 20,
+    paddingTop: 10,
+  },
+  categoty_items: {
+    fontSize: 16
   }
 });

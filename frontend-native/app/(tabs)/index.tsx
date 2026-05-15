@@ -8,12 +8,15 @@ import { CommentsSheet } from '@/components/comments-sheet';
 import { PostCard } from '@/components/post-card';
 import { PostComposerModal } from '@/components/post-composer-modal';
 import { ScreenShell } from '@/components/screen-shell';
-import { stories } from '@/constants/mock-content';
+import { StoryComposerModal } from '@/components/story-composer-modal';
+import { StoryTray } from '@/components/story-tray';
+import { stories as fallbackStories } from '@/constants/mock-content';
 import { AppColors, AppFonts } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
-import { postApi } from '@/services/api';
+import { postApi, storyApi } from '@/services/api';
 import { subscribeToPostEvents } from '@/services/post-socket';
-import type { Post, PostsPagination, UpdatePostInput } from '@/types/auth';
+import { subscribeToStoryEvents } from '@/services/story-socket';
+import type { CreateStoryInput, Post, PostsPagination, StoryGroup, UpdatePostInput } from '@/types/auth';
 
 const FEED_LIMIT = 10;
 
@@ -42,6 +45,26 @@ export default function HomeScreen() {
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [commentPostId, setCommentPostId] = useState<number | null>(null);
   const [likingPostIds, setLikingPostIds] = useState<Set<number>>(() => new Set());
+  const [storyGroups, setStoryGroups] = useState<StoryGroup[]>([]);
+  const [storyError, setStoryError] = useState('');
+  const [storyComposerVisible, setStoryComposerVisible] = useState(false);
+  const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+
+  const loadStories = useCallback(async () => {
+    if (!token) {
+      setStoryGroups([]);
+      setStoryError('');
+      return;
+    }
+
+    try {
+      const response = await storyApi.getFollowing(token);
+      setStoryGroups(response.data.groups);
+      setStoryError('');
+    } catch (loadError) {
+      setStoryError(loadError instanceof Error ? loadError.message : 'Khong the tai stories.');
+    }
+  }, [token]);
 
   const loadFeed = useCallback(async (page = 1, replace = true) => {
     if (replace) {
@@ -66,7 +89,25 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadFeed();
-  }, [loadFeed]);
+    loadStories();
+  }, [loadFeed, loadStories]);
+
+  useEffect(() => {
+    if (!token) {
+      return undefined;
+    }
+
+    const reloadStories = () => {
+      loadStories();
+    };
+
+    return subscribeToStoryEvents({
+      onCreated: reloadStories,
+      onDeleted: reloadStories,
+      onExpired: reloadStories,
+      onUpdated: reloadStories,
+    });
+  }, [loadStories, token]);
 
   useEffect(
     () =>
@@ -107,6 +148,7 @@ export default function HomeScreen() {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    loadStories();
     loadFeed(1, true);
   };
 
@@ -214,6 +256,25 @@ export default function HomeScreen() {
     patchPost(postId, { comment_count: commentCount });
   };
 
+  const handleSubmitStory = async (input: CreateStoryInput) => {
+    if (!token) {
+      setStoryError('Ban can dang nhap de tao story.');
+      return;
+    }
+
+    setIsSubmittingStory(true);
+
+    try {
+      await storyApi.create(token, input);
+      setStoryComposerVisible(false);
+      await loadStories();
+    } catch (submitError) {
+      setStoryError(submitError instanceof Error ? submitError.message : 'Khong the tao story.');
+    } finally {
+      setIsSubmittingStory(false);
+    }
+  };
+
   return (
     <ScreenShell
       titleNode={<Text style={styles.brand}>emlovy</Text>}
@@ -239,7 +300,15 @@ export default function HomeScreen() {
         ListFooterComponent={
           isLoadingMore ? <ActivityIndicator color={AppColors.accent} style={styles.footerLoader} /> : null
         }
-        ListHeaderComponent={<FeedHeader count={pagination?.total || posts.length} error={error} />}
+        ListHeaderComponent={
+          <FeedHeader
+            count={pagination?.total || posts.length}
+            error={error}
+            onCreateStory={() => setStoryComposerVisible(true)}
+            storyError={storyError}
+            storyGroups={storyGroups}
+          />
+        }
         contentContainerStyle={styles.content}
         data={posts}
         keyExtractor={(item) => String(item.post_id)}
@@ -284,33 +353,36 @@ export default function HomeScreen() {
         token={token}
         visible={Boolean(selectedCommentPost)}
       />
+
+      <StoryComposerModal
+        isSubmitting={isSubmittingStory}
+        mode="create"
+        onClose={() => setStoryComposerVisible(false)}
+        onSubmit={(input) => handleSubmitStory(input as CreateStoryInput)}
+        visible={storyComposerVisible}
+      />
     </ScreenShell>
   );
 }
 
-function FeedHeader({ count, error }: { count: number; error: string }) {
+function FeedHeader({
+  count,
+  error,
+  onCreateStory,
+  storyError,
+  storyGroups,
+}: {
+  count: number;
+  error: string;
+  onCreateStory: () => void;
+  storyError: string;
+  storyGroups: StoryGroup[];
+}) {
   return (
     <View style={styles.headerContent}>
       <View style={styles.storySection}>
-        <ScrollView contentContainerStyle={styles.storyRow} horizontal showsHorizontalScrollIndicator={false}>
-          {stories.map((story) => (
-            <View key={story.id} style={styles.storyItem}>
-              <View style={[styles.storyRing, { backgroundColor: story.accent }]}>
-                <View style={[styles.storyCore, { backgroundColor: story.tone }]}>
-                  <Text style={styles.storyInitial}>{story.initials}</Text>
-                </View>
-                {story.isOwn ? (
-                  <View style={styles.storyPlus}>
-                    <Ionicons color={AppColors.surface} name="add" size={12} />
-                  </View>
-                ) : null}
-              </View>
-              <Text numberOfLines={1} style={styles.storyName}>
-                {story.name}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
+        <StoryTray fallbackStories={fallbackStories} groups={storyGroups} onCreateStory={onCreateStory} />
+        {storyError ? <Text style={styles.storyErrorText}>{storyError}</Text> : null}
       </View>
 
       <ScrollView contentContainerStyle={styles.filterRow} horizontal showsHorizontalScrollIndicator={false}>
@@ -426,52 +498,12 @@ const styles = StyleSheet.create({
     gap: 20,
     paddingTop: 6,
   },
-  storyCore: {
-    alignItems: 'center',
-    borderColor: AppColors.surface,
-    borderRadius: 28,
-    borderWidth: 3,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  storyInitial: {
-    color: AppColors.text,
-    fontFamily: AppFonts.heading,
-    fontSize: 18,
-  },
-  storyItem: {
-    alignItems: 'center',
-    gap: 8,
-    width: 74,
-  },
-  storyName: {
-    color: AppColors.text,
+  storyErrorText: {
+    color: AppColors.accent,
     fontFamily: AppFonts.body,
     fontSize: 12,
-  },
-  storyPlus: {
-    alignItems: 'center',
-    backgroundColor: AppColors.success,
-    borderColor: AppColors.surface,
-    borderRadius: 10,
-    borderWidth: 2,
-    bottom: -2,
-    height: 20,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: -1,
-    width: 20,
-  },
-  storyRing: {
-    borderRadius: 34,
-    height: 68,
-    justifyContent: 'center',
-    padding: 3,
-    width: 68,
-  },
-  storyRow: {
-    gap: 14,
     paddingHorizontal: 18,
+    paddingTop: 8,
   },
   storySection: {
     paddingTop: 6,

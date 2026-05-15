@@ -10,11 +10,15 @@ const {
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const postRoutes = require("./routes/postRoutes");
+const storyRoutes = require("./routes/storyRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const notFound = require("./middlewares/notFound");
 const { Server } = require("socket.io");
 const http = require("http");
 const { setIo } = require("./utils/socket");
+const storyModel = require("./models/storyModel");
+
+const STORY_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 
 const createApp = () => {
   const app = express();
@@ -63,13 +67,14 @@ const createApp = () => {
   app.use("/api/auth", authRoutes);
   app.use("/api/profile", profileRoutes);
   app.use("/api/posts", postRoutes);
+  app.use("/api/stories", storyRoutes);
   app.use(notFound);
   app.use(errorHandler);
 
   return app;
 };
 
-const registerShutdownHandlers = (server) => {
+const registerShutdownHandlers = (server, timers = []) => {
   let isShuttingDown = false;
 
   const shutdown = (signal) => {
@@ -79,6 +84,7 @@ const registerShutdownHandlers = (server) => {
 
     isShuttingDown = true;
     console.log(`${signal} received. Closing server...`);
+    timers.forEach((timer) => clearInterval(timer));
 
     server.close(async (serverError) => {
       if (serverError) {
@@ -117,6 +123,18 @@ const startServer = async () => {
 
     setIo(io);
 
+    const cleanupExpiredStories = async () => {
+      try {
+        const expiredCount = await storyModel.cleanupExpiredStories();
+
+        if (expiredCount > 0) {
+          io.emit("story:expired", { count: expiredCount });
+        }
+      } catch (cleanupError) {
+        console.error("Story cleanup failed:", cleanupError.message || cleanupError);
+      }
+    };
+
     io.on("connection", (socket) => {
       console.log("Socket connected:", socket.id);
       socket.on("disconnect", () => {
@@ -129,7 +147,11 @@ const startServer = async () => {
       console.log(`http://localhost:${config.app.port}`);
     });
 
-    registerShutdownHandlers(server);
+    cleanupExpiredStories();
+    const storyCleanupTimer = setInterval(cleanupExpiredStories, STORY_CLEANUP_INTERVAL_MS);
+    storyCleanupTimer.unref?.();
+
+    registerShutdownHandlers(server, [storyCleanupTimer]);
 
     return server;
   } catch (error) {
