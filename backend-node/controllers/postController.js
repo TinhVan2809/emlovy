@@ -114,7 +114,7 @@ const createPost = async (req, res) => {
 const getFeed = async (req, res) => {
   const page = Number.parseInt(req.query.page || "1", 10) || 1;
   const limit = Number.parseInt(req.query.limit || "10", 10) || 10;
-  const posts = await postModel.getFeed({ page, limit });
+  const posts = await postModel.getFeed({ page, limit, viewerId: req.user?.user_id || null });
 
   res.status(200).json({ success: true, data: posts });
 };
@@ -133,6 +133,7 @@ const getMyPosts = async (req, res) => {
     limit,
     userId: user.user_id,
     includePrivate: true,
+    viewerId: user.user_id,
   });
 
   res.status(200).json({ success: true, data: posts });
@@ -147,7 +148,7 @@ const getUserPosts = async (req, res) => {
 
   const page = Number.parseInt(req.query.page || "1", 10) || 1;
   const limit = Number.parseInt(req.query.limit || "12", 10) || 12;
-  const posts = await postModel.getFeed({ page, limit, userId });
+  const posts = await postModel.getFeed({ page, limit, userId, viewerId: req.user?.user_id || null });
 
   res.status(200).json({ success: true, data: posts });
 };

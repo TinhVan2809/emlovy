@@ -85,10 +85,28 @@ export type Post = {
   is_deleted: boolean;
   is_edited: boolean;
   is_pinned: boolean;
+  liked_by_me: boolean;
   created_at: string;
   updated_at: string;
   author: User;
   media: PostMedia[];
+};
+
+export type PostComment = {
+  id: number;
+  post_id: number;
+  user_id: number;
+  parent_id: number | null;
+  content: string;
+  like_count: number;
+  reply_count: number;
+  liked_by_me: boolean;
+  is_edited: boolean;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at: string;
+  author: User;
+  replies: PostComment[];
 };
 
 export type PostsPagination = {
@@ -102,6 +120,32 @@ export type PostsPagination = {
 export type PostsPage = {
   items: Post[];
   pagination: PostsPagination;
+};
+
+export type CommentsPage = {
+  items: PostComment[];
+  pagination: PostsPagination;
+};
+
+export type PostLikeSummary = {
+  post_id: number;
+  liked_by_me: boolean;
+  like_count: number;
+};
+
+export type CommentLikeSummary = {
+  id: number;
+  post_id: number;
+  liked_by_me: boolean;
+  like_count: number;
+};
+
+export type CommentMutationResult = {
+  comment: PostComment;
+  post: {
+    post_id: number;
+    comment_count: number;
+  };
 };
 
 export type PostMediaInput = {

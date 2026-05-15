@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Te
 import { router } from 'expo-router';
 import { Routes } from '@/constants/routes';
 
+import { CommentsSheet } from '@/components/comments-sheet';
 import { PostCard } from '@/components/post-card';
 import { PostComposerModal } from '@/components/post-composer-modal';
 import { ScreenShell } from '@/components/screen-shell';
@@ -39,6 +40,8 @@ export default function HomeScreen() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [commentPostId, setCommentPostId] = useState<number | null>(null);
+  const [likingPostIds, setLikingPostIds] = useState<Set<number>>(() => new Set());
 
   const loadFeed = useCallback(async (page = 1, replace = true) => {
     if (replace) {
@@ -48,7 +51,7 @@ export default function HomeScreen() {
     }
 
     try {
-      const response = await postApi.getFeed({ limit: FEED_LIMIT, page });
+      const response = await postApi.getFeed({ limit: FEED_LIMIT, page, token });
       setPagination(response.data.pagination);
       setPosts((current) => (replace ? response.data.items : mergePosts(current, response.data.items)));
       setError('');
@@ -59,7 +62,7 @@ export default function HomeScreen() {
       setIsLoadingMore(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     loadFeed();
@@ -93,7 +96,9 @@ export default function HomeScreen() {
               return current.filter((item) => item.post_id !== post.post_id);
             }
 
-            return current.map((item) => (item.post_id === post.post_id ? post : item));
+            return current.map((item) =>
+              item.post_id === post.post_id ? { ...post, liked_by_me: item.liked_by_me } : item,
+            );
           });
         },
       }),
@@ -149,6 +154,66 @@ export default function HomeScreen() {
     }
   };
 
+  const selectedCommentPost = commentPostId
+    ? posts.find((post) => post.post_id === commentPostId) || null
+    : null;
+
+  const patchPost = (postId: number, patch: Partial<Post>) => {
+    setPosts((current) => current.map((post) => (post.post_id === postId ? { ...post, ...patch } : post)));
+  };
+
+  const handleTogglePostLike = async (post: Post) => {
+    if (!token) {
+      setError('Ban can dang nhap de tha tym bai viet.');
+      return;
+    }
+
+    if (likingPostIds.has(post.post_id)) {
+      return;
+    }
+
+    const shouldLike = !post.liked_by_me;
+    const optimisticLikeCount = Math.max(0, post.like_count + (shouldLike ? 1 : -1));
+
+    setLikingPostIds((current) => {
+      const next = new Set(current);
+      next.add(post.post_id);
+      return next;
+    });
+    patchPost(post.post_id, {
+      liked_by_me: shouldLike,
+      like_count: optimisticLikeCount,
+    });
+
+    try {
+      const response = shouldLike
+        ? await postApi.like(token, post.post_id)
+        : await postApi.unlike(token, post.post_id);
+
+      patchPost(post.post_id, {
+        liked_by_me: response.data.liked_by_me,
+        like_count: response.data.like_count,
+      });
+      setError('');
+    } catch (likeError) {
+      patchPost(post.post_id, {
+        liked_by_me: post.liked_by_me,
+        like_count: post.like_count,
+      });
+      setError(likeError instanceof Error ? likeError.message : 'Khong the cap nhat tym bai viet.');
+    } finally {
+      setLikingPostIds((current) => {
+        const next = new Set(current);
+        next.delete(post.post_id);
+        return next;
+      });
+    }
+  };
+
+  const handlePostCommentCountChange = (postId: number, commentCount: number) => {
+    patchPost(postId, { comment_count: commentCount });
+  };
+
   return (
     <ScreenShell
       titleNode={<Text style={styles.brand}>emlovy</Text>}
@@ -194,6 +259,8 @@ export default function HomeScreen() {
               currentUserId={user?.user_id}
               onDelete={handleDeletePost}
               onEdit={setEditingPost}
+              onOpenComments={(post) => setCommentPostId(post.post_id)}
+              onToggleLike={handleTogglePostLike}
               post={item}
             />
           </View>
@@ -208,6 +275,14 @@ export default function HomeScreen() {
         onClose={() => setEditingPost(null)}
         onSubmit={(input) => handleSubmitEdit(input as UpdatePostInput)}
         visible={Boolean(editingPost)}
+      />
+
+      <CommentsSheet
+        onClose={() => setCommentPostId(null)}
+        onPostCommentCountChange={handlePostCommentCountChange}
+        post={selectedCommentPost}
+        token={token}
+        visible={Boolean(selectedCommentPost)}
       />
     </ScreenShell>
   );

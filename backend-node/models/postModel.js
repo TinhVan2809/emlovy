@@ -20,12 +20,13 @@ const toPublicPost = (post) => {
     is_deleted: Boolean(post.is_deleted),
     is_edited: Boolean(post.is_edited),
     is_pinned: Boolean(post.is_pinned),
+    liked_by_me: Boolean(post.liked_by_me),
     created_at: post.created_at,
     updated_at: post.updated_at,
   };
 };
 
-const postSelectFields = `
+const buildPostSelectFields = (viewerId = null) => `
   p.*,
   u.user_id AS author_user_id,
   u.name AS author_name,
@@ -37,7 +38,18 @@ const postSelectFields = `
   u.email AS author_email,
   u.role AS author_role,
   u.status AS author_status,
-  u.created_at AS author_created_at
+  u.created_at AS author_created_at,
+  ${
+    viewerId
+      ? `EXISTS(
+          SELECT 1
+          FROM likes l
+          WHERE l.user_id = :viewerId
+            AND l.post_id = p.post_id
+            AND l.comment_id IS NULL
+        )`
+      : "0"
+  } AS liked_by_me
 `;
 
 const toPostWithAuthor = (row) => {
@@ -94,16 +106,16 @@ const attachMedia = async (posts) => {
 
 const hydratePosts = async (rows) => attachMedia(rows.map(toPostWithAuthor));
 
-const findById = async (postId) => {
+const findById = async (postId, viewerId = null) => {
   const rows = await query(
     `
-      SELECT ${postSelectFields}
+      SELECT ${buildPostSelectFields(viewerId)}
       FROM posts p
       JOIN users u ON u.user_id = p.user_id
       WHERE p.post_id = :postId AND p.is_deleted = 0
       LIMIT 1
     `,
-    { postId },
+    { postId, viewerId },
   );
 
   const posts = await hydratePosts(rows);
@@ -135,7 +147,7 @@ const createWithMedia = async ({ user_id, content = null, visibility = "public",
   return findById(postId);
 };
 
-const getFeed = async ({ page = 1, limit = 10, userId = null, includePrivate = false }) => {
+const getFeed = async ({ page = 1, limit = 10, userId = null, includePrivate = false, viewerId = null }) => {
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.min(30, Math.max(1, Number(limit) || 10));
   const offset = (safePage - 1) * safeLimit;
@@ -167,14 +179,14 @@ const getFeed = async ({ page = 1, limit = 10, userId = null, includePrivate = f
 
   const rows = await query(
     `
-      SELECT ${postSelectFields}
+      SELECT ${buildPostSelectFields(viewerId)}
       FROM posts p
       JOIN users u ON u.user_id = p.user_id
       WHERE ${whereClause}
       ORDER BY p.is_pinned DESC, p.created_at DESC
       LIMIT :limit OFFSET :offset
     `,
-    params,
+    { ...params, viewerId },
   );
 
   const total = Number(countRows[0]?.total || 0);

@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 8.0.45, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
 --
 -- Host: localhost    Database: emlovy
 -- ------------------------------------------------------
--- Server version	8.4.8
+-- Server version	9.7.0
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -14,6 +14,14 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
+SET @@SESSION.SQL_LOG_BIN= 0;
+
+--
+-- GTID state at the beginning of the backup
+--
+
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'f31fb58d-48f9-11f1-88b4-b445068c3c7e:1-343';
 
 --
 -- Table structure for table `comments`
@@ -38,6 +46,8 @@ CREATE TABLE `comments` (
   KEY `idx_post_created` (`post_id`,`created_at`),
   KEY `idx_user_post` (`user_id`,`post_id`),
   KEY `idx_parent` (`parent_id`),
+  KEY `idx_post_parent_top` (`post_id`,`parent_id`,`is_deleted`,`like_count` DESC,`created_at` DESC),
+  KEY `idx_parent_created` (`parent_id`,`is_deleted`,`created_at`),
   KEY `idx_created_at` (`created_at` DESC),
   KEY `idx_is_deleted` (`is_deleted`),
   CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE,
@@ -160,14 +170,17 @@ CREATE TABLE `likes` (
   `user_id` int NOT NULL,
   `post_id` int DEFAULT NULL,
   `comment_id` int DEFAULT NULL,
+  `target_post_id` int GENERATED ALWAYS AS (coalesce(`post_id`,0)) STORED,
+  `target_comment_id` int GENERATED ALWAYS AS (coalesce(`comment_id`,0)) STORED,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`like_id`),
-  UNIQUE KEY `unique_like` (`user_id`,`post_id`,`comment_id`),
-  KEY `post_id` (`post_id`),
-  KEY `comment_id` (`comment_id`),
-  CONSTRAINT `likes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
-  CONSTRAINT `likes_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`),
-  CONSTRAINT `likes_ibfk_3` FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`)
+  UNIQUE KEY `unique_like_target` (`user_id`,`target_post_id`,`target_comment_id`),
+  KEY `idx_likes_post` (`post_id`,`user_id`),
+  KEY `idx_likes_comment` (`comment_id`,`user_id`),
+  CONSTRAINT `likes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `likes_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE,
+  CONSTRAINT `likes_ibfk_3` FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `likes_one_target_check` CHECK (((`post_id` is not null) + (`comment_id` is not null)) = 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -302,7 +315,7 @@ CREATE TABLE `post_media` (
   PRIMARY KEY (`post_media_id`),
   KEY `idx_post_media` (`post_id`,`sort_order`),
   CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -311,6 +324,7 @@ CREATE TABLE `post_media` (
 
 LOCK TABLES `post_media` WRITE;
 /*!40000 ALTER TABLE `post_media` DISABLE KEYS */;
+INSERT INTO `post_media` VALUES (2,1,'/uploads/posts/user-1-1778209979555-j9ayt2lv.jpg','image',0,NULL,NULL,NULL),(3,1,'/uploads/posts/user-1-1778209979555-b9voh22m.jpg','image',1,NULL,NULL,NULL),(4,2,'/uploads/posts/user-1-1778210329729-b4ti0a7o.jpg','image',0,NULL,NULL,NULL),(6,4,'/uploads/posts/user-3-1778376913673-6zi1d7ay.jpg','image',0,NULL,NULL,NULL),(7,5,'/uploads/posts/user-1-1778782553344-rko6a2jn.jpg','image',0,NULL,NULL,NULL),(8,3,'/uploads/posts/user-2-1778782905230-wei27h29.png','image',0,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `post_media` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -349,7 +363,7 @@ CREATE TABLE `posts` (
   KEY `idx_feed_visible` (`is_deleted`,`visibility`,`is_pinned`,`created_at` DESC),
   KEY `idx_user_deleted_created` (`user_id`,`is_deleted`,`created_at` DESC),
   CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -358,6 +372,7 @@ CREATE TABLE `posts` (
 
 LOCK TABLES `posts` WRITE;
 /*!40000 ALTER TABLE `posts` DISABLE KEYS */;
+INSERT INTO `posts` VALUES (1,1,'Xin chào các bạn.',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-08 03:15:24',1,0,'2026-05-08 03:11:23','2026-05-08 03:15:24'),(2,1,'Hello.',0,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-08 03:18:49','2026-05-08 03:18:49'),(3,2,'Git syntax basic',0,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,1,0,'2026-05-08 03:20:21','2026-05-14 18:21:46'),(4,3,'Xin chao',0,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-10 01:35:13','2026-05-10 01:35:13'),(5,1,'Http status',0,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-14 18:15:53','2026-05-14 18:15:53');
 /*!40000 ALTER TABLE `posts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -450,7 +465,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `users_username_unique` (`username`),
   UNIQUE KEY `users_email_unique` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -459,9 +474,10 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Lữ Văn Tính','tinhlu','$2b$12$zngBXM86GWMgxaZjJ5TdxOHhXNBag22jjyW5q.E1fkZdklzgia0Aq',NULL,NULL,'0818177533',NULL,'tinhlu703@gmail.com','customer',1,'2026-04-29 11:42:33','2026-04-29 05:41:54');
+INSERT INTO `users` VALUES (1,'Lữ Văn Tính','tinhlu','$2b$12$zngBXM86GWMgxaZjJ5TdxOHhXNBag22jjyW5q.E1fkZdklzgia0Aq',NULL,NULL,'0818177533',NULL,'tinhlu703@gmail.com','customer',1,'2026-04-29 11:42:33','2026-04-29 05:41:54'),(2,'Lữ Tính Văn','tinhvan','$2b$12$uvBeLQeuf.jbYU7p0yNILuBBrldGxh0g85jtK/qz7CzJMzuELOqP6',NULL,NULL,'0818177533','/uploads/avatars/user-2-1778786275246-hn2pky2q.jpg','tinhlu263@gmail.com','customer',1,'2026-05-08 10:19:44','2026-05-14 19:17:55'),(3,'Gia Huy','huy123','$2b$12$evqrwvuIjKOopNNv7xFabOPWEtE3ZCFwwDoErV1u8BsOTvdLub6H6',NULL,NULL,NULL,NULL,NULL,'customer',1,'2026-05-10 08:34:57','2026-05-10 01:34:57');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
+SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -472,4 +488,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-29 12:55:31
+-- Dump completed on 2026-05-15 17:40:59

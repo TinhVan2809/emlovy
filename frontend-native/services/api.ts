@@ -5,9 +5,13 @@ import type {
   ApiResponse,
   AuthPayload,
   AvatarUploadInput,
+  CommentLikeSummary,
+  CommentMutationResult,
+  CommentsPage,
   CreatePostInput,
   LoginInput,
   Post,
+  PostLikeSummary,
   PostMediaInput,
   PostsPage,
   Profile,
@@ -228,9 +232,10 @@ export const profileApi = {
 };
 
 export const postApi = {
-  async getFeed({ page = 1, limit = 10 }: { page?: number; limit?: number } = {}) {
+  async getFeed({ page = 1, limit = 10, token }: { page?: number; limit?: number; token?: string | null } = {}) {
     const response = await request<PostsPage | Post[]>(`/posts?page=${page}&limit=${limit}`, {
       method: 'GET',
+      token,
     });
 
     return {
@@ -265,6 +270,53 @@ export const postApi = {
   },
   async delete(token: string, postId: number) {
     return request<null>(`/posts/${postId}`, {
+      method: 'DELETE',
+      token,
+    });
+  },
+  async like(token: string, postId: number) {
+    return request<PostLikeSummary>(`/posts/${postId}/like`, {
+      method: 'POST',
+      token,
+    });
+  },
+  async unlike(token: string, postId: number) {
+    return request<PostLikeSummary>(`/posts/${postId}/like`, {
+      method: 'DELETE',
+      token,
+    });
+  },
+  async getComments(
+    postId: number,
+    { page = 1, limit = 20, sort = 'top', token }: { page?: number; limit?: number; sort?: 'top' | 'new'; token?: string | null } = {},
+  ) {
+    return request<CommentsPage>(`/posts/${postId}/comments?page=${page}&limit=${limit}&sort=${sort}`, {
+      method: 'GET',
+      token,
+    });
+  },
+  async comment(token: string, postId: number, content: string) {
+    return request<CommentMutationResult>(`/posts/${postId}/comments`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ content }),
+    });
+  },
+  async reply(token: string, postId: number, commentId: number, content: string) {
+    return request<CommentMutationResult>(`/posts/${postId}/comments/${commentId}/replies`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ content }),
+    });
+  },
+  async likeComment(token: string, commentId: number) {
+    return request<CommentLikeSummary>(`/posts/comments/${commentId}/like`, {
+      method: 'POST',
+      token,
+    });
+  },
+  async unlikeComment(token: string, commentId: number) {
+    return request<CommentLikeSummary>(`/posts/comments/${commentId}/like`, {
       method: 'DELETE',
       token,
     });

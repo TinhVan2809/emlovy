@@ -13,6 +13,8 @@ type PostCardProps = {
   currentUserId?: number | null;
   onDelete?: (post: Post) => void;
   onEdit?: (post: Post) => void;
+  onOpenComments?: (post: Post) => void;
+  onToggleLike?: (post: Post) => void;
   post: Post;
 };
 
@@ -50,7 +52,7 @@ const formatRelativeTime = (value: string) => {
   return `${Math.floor(diffMs / day)} ngay truoc`;
 };
 
-export function PostCard({ currentUserId, onDelete, onEdit, post }: PostCardProps) {
+export function PostCard({ currentUserId, onDelete, onEdit, onOpenComments, onToggleLike, post }: PostCardProps) {
   const { width } = useWindowDimensions();
   const [showOwnerActions, setShowOwnerActions] = useState(false);
   const ownerCanManage = Number(currentUserId) === Number(post.user_id);
@@ -142,8 +144,16 @@ export function PostCard({ currentUserId, onDelete, onEdit, post }: PostCardProp
 
       <View style={styles.actions}>
         <View style={styles.actionGroup}>
-          <Ionicons color={AppColors.text} name="heart-outline" size={24} />
-          <Ionicons color={AppColors.text} name="chatbubble-outline" size={22} />
+          <Pressable hitSlop={10} onPress={() => onToggleLike?.(post)} style={styles.iconButton}>
+            <Ionicons
+              color={post.liked_by_me ? AppColors.accent : AppColors.text}
+              name={post.liked_by_me ? 'heart' : 'heart-outline'}
+              size={24}
+            />
+          </Pressable>
+          <Pressable hitSlop={10} onPress={() => onOpenComments?.(post)} style={styles.iconButton}>
+            <Ionicons color={AppColors.text} name="chatbubble-outline" size={22} />
+          </Pressable>
           <Ionicons color={AppColors.text} name="paper-plane-outline" size={22} />
         </View>
 
@@ -157,9 +167,11 @@ export function PostCard({ currentUserId, onDelete, onEdit, post }: PostCardProp
           {post.content}
         </Text>
       ) : null}
-      <Text style={styles.meta}>
+      <Pressable onPress={() => onOpenComments?.(post)}>
+        <Text style={styles.meta}>
         {post.comment_count} binh luan - {formatRelativeTime(post.created_at)}
-      </Text>
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -205,6 +217,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingBottom: 14,
+  },
+  iconButton: {
+    alignItems: 'center',
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   likes: {
     color: AppColors.text,
