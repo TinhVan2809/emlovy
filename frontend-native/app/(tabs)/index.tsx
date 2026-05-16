@@ -206,7 +206,7 @@ export default function HomeScreen() {
 
   const handleTogglePostLike = async (post: Post) => {
     if (!token) {
-      setError('Ban can dang nhap de tha tym bai viet.');
+      setError('Bạn cần đăng nhập.');
       return;
     }
 
@@ -258,7 +258,7 @@ export default function HomeScreen() {
 
   const handleSubmitStory = async (input: CreateStoryInput) => {
     if (!token) {
-      setStoryError('Ban can dang nhap de tao story.');
+      setStoryError('Bạn cần đăng nhập để tạo story.');
       return;
     }
 

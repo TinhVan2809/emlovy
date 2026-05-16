@@ -23,8 +23,8 @@ import type { UpdateProfileInput } from '@/types/auth';
 
 const genderOptions = [
   { label: 'Nam', value: '0' },
-  { label: 'Nu', value: '1' },
-  { label: 'Khac', value: '2' },
+  { label: 'Nữ', value: '1' },
+  { label: 'Không tiết lộ', value: '2' },
 ] as const;
 
 export default function EditProfileScreen() {
@@ -50,7 +50,7 @@ export default function EditProfileScreen() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      setError('Ung dung can quyen truy cap thu vien anh.');
+      setError('Ứng dụng cần quyền truy cập thư viện ảnh.');
       return;
     }
 
@@ -66,7 +66,7 @@ export default function EditProfileScreen() {
       });
     } catch (pickerError) {
       setError(
-        pickerError instanceof Error ? pickerError.message : 'Khong the mo thu vien anh tren thiet bi nay.',
+        pickerError instanceof Error ? pickerError.message : 'Không thể mở thư viện ảnh trên thiết bị này.',
       );
       return;
     }
@@ -93,7 +93,7 @@ export default function EditProfileScreen() {
       setAvatarPreview(resolveMediaUrl(response.data.profile.avatar_url));
     } catch (uploadError) {
       setAvatarPreview(previousPreview);
-      setError(uploadError instanceof Error ? uploadError.message : 'Upload avatar khong thanh cong.');
+      setError(uploadError instanceof Error ? uploadError.message : 'Upload avatar không thành công.');
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -167,7 +167,7 @@ export default function EditProfileScreen() {
           </View>
 
           <View style={styles.form}>
-            <FormField label="Ho ten" onChangeText={setName} value={name} />
+            <FormField label="Họ tên" onChangeText={setName} value={name} />
             <FormField
               autoCapitalize="none"
               label="Username"
@@ -195,7 +195,7 @@ export default function EditProfileScreen() {
             />
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Gioi tinh</Text>
+              <Text style={styles.label}>Giới tính</Text>
               <View style={styles.segmentedRow}>
                 {genderOptions.map((option) => {
                   const isActive = gender === option.value;
@@ -227,7 +227,7 @@ export default function EditProfileScreen() {
               {isSaving ? (
                 <ActivityIndicator color={AppColors.surface} />
               ) : (
-                <Text style={styles.primaryButtonText}>Luu thay doi</Text>
+                <Text style={styles.primaryButtonText}>Lưu thay đổi</Text>
               )}
             </Pressable>
           </View>

@@ -29,9 +29,9 @@ type PostComposerModalProps = {
 };
 
 const visibilityOptions: { label: string; value: PostVisibility }[] = [
-  { label: 'Public', value: 'public' },
-  { label: 'Followers', value: 'followers' },
-  { label: 'Private', value: 'private' },
+  { label: 'Mọi người', value: 'public' },
+  { label: 'Follwers', value: 'followers' },
+  { label: 'Chỉ mình tôi', value: 'private' },
 ];
 
 const imagePickerBaseOptions = {

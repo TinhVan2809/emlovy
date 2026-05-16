@@ -42,14 +42,14 @@ const formatRelativeTime = (value: string) => {
   }
 
   if (diffMs < hour) {
-    return `${Math.floor(diffMs / minute)} phut truoc`;
+    return `${Math.floor(diffMs / minute)} phút trước`;
   }
 
   if (diffMs < day) {
-    return `${Math.floor(diffMs / hour)} gio truoc`;
+    return `${Math.floor(diffMs / hour)} giò trước`;
   }
 
-  return `${Math.floor(diffMs / day)} ngay truoc`;
+  return `${Math.floor(diffMs / day)} ngày trước`;
 };
 
 export function PostCard({ currentUserId, onDelete, onEdit, onOpenComments, onToggleLike, post }: PostCardProps) {
@@ -72,12 +72,12 @@ export function PostCard({ currentUserId, onDelete, onEdit, onOpenComments, onTo
   );
 
   const handleDelete = () => {
-    Alert.alert('Xoa bai viet', 'Bai viet se duoc go khoi feed cua moi nguoi.', [
-      { style: 'cancel', text: 'Huy' },
+    Alert.alert('Xóa bài viết', 'Bạn chắc chắn muốn xóa bài viết này?', [
+      { style: 'cancel', text: ' Hủy' },
       {
         onPress: () => onDelete?.(post),
         style: 'destructive',
-        text: 'Xoa',
+        text: 'Xóa',
       },
     ]);
   };
@@ -129,7 +129,7 @@ export function PostCard({ currentUserId, onDelete, onEdit, onOpenComments, onTo
               key={uri}
               contentFit="cover"
               source={{ uri }}
-              style={[styles.mediaImage, { height: mediaWidth * 1.04, width: mediaWidth }]}
+              style={[styles.mediaImage, { height: mediaWidth * 1.5, width: mediaWidth }]}
             />
           ))}
         </ScrollView>
@@ -169,7 +169,7 @@ export function PostCard({ currentUserId, onDelete, onEdit, onOpenComments, onTo
       ) : null}
       <Pressable onPress={() => onOpenComments?.(post)}>
         <Text style={styles.meta}>
-        {post.comment_count} binh luan - {formatRelativeTime(post.created_at)}
+        {post.comment_count} bình luận - {formatRelativeTime(post.created_at)}
         </Text>
       </Pressable>
     </View>

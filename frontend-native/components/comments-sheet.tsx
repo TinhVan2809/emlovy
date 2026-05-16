@@ -296,7 +296,7 @@ export function CommentsSheet({
               <Ionicons color={AppColors.accent} name="heart" size={13} />
               <Text style={styles.sortText}>Top comments</Text>
             </View>
-            {post ? <Text style={styles.countText}>{post.comment_count} binh luan</Text> : null}
+            {post ? <Text style={styles.countText}>{post.comment_count} bình luận</Text> : null}
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -305,7 +305,7 @@ export function CommentsSheet({
             <ActivityIndicator color={AppColors.accent} style={styles.loader} />
           ) : (
             <FlatList
-              ListEmptyComponent={<Text style={styles.emptyText}>Chua co binh luan nao.</Text>}
+              ListEmptyComponent={<Text style={styles.emptyText}>Hãy trở thành người bình luận đầu tiên.</Text>}
               ListFooterComponent={
                 isLoadingMore ? <ActivityIndicator color={AppColors.accent} style={styles.footerLoader} /> : null
               }
@@ -322,7 +322,7 @@ export function CommentsSheet({
           {replyingTo ? (
             <View style={styles.replyBanner}>
               <Text numberOfLines={1} style={styles.replyBannerText}>
-                Dang tra loi @{replyingTo.author?.username || 'emlovy'}
+                Đang trả lời @{replyingTo.author?.username || 'emlovy'}
               </Text>
               <Pressable hitSlop={8} onPress={() => setReplyingTo(null)}>
                 <Ionicons color={AppColors.muted} name="close-circle" size={18} />
@@ -335,7 +335,7 @@ export function CommentsSheet({
               maxLength={1000}
               multiline
               onChangeText={setInput}
-              placeholder={replyingTo ? 'Viet phan hoi...' : 'Viet binh luan...'}
+              placeholder={replyingTo ? 'Viết phản hồi...' : 'Viết bình luận...'}
               placeholderTextColor={AppColors.muted}
               style={styles.input}
               value={input}

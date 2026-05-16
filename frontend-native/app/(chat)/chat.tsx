@@ -7,7 +7,7 @@ import { ScreenShell } from "@/components/screen-shell";
 
 export default function ChatScreen() {
   return (
-    <ScreenShell title="Chat">
+    <ScreenShell title="Chats">
       <View style={styles.container}>
         <TextInput placeholder="Search Chat..." style={styles.input}/>
         <View style={styles.category}>
@@ -46,5 +46,8 @@ const styles = StyleSheet.create({
   },
   categoty_items: {
     fontSize: 16
+  },
+  active: {
+    fontWeight: "bold",
   }
 });

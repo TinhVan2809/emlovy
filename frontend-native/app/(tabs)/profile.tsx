@@ -371,7 +371,7 @@ export default function ProfileScreen() {
     input: CreateStoryInput | UpdateStoryInput,
   ) => {
     if (!token) {
-      setStoryError("Ban can dang nhap de tao story.");
+      setStoryError("Bạn cần đăng nhập để tạo story.");
       return;
     }
 
@@ -565,13 +565,13 @@ export default function ProfileScreen() {
               ))}
             </ScrollView>
 
-            {/* <ProfileStoryIconSection
+            <ProfileStoryIconSection
               error={storyError}
               onCreate={openCreateStoryComposer}
               onDelete={confirmDeleteStory}
               onEdit={openEditStoryComposer}
               stories={stories}
-            /> */}
+            />
 
             <View style={styles.segmentedBar}>
               <View style={[styles.segmentedIcon, styles.segmentedIconActive]}>

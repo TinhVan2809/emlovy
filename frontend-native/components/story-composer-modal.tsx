@@ -31,7 +31,7 @@ type StoryComposerModalProps = {
 const colorOptions = ['#FFE1D6', '#FDE8C9', '#D9EFE1', '#DDE7FF', '#F5DCF9', '#161616'];
 
 const musicOptions = [
-  { label: 'Khong nhac', value: '' },
+  { label: 'Không nhạc', value: '' },
   { label: 'Lo-fi glow', value: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
   { label: 'Soft city', value: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
   { label: 'Night walk', value: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
@@ -77,14 +77,14 @@ export function StoryComposerModal({
   const canSubmit =
     !isSubmitting &&
     (content.trim().length > 0 || media.length > 0 || (mode === 'edit' && Boolean(initialStory?.media.length)));
-  const title = mode === 'edit' ? 'Sua story' : 'Tao story';
-  const submitLabel = mode === 'edit' ? 'Luu' : 'Dang';
+  const title = mode === 'edit' ? ' Chỉnh sửa' : 'Tạo story';
+  const submitLabel = mode === 'edit' ? 'Lưu' : 'Đăng';
 
   const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      setError('Ung dung can quyen truy cap thu vien anh.');
+      setError('Ứng dụng cần quyền truy cập thư viện ảnh.');
       return;
     }
 
@@ -109,13 +109,13 @@ export function StoryComposerModal({
       ]);
       setError('');
     } catch (pickError) {
-      setError(pickError instanceof Error ? pickError.message : 'Khong the mo thu vien anh.');
+      setError(pickError instanceof Error ? pickError.message : 'Không thể mở thư viện ảnh.');
     }
   };
 
   const handleSubmit = async () => {
     if (!canSubmit) {
-      setError('Hay them chu hoac chon mot anh cho story.');
+      setError('Hãy thêm chữ hoặc chọn một ảnh cho story.');
       return;
     }
 
@@ -178,7 +178,7 @@ export function StoryComposerModal({
               maxLength={280}
               multiline
               onChangeText={setContent}
-              placeholder="Them chu vao story"
+              placeholder="Nhập cảm nghĩ của bạn."
               placeholderTextColor={AppColors.tabInactive}
               style={styles.textInput}
               value={content}
@@ -187,12 +187,12 @@ export function StoryComposerModal({
             <View style={styles.toolRow}>
               <Pressable disabled={isSubmitting} onPress={handlePickImage} style={styles.toolButton}>
                 <Ionicons color={AppColors.surface} name="image-outline" size={18} />
-                <Text style={styles.toolButtonText}>{previewUri ? 'Doi anh' : 'Them anh'}</Text>
+                <Text style={styles.toolButtonText}>{previewUri ? 'Đổi ảnh' : 'Thêm ảnh'}</Text>
               </Pressable>
             </View>
 
             <View style={styles.optionBlock}>
-              <Text style={styles.optionTitle}>Mau nen</Text>
+              <Text style={styles.optionTitle}>Màu nền</Text>
               <View style={styles.colorRow}>
                 {colorOptions.map((color) => (
                   <Pressable
@@ -212,7 +212,7 @@ export function StoryComposerModal({
             </View>
 
             <View style={styles.optionBlock}>
-              <Text style={styles.optionTitle}>Nhac nen</Text>
+              <Text style={styles.optionTitle}>Nhạc nền</Text>
               <ScrollView contentContainerStyle={styles.musicRow} horizontal showsHorizontalScrollIndicator={false}>
                 {musicOptions.map((option) => {
                   const active = option.value === musicUrl;
