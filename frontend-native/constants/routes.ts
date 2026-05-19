@@ -6,4 +6,5 @@ export const Routes = {
   editProfile: '/(tabs)/edit-profile' as Href,
   login: '/login' as Href,
   register: '/register' as Href,
+  setting: '/(setting)/setting' as Href,
 };

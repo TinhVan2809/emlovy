@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
-import { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { Link } from "expo-router";
+import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,21 +11,22 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Routes } from '@/constants/routes';
-import { AppColors, AppFonts } from '@/constants/theme';
-import { useAuth } from '@/contexts/auth-context';
+import { Routes } from "@/constants/routes";
+import { AppColors, AppFonts } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function LoginScreen() {
   const { login } = useAuth();
-  const [loginName, setLoginName] = useState('');
-  const [password, setPassword] = useState('');
+  const [loginName, setLoginName] = useState("");
+  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const canSubmit = loginName.trim().length > 0 && password.length > 0 && !isSubmitting;
+  const canSubmit =
+    loginName.trim().length > 0 && password.length > 0 && !isSubmitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) {
@@ -33,7 +34,7 @@ export default function LoginScreen() {
     }
 
     setIsSubmitting(true);
-    setError('');
+    setError("");
 
     try {
       await login({
@@ -41,7 +42,11 @@ export default function LoginScreen() {
         password,
       });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Đăng nhập không thành công.');
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Đăng nhập không thành công.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -50,12 +55,14 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', default: undefined })}
-        style={styles.keyboard}>
+        behavior={Platform.select({ ios: "padding", default: undefined })}
+        style={styles.keyboard}
+      >
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.brandBlock}>
             <Text style={styles.brand}>emlovy</Text>
             <Text style={styles.heading}>Đăng nhập</Text>
@@ -65,7 +72,11 @@ export default function LoginScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Username hoặc email</Text>
               <View style={styles.inputWrap}>
-                <Ionicons color={AppColors.muted} name="person-outline" size={20} />
+                <Ionicons
+                  color={AppColors.muted}
+                  name="person-outline"
+                  size={20}
+                />
                 <TextInput
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -82,7 +93,11 @@ export default function LoginScreen() {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Mật khẩu</Text>
               <View style={styles.inputWrap}>
-                <Ionicons color={AppColors.muted} name="lock-closed-outline" size={20} />
+                <Ionicons
+                  color={AppColors.muted}
+                  name="lock-closed-outline"
+                  size={20}
+                />
                 <TextInput
                   onChangeText={setPassword}
                   placeholder="••••••••"
@@ -98,6 +113,10 @@ export default function LoginScreen() {
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+            <View style={styles.forgetPassword}>
+              <Text style={styles.fotgetText}>Quên mật khẩu</Text>
+            </View>
+
             <Pressable
               disabled={!canSubmit}
               onPress={handleSubmit}
@@ -105,13 +124,19 @@ export default function LoginScreen() {
                 styles.primaryButton,
                 !canSubmit ? styles.primaryButtonDisabled : null,
                 pressed ? styles.primaryButtonPressed : null,
-              ]}>
+              ]}
+            >
               {isSubmitting ? (
                 <ActivityIndicator color={AppColors.surface} />
               ) : (
                 <>
                   <Text style={styles.primaryButtonText}>Đăng nhập</Text>
-                  <Ionicons color={AppColors.surface} name="arrow-forward" size={18} />
+                  <Ionicons
+                    color={AppColors.surface}
+                    name="arrow-forward"
+                    size={18}
+                    style={styles.icon}
+                  />
                 </>
               )}
             </Pressable>
@@ -136,7 +161,7 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontFamily: AppFonts.brand,
     fontSize: 42,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   brandBlock: {
     gap: 10,
@@ -145,7 +170,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     gap: 28,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 22,
   },
   errorText: {
@@ -160,10 +185,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   footerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 6,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   footerText: {
     color: AppColors.muted,
@@ -195,12 +220,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   inputWrap: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
     borderRadius: 16,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     minHeight: 54,
     paddingHorizontal: 14,
@@ -213,13 +238,25 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.heading,
     fontSize: 13,
   },
+  forgetPassword: {
+    justifyContent: "flex-end",
+    flexDirection: "row",
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  fotgetText: {
+    fontSize: 14,
+  },
+  icon: {
+    marginTop: 4.5
+  },
   primaryButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.text,
     borderRadius: 16,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
     minHeight: 54,
   },
   primaryButtonDisabled: {

@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { postApi, profileApi, resolveMediaUrl, storyApi } from "@/services/api";
 import { subscribeToPostEvents } from "@/services/post-socket";
 import { subscribeToStoryEvents } from "@/services/story-socket";
+
 import type {
   CreatePostInput,
   CreateStoryInput,
@@ -74,6 +75,7 @@ export default function ProfileScreen() {
   );
   const [editingStory, setEditingStory] = useState<StoryItem | null>(null);
   const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+
 
   const loadProfile = useCallback(async () => {
     if (!token) {
@@ -447,203 +449,241 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScreenShell
-      titleNode={
-        <View style={styles.titleRow}>
-          <Text style={styles.profileHandle}>{displayHandle}</Text>
-          <Ionicons color={AppColors.text} name="chevron-down" size={18} />
-        </View>
-      }
-      right={
-        <View style={styles.headerActions}>
-          <Pressable hitSlop={10} onPress={openCreateComposer}>
-            <Ionicons
-              color={AppColors.text}
-              name="add-circle-outline"
-              size={25}
-            />
-          </Pressable>
-          <Pressable hitSlop={10} onPress={signOut}>
-            <Ionicons color={AppColors.text} name="log-out-outline" size={24} />
-          </Pressable>
-        </View>
-      }
-    >
-      <FlatList
-        ListEmptyComponent={
-          isLoadingPosts ? (
-            <ActivityIndicator
-              color={AppColors.accent}
-              style={styles.emptyGrid}
-            />
-          ) : (
-            <Text style={styles.emptyGridText}>
-              Hãy đăng bài viết đầu tiên của bạn.
-            </Text>
-          )
-        }
-        ListFooterComponent={
-          isLoadingMore ? (
-            <ActivityIndicator
-              color={AppColors.accent}
-              style={styles.footerLoader}
-            />
-          ) : null
-        }
-        ListHeaderComponent={
-          <View style={styles.profileHeaderContent}>
-            <View style={styles.profileCard}>
-              <View style={styles.topRow}>
-                <UserAvatar imageUrl={avatarUrl} name={displayName} />
-
-                <View style={styles.statsRow}>
-                  {stats.map((stat) => (
-                    <View key={stat.label} style={styles.statCard}>
-                      <Text style={styles.statValue}>{stat.value}</Text>
-                      <Text style={styles.statLabel}>{stat.label}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              <Text style={styles.profileName}>{displayName}</Text>
-              <Text style={styles.profileBio}>
-                {displayUser?.email ||
-                  displayUser?.phone ||
-                  "Curated moments and daily moodboards."}
-              </Text>
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-              <View style={styles.buttonRow}>
-                <Pressable
-                  onPress={() => router.push(Routes.editProfile)}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    styles.actionButtonPrimary,
-                    pressed ? styles.actionButtonPressed : null,
-                  ]}
-                >
-                  <Text style={styles.actionButtonPrimaryText}>
-                    Edit profile
-                  </Text>
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    pressed ? styles.actionButtonPressed : null,
-                  ]}
-                >
-                  <Text style={styles.actionButtonText}>Share profile</Text>
-                </Pressable>
-              </View>
-            </View>
-
-            <ScrollView
-              contentContainerStyle={styles.highlightRow}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            >
-              {profileHighlights.map((item) => (
-                <View key={item.id} style={styles.highlightItem}>
-                  <View
-                    style={[
-                      styles.highlightRing,
-                      { backgroundColor: item.accent },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.highlightCore,
-                        { backgroundColor: item.tone },
-                      ]}
-                    >
-                      <Text style={styles.highlightText}>{item.initials}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.highlightName}>{item.name}</Text>
-                </View>
-              ))}
-            </ScrollView>
-
-            <ProfileStoryIconSection
-              error={storyError}
-              onCreate={openCreateStoryComposer}
-              onDelete={confirmDeleteStory}
-              onEdit={openEditStoryComposer}
-              stories={stories}
-            />
-
-            <View style={styles.segmentedBar}>
-              <View style={[styles.segmentedIcon, styles.segmentedIconActive]}>
-                <Ionicons
-                  color={AppColors.text}
-                  name="grid-outline"
-                  size={20}
-                />
-              </View>
-              <View style={styles.segmentedIcon}>
-                <Ionicons
-                  color={AppColors.tabInactive}
-                  name="play-circle-outline"
-                  size={20}
-                />
-              </View>
-              <View style={styles.segmentedIcon}>
-                <Ionicons
-                  color={AppColors.tabInactive}
-                  name="person-outline"
-                  size={20}
-                />
-              </View>
-            </View>
-
-            {postError ? (
-              <Text style={styles.errorText}>{postError}</Text>
-            ) : null}
+    <>
+      <ScreenShell
+        titleNode={
+          <View style={styles.titleRow}>
+            <Text style={styles.profileHandle}>{displayHandle}</Text>
+            <Ionicons color={AppColors.text} name="chevron-down" size={18} />
           </View>
         }
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={styles.content}
-        data={posts}
-        keyExtractor={(item) => String(item.post_id)}
-        numColumns={3}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl
-            colors={[AppColors.accent]}
-            onRefresh={handleRefresh}
-            refreshing={isRefreshing}
-            tintColor={AppColors.accent}
-          />
+        right={
+          <View style={styles.headerActions}>
+            <Pressable hitSlop={10} onPress={openCreateComposer}>
+              <Ionicons
+                color={AppColors.text}
+                name="add-circle-outline"
+                size={25}
+              />
+            </Pressable>
+            <Pressable hitSlop={10} onPress={signOut}>
+              <Ionicons
+                color={AppColors.text}
+                name="log-out-outline"
+                size={24}
+              />
+            </Pressable>
+          </View>
         }
-        renderItem={({ item }) => (
-          <ProfilePostTile
-            onDelete={confirmDeletePost}
-            onEdit={openEditComposer}
-            post={item}
-          />
-        )}
-        showsVerticalScrollIndicator={false}
-      />
-      <PostComposerModal
-        initialPost={editingPost}
-        isSubmitting={isSubmittingPost}
-        mode={composerMode}
-        onClose={closeComposer}
-        onSubmit={handleSubmitPost}
-        visible={composerVisible}
-      />
+      >
+        <FlatList
+          ListEmptyComponent={
+            isLoadingPosts ? (
+              <ActivityIndicator
+                color={AppColors.accent}
+                style={styles.emptyGrid}
+              />
+            ) : (
+              <Text style={styles.emptyGridText}>
+                Hãy đăng bài viết đầu tiên của bạn.
+              </Text>
+            )
+          }
+          ListFooterComponent={
+            isLoadingMore ? (
+              <ActivityIndicator
+                color={AppColors.accent}
+                style={styles.footerLoader}
+              />
+            ) : null
+          }
+          ListHeaderComponent={
+            <View style={styles.profileHeaderContent}>
+              <View style={styles.profileCard}>
+                <View style={styles.topRow}>
+                  <UserAvatar imageUrl={avatarUrl} name={displayName} />
 
-      <StoryComposerModal
-        initialStory={editingStory}
-        isSubmitting={isSubmittingStory}
-        mode={storyComposerMode}
-        onClose={closeStoryComposer}
-        onSubmit={handleSubmitStory}
-        visible={storyComposerVisible}
-      />
-    </ScreenShell>
+                  <View style={styles.statsRow}>
+                    {stats.map((stat) => (
+                      <View key={stat.label} style={styles.statCard}>
+                        <Text style={styles.statValue}>{stat.value}</Text>
+                        <Text style={styles.statLabel}>{stat.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <Text style={styles.profileName}>{displayName}</Text>
+                <Text style={styles.profileBio}>
+                  {displayUser?.email ||
+                    displayUser?.phone ||
+                    "Curated moments and daily moodboards."}
+                </Text>
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+                <View style={styles.buttonRowContainer}>
+                  <View style={styles.buttonRow}>
+                    {/* Edit trang cá nhân */}
+                    <Pressable
+                      onPress={() => router.push(Routes.editProfile)}
+                      style={({ pressed }) => [
+                        styles.actionButton,
+                        styles.actionButtonPrimary,
+                        pressed ? styles.actionButtonPressed : null,
+                      ]}
+                    >
+                      <Text style={styles.actionButtonPrimaryText}>
+                        Edit profile
+                      </Text>
+                    </Pressable>
+
+                    {/* Chia sẽ trang cá nhân*/}
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.actionButton,
+                        pressed ? styles.actionButtonPressed : null,
+                      ]}
+                    >
+                      <Text style={styles.actionButtonText}>Share profile</Text>
+                    </Pressable>
+                  </View>
+
+                  <View style={styles.buttonRow}>
+                    {/* Setting */}
+                    <Pressable onPress={() => router.push(Routes.setting)}>
+                      <Ionicons
+                        color={AppColors.text}
+                        name="settings-outline"
+                        size={25}
+                      />
+                    </Pressable>
+
+                    {/* Xem kho lưu trữ*/}
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.actionButton,
+                        pressed ? styles.actionButtonPressed : null,
+                      ]}
+                    >
+                      <Text style={styles.actionButtonText}>
+                        Xem kho lưu trữ
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+
+              <ScrollView
+                contentContainerStyle={styles.highlightRow}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+              >
+                {profileHighlights.map((item) => (
+                  <View key={item.id} style={styles.highlightItem}>
+                    <View
+                      style={[
+                        styles.highlightRing,
+                        { backgroundColor: item.accent },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.highlightCore,
+                          { backgroundColor: item.tone },
+                        ]}
+                      >
+                        <Text style={styles.highlightText}>
+                          {item.initials}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.highlightName}>{item.name}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+
+              <ProfileStoryIconSection
+                error={storyError}
+                onCreate={openCreateStoryComposer}
+                onDelete={confirmDeleteStory}
+                onEdit={openEditStoryComposer}
+                stories={stories}
+              />
+
+              <View style={styles.segmentedBar}>
+                <View
+                  style={[styles.segmentedIcon, styles.segmentedIconActive]}
+                >
+                  <Ionicons
+                    color={AppColors.text}
+                    name="grid-outline"
+                    size={20}
+                  />
+                </View>
+                <View style={styles.segmentedIcon}>
+                  <Ionicons
+                    color={AppColors.tabInactive}
+                    name="play-circle-outline"
+                    size={20}
+                  />
+                </View>
+                <View style={styles.segmentedIcon}>
+                  <Ionicons
+                    color={AppColors.tabInactive}
+                    name="person-outline"
+                    size={20}
+                  />
+                </View>
+              </View>
+
+              {postError ? (
+                <Text style={styles.errorText}>{postError}</Text>
+              ) : null}
+            </View>
+          }
+          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={styles.content}
+          data={posts}
+          keyExtractor={(item) => String(item.post_id)}
+          numColumns={3}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl
+              colors={[AppColors.accent]}
+              onRefresh={handleRefresh}
+              refreshing={isRefreshing}
+              tintColor={AppColors.accent}
+            />
+          }
+          renderItem={({ item }) => (
+            <ProfilePostTile
+              onDelete={confirmDeletePost}
+              onEdit={openEditComposer}
+              post={item}
+            />
+          )}
+          showsVerticalScrollIndicator={false}
+        />
+        <PostComposerModal
+          initialPost={editingPost}
+          isSubmitting={isSubmittingPost}
+          mode={composerMode}
+          onClose={closeComposer}
+          onSubmit={handleSubmitPost}
+          visible={composerVisible}
+        />
+
+        <StoryComposerModal
+          initialStory={editingStory}
+          isSubmitting={isSubmittingStory}
+          mode={storyComposerMode}
+          onClose={closeStoryComposer}
+          onSubmit={handleSubmitStory}
+          visible={storyComposerVisible}
+        />
+      </ScreenShell>
+    </>
   );
 }
 
@@ -879,10 +919,15 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.heading,
     fontSize: 13,
   },
-  buttonRow: {
-    flexDirection: "row",
-    gap: 10,
+
+  buttonRowContainer: {
+    gap: 15,
     paddingTop: 18,
+  },
+  buttonRow: {
+    gap: 10,
+    flexDirection: "row",
+    alignItems: "center",
   },
   content: {
     paddingBottom: 28,
