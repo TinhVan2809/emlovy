@@ -62,7 +62,7 @@ export default function HomeScreen() {
       setStoryGroups(response.data.groups);
       setStoryError('');
     } catch (loadError) {
-      setStoryError(loadError instanceof Error ? loadError.message : 'Khong the tai stories.');
+      setStoryError(loadError instanceof Error ? loadError.message : 'Không thể tải stories.');
     }
   }, [token]);
 
@@ -269,7 +269,7 @@ export default function HomeScreen() {
       setStoryComposerVisible(false);
       await loadStories();
     } catch (submitError) {
-      setStoryError(submitError instanceof Error ? submitError.message : 'Khong the tao story.');
+      setStoryError(submitError instanceof Error ? submitError.message : 'Không thể tạo story.');
     } finally {
       setIsSubmittingStory(false);
     }

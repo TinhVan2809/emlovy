@@ -1,7 +1,12 @@
 import { ScreenShell } from "@/components/screen-shell";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons"
+import { settingRoutes } from '@/constants/routes';
+import { router } from "expo-router";
+
+// Danh sách các cài đặt
 export default function Setting() {
+
   return (
     <>
       <ScreenShell title="Cài đặt">
@@ -27,7 +32,7 @@ export default function Setting() {
           <Pressable style={styles.items}>
             <Text style={styles.text}><Ionicons size={17} name="heart-circle-outline"/> Thêm tin nổi bật</Text>
           </Pressable>
-          <Pressable style={styles.items}>
+          <Pressable style={styles.items} onPress={() => router.push(settingRoutes.more)}>
             <Text style={styles.text}><Ionicons size={17} name="settings-outline"/> Xem thêm cài đặt</Text>
           </Pressable>
         </View>

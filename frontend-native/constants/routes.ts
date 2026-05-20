@@ -8,3 +8,7 @@ export const Routes = {
   register: '/register' as Href,
   setting: '/(setting)/setting' as Href,
 };
+
+export const settingRoutes = {
+  more: '/(setting)/more-setting' as Href,
+};
