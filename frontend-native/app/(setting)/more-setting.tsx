@@ -21,9 +21,9 @@ export default function MoreSetting() {
             <View style={{ gap: 8 }}>
               <View style={styles.items}>
                 <Ionicons size={24} name="person-circle-outline" />
-                <Text>Trung tâm tài khoản </Text>
+                <Text style={styles.content}>Trung tâm tài khoản </Text>
               </View>
-              <Text>
+              <Text style={{fontSize: 16}}>
                 Thông tin cá nhân, mật khẩu, bảo mật, các kết nối và tùy chọn
                 quảng cáo
               </Text>
@@ -36,7 +36,7 @@ export default function MoreSetting() {
           <Text style={styles.discription}>Cá nhân</Text>
           <View style={styles.items}>
             <Ionicons size={24} name="person-outline" />
-            <Text>Chỉnh sửa trang cá nhân</Text>
+            <Text style={styles.content}>Chỉnh sửa trang cá nhân</Text>
           </View>
         </View>
 
@@ -45,7 +45,7 @@ export default function MoreSetting() {
           <Text style={styles.discription}>Cài đặt thông báo</Text>
           <View style={styles.items}>
             <Ionicons size={24} name="notifications-outline" />
-            <Text>Thông báo</Text>
+            <Text style={styles.content}>Thông báo</Text>
           </View>
         </View>
 
@@ -54,19 +54,19 @@ export default function MoreSetting() {
           <Text style={styles.discription}>Ai có thể xem nội dung của bạn</Text>
           <View style={styles.items}>
             <Ionicons size={24} name="lock-closed-outline" />
-            <Text>Quyền riêng tư và tải khoản</Text>
+            <Text style={styles.content}>Quyền riêng tư và tải khoản</Text>
           </View>
           <View style={styles.items}>
             <Ionicons size={24} name="star-outline" />
-            <Text>Bạn thân</Text>
+            <Text style={styles.content}>Bạn thân</Text>
           </View>
           <View style={styles.items}>
             <Ionicons size={24} name="stop-circle-outline" />
-            <Text>Đã chặn</Text>
+            <Text style={styles.content}>Đã chặn</Text>
           </View>
           <View style={styles.items}>
             <Ionicons size={24} name="location-outline" />
-            <Text>Tin và vị trí</Text>
+            <Text style={styles.content}>Tin và vị trí</Text>
           </View>
         </View>
       </View>
@@ -114,5 +114,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
+    marginTop: 10,
+  },
+  content: {
+    fontSize: 18
   },
 });

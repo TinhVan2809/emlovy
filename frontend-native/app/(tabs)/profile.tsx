@@ -414,19 +414,19 @@ export default function ProfileScreen() {
   };
 
   const confirmDeleteStory = (story: StoryItem) => {
-    Alert.alert("Xoa story", "Story se duoc go khoi danh sach hien thi.", [
-      { style: "cancel", text: "Huy" },
+    Alert.alert("Xóa strory?", "Story sẽ được xóa và không thể khôi phục. Xác nhận xóa?", [
+      { style: "cancel", text: "Hủy" },
       {
         onPress: () => handleDeleteStory(story),
         style: "destructive",
-        text: "Xoa",
+        text: "Xóa",
       },
     ]);
   };
 
   const handleDeleteStory = async (story: StoryItem) => {
     if (!token) {
-      setStoryError("Ban can dang nhap de xoa story.");
+      setStoryError("Bạn cần đăng nhập để xóa story.");
       return;
     }
 
@@ -443,7 +443,7 @@ export default function ProfileScreen() {
       setStoryError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Xoa story khong thanh cong.",
+          : "Xóa story thành công.",
       );
     }
   };

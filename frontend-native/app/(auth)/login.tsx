@@ -114,7 +114,7 @@ export default function LoginScreen() {
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <View style={styles.forgetPassword}>
-              <Text style={styles.fotgetText}>Quên mật khẩu</Text>
+              <Text style={styles.fotgetText}>Quên mật khẩu?</Text>
             </View>
 
             <Pressable
