@@ -19,7 +19,7 @@ import { PostComposerModal } from "@/components/post-composer-modal";
 import { ScreenShell } from "@/components/screen-shell";
 import { StoryComposerModal } from "@/components/story-composer-modal";
 import { UserAvatar } from "@/components/user-avatar";
-import { Routes } from "@/constants/routes";
+import { Routes, followRoutes, postRoutes } from "@/constants/routes";
 import { profileHighlights } from "@/constants/mock-content";
 import { AppColors, AppFonts } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -75,7 +75,6 @@ export default function ProfileScreen() {
   );
   const [editingStory, setEditingStory] = useState<StoryItem | null>(null);
   const [isSubmittingStory, setIsSubmittingStory] = useState(false);
-
 
   const loadProfile = useCallback(async () => {
     if (!token) {
@@ -226,9 +225,9 @@ export default function ProfileScreen() {
     displayUser?.avatar_url || displayUser?.avata,
   );
   const stats = [
-    { label: "Posts", value: String(profile?.stats.posts ?? posts.length) },
-    { label: "Followers", value: String(profile?.stats.followers ?? 0) },
-    { label: "Following", value: String(profile?.stats.following ?? 0) },
+    { label: "Posts", value: String(profile?.stats.posts ?? posts.length), route: () => router.push(postRoutes.posts)},
+    { label: "Followers", value: String(profile?.stats.followers ?? 0),  route: () => router.push(followRoutes.followers)},
+    { label: "Following", value: String(profile?.stats.following ?? 0), route: () => router.push(followRoutes.following) },
   ];
 
   const openCreateComposer = () => {
@@ -314,19 +313,19 @@ export default function ProfileScreen() {
   };
 
   const confirmDeletePost = (post: Post) => {
-    Alert.alert("Xoa bai viet", "Bai viet se duoc go khoi profile va feed.", [
-      { style: "cancel", text: "Huy" },
+    Alert.alert("Xóa bài viết", "Bài viết sẽ được gỡ khỏi profile và feed.", [
+      { style: "cancel", text: "Hủy" },
       {
         onPress: () => handleDeletePost(post),
         style: "destructive",
-        text: "Xoa",
+        text: "Xóa",
       },
     ]);
   };
 
   const handleDeletePost = async (post: Post) => {
     if (!token) {
-      setPostError("Ban can dang nhap de xoa bai viet.");
+      setPostError("Bạn cần đăng nhập để xóa bài viết.");
       return;
     }
 
@@ -414,14 +413,18 @@ export default function ProfileScreen() {
   };
 
   const confirmDeleteStory = (story: StoryItem) => {
-    Alert.alert("Xóa strory?", "Story sẽ được xóa và không thể khôi phục. Xác nhận xóa?", [
-      { style: "cancel", text: "Hủy" },
-      {
-        onPress: () => handleDeleteStory(story),
-        style: "destructive",
-        text: "Xóa",
-      },
-    ]);
+    Alert.alert(
+      "Xóa strory?",
+      "Story sẽ được xóa và không thể khôi phục. Xác nhận xóa?",
+      [
+        { style: "cancel", text: "Hủy" },
+        {
+          onPress: () => handleDeleteStory(story),
+          style: "destructive",
+          text: "Xóa",
+        },
+      ],
+    );
   };
 
   const handleDeleteStory = async (story: StoryItem) => {
@@ -505,10 +508,10 @@ export default function ProfileScreen() {
 
                   <View style={styles.statsRow}>
                     {stats.map((stat) => (
-                      <View key={stat.label} style={styles.statCard}>
+                      <Pressable key={stat.label} style={styles.statCard} onPress={stat.route}>
                         <Text style={styles.statValue}>{stat.value}</Text>
                         <Text style={styles.statLabel}>{stat.label}</Text>
-                      </View>
+                      </Pressable>
                     ))}
                   </View>
                 </View>

@@ -12,3 +12,13 @@ export const Routes = {
 export const settingRoutes = {
   more: '/(setting)/more-setting' as Href,
 };
+
+export const postRoutes = {
+  posts: '/(posts)/page' as Href,
+}
+
+export const followRoutes = {
+  followers: '/(follows)/followers' as Href,
+  following: '/(follows)/following' as Href,
+}
+

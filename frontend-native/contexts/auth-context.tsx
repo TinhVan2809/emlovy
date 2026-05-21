@@ -60,6 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       } catch (_error) {
         await tokenStorage.remove();
+        console.error("Error fething bootstrap", _error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
