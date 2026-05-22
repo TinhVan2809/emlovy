@@ -184,6 +184,77 @@ export type CommentMutationResult = {
   };
 };
 
+export type ChatMessageType = 'text' | 'image' | 'video' | 'file' | 'sticker' | 'voice' | 'location';
+
+export type ChatMessage = {
+  message_id: number;
+  conversation_id: number;
+  sender_id: number;
+  content: string | null;
+  message_type: ChatMessageType;
+  is_edited: boolean;
+  is_deleted: boolean;
+  reply_to_message_id: number | null;
+  created_at: string;
+  updated_at: string;
+  sender: User;
+  attachments: unknown[];
+};
+
+export type ChatParticipant = User & {
+  role: 'member' | 'admin';
+  joined_at: string;
+  is_muted: boolean;
+  is_archived: boolean;
+  last_read_message_id: number | null;
+};
+
+export type ChatConversation = {
+  conversation_id: number;
+  type: 'private' | 'group';
+  name: string | null;
+  title: string;
+  avatar: string | null;
+  avatar_url: string | null;
+  last_message_id: number | null;
+  last_message_at: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_message: ChatMessage | null;
+  participants: ChatParticipant[];
+  participant_ids: number[];
+  unread_count: number;
+};
+
+export type ChatConversationsPage = {
+  items: ChatConversation[];
+  pagination: PostsPagination;
+};
+
+export type ChatMessagesPage = {
+  items: ChatMessage[];
+  pagination: PostsPagination;
+};
+
+export type CreateConversationInput = {
+  participant_ids?: number[];
+  participantIds?: number[];
+  user_id?: number;
+  userId?: number;
+  target_user_id?: number;
+  targetUserId?: number;
+  type?: 'private' | 'group';
+  name?: string | null;
+};
+
+export type SendMessageInput = {
+  content: string;
+  message_type?: ChatMessageType;
+  messageType?: ChatMessageType;
+  reply_to_message_id?: number | null;
+};
+
 export type PostMediaInput = {
   uri: string;
   fileName?: string | null;

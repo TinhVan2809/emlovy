@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const path = require("path");
 
 const config = require("./config/env");
@@ -8,6 +9,7 @@ const {
   closeDatabaseConnection,
 } = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 const followRoutes = require("./routes/followRoute");
 const profileRoutes = require("./routes/profileRoutes");
 const postRoutes = require("./routes/postRoutes");
@@ -17,7 +19,10 @@ const notFound = require("./middlewares/notFound");
 const { Server } = require("socket.io");
 const http = require("http");
 const { setIo } = require("./utils/socket");
+const { conversationRoom, emitChatMessage, userRoom } = require("./utils/chatRealtime");
+const chatModel = require("./models/chatModel");
 const storyModel = require("./models/storyModel");
+const userModel = require("./models/userModel");
 
 const STORY_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 
@@ -66,6 +71,7 @@ const createApp = () => {
   });
 
   app.use("/api/auth", authRoutes);
+  app.use("/api/chats", chatRoutes);
   app.use("/api/follows", followRoutes);
   app.use("/api/profile", profileRoutes);
   app.use("/api/posts", postRoutes);
@@ -74,6 +80,157 @@ const createApp = () => {
   app.use(errorHandler);
 
   return app;
+};
+
+const getSocketToken = (socket) => {
+  const authToken = socket.handshake.auth?.token;
+
+  if (authToken) {
+    return authToken;
+  }
+
+  const authorizationHeader = socket.handshake.headers?.authorization || "";
+
+  return authorizationHeader.startsWith("Bearer ") ? authorizationHeader.slice("Bearer ".length) : "";
+};
+
+const attachSocketUser = async (socket) => {
+  const token = getSocketToken(socket);
+
+  if (!token) {
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, config.auth.jwtSecret);
+    const user = await userModel.findById(decoded.sub);
+
+    if (user && Number(user.status) === 1) {
+      socket.data.user = user;
+      socket.join(userRoom(user.user_id));
+    }
+  } catch (_error) {
+    // Other realtime features can work anonymously; chat events still require socket.data.user.
+  }
+};
+
+const getSocketConversationId = (payload = {}) => {
+  const conversationId = Number.parseInt(payload.conversation_id || payload.conversationId, 10);
+
+  return Number.isInteger(conversationId) && conversationId > 0 ? conversationId : null;
+};
+
+const acknowledgeSocketError = (socket, ack, message, status = 400) => {
+  const payload = { success: false, status, message };
+
+  if (typeof ack === "function") {
+    ack(payload);
+  }
+
+  socket.emit("chat:error", payload);
+};
+
+const registerChatSocketHandlers = (io, socket) => {
+  socket.on("chat:join", async (payload = {}, ack) => {
+    const user = socket.data.user;
+    const conversationId = getSocketConversationId(payload);
+
+    if (!user) {
+      acknowledgeSocketError(socket, ack, "Ban chua dang nhap.", 401);
+      return;
+    }
+
+    if (!conversationId) {
+      acknowledgeSocketError(socket, ack, "Conversation id khong hop le.");
+      return;
+    }
+
+    try {
+      const isParticipant = await chatModel.isParticipant(conversationId, user.user_id);
+
+      if (!isParticipant) {
+        acknowledgeSocketError(socket, ack, "Ban khong thuoc hoi thoai nay.", 403);
+        return;
+      }
+
+      socket.join(conversationRoom(conversationId));
+
+      if (typeof ack === "function") {
+        ack({ success: true, data: { conversation_id: conversationId } });
+      }
+    } catch (error) {
+      acknowledgeSocketError(socket, ack, error.message || "Khong the vao phong chat.", error.status || 500);
+    }
+  });
+
+  socket.on("chat:leave", (payload = {}, ack) => {
+    const conversationId = getSocketConversationId(payload);
+
+    if (conversationId) {
+      socket.leave(conversationRoom(conversationId));
+    }
+
+    if (typeof ack === "function") {
+      ack({ success: true });
+    }
+  });
+
+  socket.on("send_message", async (payload = {}, ack) => {
+    const user = socket.data.user;
+    const conversationId = getSocketConversationId(payload);
+    const content = typeof payload.content === "string" ? payload.content.trim() : "";
+
+    if (!user) {
+      acknowledgeSocketError(socket, ack, "Ban chua dang nhap.", 401);
+      return;
+    }
+
+    if (!conversationId) {
+      acknowledgeSocketError(socket, ack, "Conversation id khong hop le.");
+      return;
+    }
+
+    if (!content) {
+      acknowledgeSocketError(socket, ack, "Vui long nhap tin nhan.");
+      return;
+    }
+
+    try {
+      const isParticipant = await chatModel.isParticipant(conversationId, user.user_id);
+
+      if (!isParticipant) {
+        acknowledgeSocketError(socket, ack, "Ban khong thuoc hoi thoai nay.", 403);
+        return;
+      }
+
+      const message = await chatModel.createMessage({
+        conversationId,
+        senderId: user.user_id,
+        content,
+        messageType: payload.message_type || payload.messageType || "text",
+      });
+      const conversation = await chatModel.findConversationForUser(conversationId, user.user_id);
+      const participantIds = await chatModel.getConversationParticipantIds(conversationId);
+
+      emitChatMessage(io, {
+        conversation,
+        message,
+        participantIds,
+      });
+
+      if (typeof ack === "function") {
+        ack({
+          success: true,
+          data: {
+            conversation,
+            message,
+          },
+        });
+      }
+    } catch (error) {
+      acknowledgeSocketError(socket, ack, error.message || "Gui tin nhan khong thanh cong.", error.status || 500);
+    }
+  });
 };
 
 const registerShutdownHandlers = (server, timers = []) => {
@@ -137,8 +294,14 @@ const startServer = async () => {
       }
     };
 
+    io.use(async (socket, next) => {
+      await attachSocketUser(socket);
+      next();
+    });
+
     io.on("connection", (socket) => {
       console.log("Socket connected:", socket.id);
+      registerChatSocketHandlers(io, socket);
       socket.on("disconnect", () => {
         // noop
       });

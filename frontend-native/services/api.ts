@@ -5,9 +5,14 @@ import type {
   ApiResponse,
   AuthPayload,
   AvatarUploadInput,
+  ChatConversation,
+  ChatConversationsPage,
+  ChatMessage,
+  ChatMessagesPage,
   CommentLikeSummary,
   CommentMutationResult,
   CommentsPage,
+  CreateConversationInput,
   CreatePostInput,
   CreateStoryInput,
   LoginInput,
@@ -17,6 +22,7 @@ import type {
   PostsPage,
   Profile,
   RegisterInput,
+  SendMessageInput,
   StoryGroup,
   StoryItem,
   UpdatePostInput,
@@ -383,6 +389,42 @@ export const postApi = {
       method: 'DELETE',
       token,
     });
+  },
+};
+
+export const chatApi = {
+  async getConversations(token: string, { page = 1, limit = 20 }: { page?: number; limit?: number } = {}) {
+    return request<ChatConversationsPage>(`/chats/conversations?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      token,
+    });
+  },
+  async createConversation(token: string, input: CreateConversationInput) {
+    return request<{ conversation: ChatConversation }>('/chats/conversations', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(input),
+    });
+  },
+  async getMessages(
+    token: string,
+    conversationId: number | string,
+    { page = 1, limit = 30 }: { page?: number; limit?: number } = {},
+  ) {
+    return request<ChatMessagesPage>(`/chats/conversations/${conversationId}/messages?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      token,
+    });
+  },
+  async sendMessage(token: string, conversationId: number | string, input: SendMessageInput) {
+    return request<{ conversation: ChatConversation; message: ChatMessage }>(
+      `/chats/conversations/${conversationId}/messages`,
+      {
+        method: 'POST',
+        token,
+        body: JSON.stringify(input),
+      },
+    );
   },
 };
 
