@@ -248,6 +248,12 @@ export const profileApi = {
       token,
     });
   },
+  async getUser(userId: number | string, token?: string | null) {
+    return request<{ profile: Profile }>(`/profile/${userId}`, {
+      method: 'GET',
+      token,
+    });
+  },
   async updateMe(token: string, input: UpdateProfileInput) {
     return request<{ profile: Profile; user: User }>('/profile/me', {
       method: 'PUT',
@@ -288,6 +294,20 @@ export const postApi = {
   },
   async getMyPosts(token: string, { page = 1, limit = 12 }: { page?: number; limit?: number } = {}) {
     const response = await request<PostsPage | Post[]>(`/posts/me?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      token,
+    });
+
+    return {
+      ...response,
+      data: normalizePostsPage(response.data, page, limit),
+    };
+  },
+  async getUserPosts(
+    userId: number | string,
+    { page = 1, limit = 12, token }: { page?: number; limit?: number; token?: string | null } = {},
+  ) {
+    const response = await request<PostsPage | Post[]>(`/posts/user/${userId}?page=${page}&limit=${limit}`, {
       method: 'GET',
       token,
     });
@@ -360,6 +380,21 @@ export const postApi = {
   },
   async unlikeComment(token: string, commentId: number) {
     return request<CommentLikeSummary>(`/posts/comments/${commentId}/like`, {
+      method: 'DELETE',
+      token,
+    });
+  },
+};
+
+export const followApi = {
+  async follow(token: string, userId: number | string) {
+    return request<{ profile: Profile }>(`/follows/${userId}`, {
+      method: 'POST',
+      token,
+    });
+  },
+  async unfollow(token: string, userId: number | string) {
+    return request<{ profile: Profile }>(`/follows/${userId}`, {
       method: 'DELETE',
       token,
     });

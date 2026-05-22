@@ -8,6 +8,7 @@ const {
   closeDatabaseConnection,
 } = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
+const followRoutes = require("./routes/followRoute");
 const profileRoutes = require("./routes/profileRoutes");
 const postRoutes = require("./routes/postRoutes");
 const storyRoutes = require("./routes/storyRoutes");
@@ -65,6 +66,7 @@ const createApp = () => {
   });
 
   app.use("/api/auth", authRoutes);
+  app.use("/api/follows", followRoutes);
   app.use("/api/profile", profileRoutes);
   app.use("/api/posts", postRoutes);
   app.use("/api/stories", storyRoutes);

@@ -1,6 +1,6 @@
 const { execute, query } = require("../config/database");
 
-const profileSelectFields = `
+const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } = {}) => `
   u.user_id,
   u.name,
   u.username,
@@ -15,7 +15,9 @@ const profileSelectFields = `
   (
     SELECT COUNT(*)
     FROM posts p
-    WHERE p.user_id = u.user_id AND p.is_deleted = 0
+    WHERE p.user_id = u.user_id
+      AND p.is_deleted = 0
+      ${publicPostsOnly ? "AND p.visibility = 'public'" : ""}
   ) AS post_count,
   (
     SELECT COUNT(*)
@@ -26,7 +28,17 @@ const profileSelectFields = `
     SELECT COUNT(*)
     FROM follows f
     WHERE f.follower_id = u.user_id
-  ) AS following_count
+  ) AS following_count,
+  ${
+    viewerId
+      ? `EXISTS(
+          SELECT 1
+          FROM follows f
+          WHERE f.follower_id = :viewerId
+            AND f.following_id = u.user_id
+        )`
+      : "0"
+  } AS is_following
 `;
 
 const toProfile = (row) => {
@@ -47,6 +59,7 @@ const toProfile = (row) => {
     role: row.role,
     status: row.status,
     created_at: row.created_at,
+    is_following: Boolean(row.is_following),
     stats: {
       posts: Number(row.post_count || 0),
       followers: Number(row.followers_count || 0),
@@ -55,15 +68,15 @@ const toProfile = (row) => {
   };
 };
 
-const findByUserId = async (userId) => {
+const findByUserId = async (userId, options = {}) => {
   const rows = await query(
     `
-      SELECT ${profileSelectFields}
+      SELECT ${buildProfileSelectFields(options)}
       FROM users u
       WHERE u.user_id = :userId
       LIMIT 1
     `,
-    { userId },
+    { userId, viewerId: options.viewerId || null },
   );
 
   return toProfile(rows[0]);

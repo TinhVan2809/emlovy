@@ -13,6 +13,7 @@ type PostCardProps = {
   currentUserId?: number | null;
   onDelete?: (post: Post) => void;
   onEdit?: (post: Post) => void;
+  onOpenAuthor?: (post: Post) => void;
   onOpenComments?: (post: Post) => void;
   onToggleLike?: (post: Post) => void;
   post: Post;
@@ -52,7 +53,15 @@ const formatRelativeTime = (value: string) => {
   return `${Math.floor(diffMs / day)} ngày trước`;
 };
 
-export function PostCard({ currentUserId, onDelete, onEdit, onOpenComments, onToggleLike, post }: PostCardProps) {
+export function PostCard({
+  currentUserId,
+  onDelete,
+  onEdit,
+  onOpenAuthor,
+  onOpenComments,
+  onToggleLike,
+  post,
+}: PostCardProps) {
   const { width } = useWindowDimensions();
   const [showOwnerActions, setShowOwnerActions] = useState(false);
   const ownerCanManage = Number(currentUserId) === Number(post.user_id);
@@ -85,7 +94,10 @@ export function PostCard({ currentUserId, onDelete, onEdit, onOpenComments, onTo
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <View style={styles.userRow}>
+        <Pressable
+          disabled={!onOpenAuthor}
+          onPress={() => onOpenAuthor?.(post)}
+          style={styles.userRow}>
           <UserAvatar imageUrl={avatarUrl} name={authorName} size={48} />
 
           <View style={styles.userMeta}>
@@ -94,7 +106,7 @@ export function PostCard({ currentUserId, onDelete, onEdit, onOpenComments, onTo
               {post.location || authorHandle}
             </Text>
           </View>
-        </View>
+        </Pressable>
 
         {ownerCanManage ? (
           <Pressable hitSlop={10} onPress={() => setShowOwnerActions((value) => !value)}>

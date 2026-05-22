@@ -256,6 +256,18 @@ export default function HomeScreen() {
     patchPost(postId, { comment_count: commentCount });
   };
 
+  const handleOpenAuthor = (post: Post) => {
+    if (Number(post.user_id) === Number(user?.user_id)) {
+      router.push(Routes.profile);
+      return;
+    }
+
+    router.push({
+      pathname: '/(users)/[userId]',
+      params: { userId: String(post.user_id) },
+    });
+  };
+
   const handleSubmitStory = async (input: CreateStoryInput) => {
     if (!token) {
       setStoryError('Bạn cần đăng nhập để tạo story.');
@@ -328,6 +340,7 @@ export default function HomeScreen() {
               currentUserId={user?.user_id}
               onDelete={handleDeletePost}
               onEdit={setEditingPost}
+              onOpenAuthor={handleOpenAuthor}
               onOpenComments={(post) => setCommentPostId(post.post_id)}
               onToggleLike={handleTogglePostLike}
               post={item}

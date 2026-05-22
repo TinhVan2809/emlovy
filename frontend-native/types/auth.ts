@@ -20,6 +20,8 @@ export type ProfileStats = {
 };
 
 export type Profile = User & {
+  is_following?: boolean;
+  is_self?: boolean;
   stats: ProfileStats;
 };
 

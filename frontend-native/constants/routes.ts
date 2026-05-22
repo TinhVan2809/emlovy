@@ -5,6 +5,7 @@ export const Routes = {
   chat: '/(chat)/chat' as Href,
   editProfile: '/(tabs)/edit-profile' as Href,
   login: '/login' as Href,
+  profile: '/(tabs)/profile' as Href,
   register: '/register' as Href,
   setting: '/(setting)/setting' as Href,
 };
@@ -21,4 +22,3 @@ export const followRoutes = {
   followers: '/(follows)/followers' as Href,
   following: '/(follows)/following' as Href,
 }
-

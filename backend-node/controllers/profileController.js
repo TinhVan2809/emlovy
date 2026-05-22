@@ -22,6 +22,16 @@ const normalizeNullableText = (value) => {
 
 const createUserPayload = (profile) => userModel.toPublicUser(profile);
 
+const parseUserId = (value) => {
+  const userId = Number.parseInt(value, 10);
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw createHttpError(400, "User id khong hop le.");
+  }
+
+  return userId;
+};
+
 const validateProfilePayload = (body) => {
   const updates = {};
 
@@ -94,6 +104,30 @@ const getMyProfile = async (req, res) => {
     message: "Lay profile thanh cong.",
     data: {
       profile,
+    },
+  });
+};
+
+const getUserProfile = async (req, res) => {
+  const userId = parseUserId(req.params.userId);
+  const viewerId = req.user?.user_id || null;
+  const profile = await profileModel.findByUserId(userId, {
+    publicPostsOnly: true,
+    viewerId,
+  });
+
+  if (!profile) {
+    throw createHttpError(404, "Khong tim thay profile.");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Lay profile thanh cong.",
+    data: {
+      profile: {
+        ...profile,
+        is_self: Number(viewerId) === Number(userId),
+      },
     },
   });
 };
@@ -190,6 +224,7 @@ const uploadAvatar = async (req, res) => {
 
 module.exports = {
   getMyProfile,
+  getUserProfile,
   updateMyProfile,
   uploadAvatar,
 };
