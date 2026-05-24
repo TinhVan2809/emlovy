@@ -242,7 +242,7 @@ export default function HomeScreen() {
         liked_by_me: post.liked_by_me,
         like_count: post.like_count,
       });
-      setError(likeError instanceof Error ? likeError.message : 'Khong the cap nhat tym bai viet.');
+      setError(likeError instanceof Error ? likeError.message : 'Không thể cập nhật tym bài viết.');
     } finally {
       setLikingPostIds((current) => {
         const next = new Set(current);

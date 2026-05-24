@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Routes } from "@/constants/routes";
+import { Routes, authRoute } from "@/constants/routes";
 import { AppColors, AppFonts } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -114,7 +114,7 @@ export default function LoginScreen() {
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <View style={styles.forgetPassword}>
-              <Text style={styles.fotgetText}>Quên mật khẩu?</Text>
+              <Link href={authRoute.forget} style={styles.fotgetText}>Quên mật khẩu?</Link>
             </View>
 
             <Pressable

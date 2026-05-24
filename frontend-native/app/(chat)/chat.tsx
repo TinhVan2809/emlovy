@@ -556,7 +556,7 @@ function ConversationListHeader({
         <Ionicons color={AppColors.muted} name="search-outline" size={18} />
         <TextInput
           onChangeText={setSearchQuery}
-          placeholder="Tìm kiếm"
+          placeholder="Tìm kiếm tin nhắn..."
           placeholderTextColor={AppColors.tabInactive}
           style={styles.searchInput}
           value={searchQuery}
