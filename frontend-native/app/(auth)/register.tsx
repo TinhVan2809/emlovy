@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useState, useRef, useEffect, forwardRef } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -28,6 +28,41 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const nameRef = useRef<TextInput>(null);
+  const usernameRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const phoneRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    nameRef.current?.focus();
+  },[]);
+
+
+  // 1. name => username
+  const onSubmitNameEditing = () => {
+    usernameRef.current?.focus();
+  }
+
+  // 2. username => email
+  const onSubmitUsernameEditing = () => {
+    emailRef.current?.focus();
+  }
+  
+  // 3. email => number phone 
+  const onSubmitEmailediting = () => {
+    phoneRef.current?.focus();
+  }
+  // 4. number phone => passowrd
+  const onSubmitPhoneEditing = () => {
+    passwordRef.current?.focus();
+  }
+  // 5. passowrd => confirm passowrd
+  const onSubmitPasswordEditing = () => {
+    confirmPasswordRef.current?.focus();
+  }
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -85,6 +120,9 @@ export default function RegisterScreen() {
               onChangeText={setName}
               placeholder="Nguyễn Minh Anh"
               value={name}
+              onSubmitEditing={onSubmitNameEditing}
+              ref={nameRef}
+
             />
             <AuthInput
               autoCapitalize="none"
@@ -93,6 +131,8 @@ export default function RegisterScreen() {
               onChangeText={setUsername}
               placeholder="minhanh"
               value={username}
+              onSubmitEditing={onSubmitUsernameEditing}
+              ref={usernameRef}
             />
             <AuthInput
               autoCapitalize="none"
@@ -102,6 +142,8 @@ export default function RegisterScreen() {
               onChangeText={setEmail}
               placeholder="you@example.com"
               value={email}
+              onSubmitEditing={onSubmitEmailediting}
+              ref={emailRef}
             />
             <AuthInput
               icon="call-outline"
@@ -110,6 +152,8 @@ export default function RegisterScreen() {
               onChangeText={setPhone}
               placeholder="0901234567"
               value={phone}
+              onSubmitEditing={onSubmitPhoneEditing}
+              ref={phoneRef}
             />
             <AuthInput
               icon="lock-closed-outline"
@@ -118,6 +162,8 @@ export default function RegisterScreen() {
               placeholder="••••••••"
               secureTextEntry
               value={password}
+              onSubmitEditing={onSubmitPasswordEditing}
+              ref={passwordRef}
             />
             <AuthInput
               icon="shield-checkmark-outline"
@@ -127,6 +173,7 @@ export default function RegisterScreen() {
               placeholder="••••••••"
               secureTextEntry
               value={confirmPassword}
+              ref={confirmPasswordRef}
             />
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -176,38 +223,48 @@ type AuthInputProps = {
   value: string;
 };
 
-function AuthInput({
-  autoCapitalize,
-  icon,
-  keyboardType,
-  label,
-  onChangeText,
-  onSubmitEditing,
-  placeholder,
-  secureTextEntry,
-  value,
-}: AuthInputProps) {
-  return (
-    <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputWrap}>
-        <Ionicons color={AppColors.muted} name={icon} size={20} />
-        <TextInput
-          autoCapitalize={autoCapitalize}
-          autoCorrect={false}
-          keyboardType={keyboardType}
-          onChangeText={onChangeText}
-          onSubmitEditing={onSubmitEditing}
-          placeholder={placeholder}
-          placeholderTextColor={AppColors.tabInactive}
-          secureTextEntry={secureTextEntry}
-          style={styles.input}
-          value={value}
-        />
+const AuthInput = forwardRef<TextInput, AuthInputProps>(
+  (
+    {
+      autoCapitalize,
+      icon,
+      keyboardType,
+      label,
+      onChangeText,
+      onSubmitEditing,
+      placeholder,
+      secureTextEntry,
+      value,
+    },
+    ref
+  ) => {
+    return (
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>{label}</Text>
+
+        <View style={styles.inputWrap}>
+          <Ionicons color={AppColors.muted} name={icon} size={20} />
+
+          <TextInput
+            autoCapitalize={autoCapitalize}
+            autoCorrect={false}
+            keyboardType={keyboardType}
+            onChangeText={onChangeText}
+            onSubmitEditing={onSubmitEditing}
+            placeholder={placeholder}
+            placeholderTextColor={AppColors.tabInactive}
+            secureTextEntry={secureTextEntry}
+            style={styles.input}
+            value={value}
+            ref={ref}
+          />
+        </View>
       </View>
-    </View>
-  );
-}
+    );
+  }
+);
+
+AuthInput.displayName = "AuthInput";
 
 const styles = StyleSheet.create({
   brand: {
