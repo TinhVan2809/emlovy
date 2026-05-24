@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -24,6 +24,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const usernameRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   const canSubmit =
     loginName.trim().length > 0 && password.length > 0 && !isSubmitting;
@@ -51,6 +54,14 @@ export default function LoginScreen() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    usernameRef.current?.focus();
+  },[]);
+
+  const onSubmitEditing = () => {
+    passwordRef.current?.focus();
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -86,6 +97,8 @@ export default function LoginScreen() {
                   returnKeyType="next"
                   style={styles.input}
                   value={loginName}
+                  ref={usernameRef}
+                  onSubmitEditing={onSubmitEditing}
                 />
               </View>
             </View>
@@ -107,6 +120,7 @@ export default function LoginScreen() {
                   style={styles.input}
                   value={password}
                   onSubmitEditing={handleSubmit}
+                  ref={passwordRef}
                 />
               </View>
             </View>
