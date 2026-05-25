@@ -1054,7 +1054,7 @@ const styles = StyleSheet.create({
   profileCard: {
     backgroundColor: AppColors.surface,
     borderRadius: 28,
-    padding: 18,
+    padding: 10,
   },
   profileHandle: {
     color: AppColors.text,
@@ -1195,13 +1195,13 @@ const styles = StyleSheet.create({
   },
   statCard: {
     alignItems: "center",
-    backgroundColor: AppColors.surfaceMuted,
+    // backgroundColor: AppColors.surfaceMuted,
     borderRadius: 18,
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     minHeight: 70,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    // paddingHorizontal: 10,
+    // paddingVertical: 10,
   },
   statLabel: {
     color: AppColors.muted,

@@ -262,7 +262,7 @@ export function CommentsSheet({
               <Text style={styles.commentActionText}>{comment.like_count}</Text>
             </Pressable>
             <Pressable onPress={() => setReplyingTo(rootComment)} style={styles.commentAction}>
-              <Text style={styles.commentActionText}>Tra loi</Text>
+              <Text style={styles.commentActionText}>Trả lời</Text>
             </Pressable>
           </View>
 

@@ -8,7 +8,7 @@ type UserAvatarProps = {
   size?: number;
 };
 
-export function UserAvatar({ imageUrl, name, size = 104 }: UserAvatarProps) {
+export function UserAvatar({ imageUrl, name, size = 80 }: UserAvatarProps) {
   const initial = (name || 'E').slice(0, 1).toUpperCase();
   const innerSize = size - 8;
 

@@ -17,7 +17,7 @@ export default function ForgetPassword() {
         </View>
         <View style={styles.box}>
           <TextInput placeholder="Nhập email của bạn" style={styles.input} />
-          <Text style={styles.btn}>Xác nhận</Text>
+          <Text style={styles.btn}>Tiếp tục</Text>
         </View>
         <View style={styles.bottom}>
             <Text onPress={() => router.push(Routes.login)}>Nhớ lại mật khẩu?</Text>
@@ -61,10 +61,11 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
     paddingRight: 15,
     paddingLeft: 15,
-    borderRadius: 15
+    borderRadius: 15,
+    borderWidth: 0.1
   },
   btn: {
-    backgroundColor: '#155eee',
+    backgroundColor: '#000',
     color: '#fff',
     paddingTop: 10,
     paddingBottom: 10,

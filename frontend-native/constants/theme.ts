@@ -6,8 +6,8 @@
 import { Platform } from 'react-native';
 
 export const AppColors = {
-  background: '#F6F1EA',
-  white: '#fff',
+  background: '#fff',
+  white: '#F6F1EA',
   surface: '#FFFFFF',
   surfaceMuted: '#FFF8EE',
   text: '#161616',
