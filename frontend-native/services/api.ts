@@ -226,6 +226,7 @@ const normalizePostsPage = (data: PostsPage | Post[], page: number, limit: numbe
   };
 };
 
+// [Auth] 
 export const authApi = {
   async login(input: LoginInput) {
     return request<AuthPayload>('/auth/login', {
@@ -247,6 +248,7 @@ export const authApi = {
   },
 };
 
+// [Profile]
 export const profileApi = {
   async getMe(token: string) {
     return request<{ profile: Profile }>('/profile/me', {
@@ -286,6 +288,7 @@ export const profileApi = {
   },
 };
 
+// [Posts]
 export const postApi = {
   async getFeed({ page = 1, limit = 10, token }: { page?: number; limit?: number; token?: string | null } = {}) {
     const response = await request<PostsPage | Post[]>(`/posts?page=${page}&limit=${limit}`, {
@@ -392,6 +395,7 @@ export const postApi = {
   },
 };
 
+// [Chats]
 export const chatApi = {
   async getConversations(token: string, { page = 1, limit = 20 }: { page?: number; limit?: number } = {}) {
     return request<ChatConversationsPage>(`/chats/conversations?page=${page}&limit=${limit}`, {
@@ -428,6 +432,7 @@ export const chatApi = {
   },
 };
 
+// [Follows]
 export const followApi = {
   async follow(token: string, userId: number | string) {
     return request<{ profile: Profile }>(`/follows/${userId}`, {
@@ -473,6 +478,21 @@ export const storyApi = {
   async delete(token: string, storyId: number) {
     return request<null>(`/stories/${storyId}`, {
       method: 'DELETE',
+      token,
+    });
+  },
+};
+
+export const searchApi = {
+  async searchUsers(query: string, token?: string | null) {
+    return request<{ results: Profile[] }>(`/search/users?q=${encodeURIComponent(query)}`, {
+      method: 'GET',
+      token,
+    });
+  },
+  async searchPosts(query: string, token?: string | null) {
+    return request<{ results: Post[] }>(`/search/posts?q=${encodeURIComponent(query)}`, {
+      method: 'GET',
       token,
     });
   },

@@ -110,10 +110,22 @@ const create = async ({
   return findById(result.insertId);
 };
 
+const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } = {}) => {
+  let fields = publicUserFields;
+
+  if (publicPostsOnly) {
+    fields += `,
+      (SELECT COUNT(*) FROM posts WHERE user_id = u.user_id AND status = 1) AS public_posts_count
+    `;
+  }
+  return fields;
+};
+
 module.exports = {
   create,
   findById,
   findByLogin,
   findExistingAccount,
   toPublicUser,
+  buildProfileSelectFields,
 };

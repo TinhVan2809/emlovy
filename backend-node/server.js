@@ -14,6 +14,7 @@ const followRoutes = require("./routes/followRoute");
 const profileRoutes = require("./routes/profileRoutes");
 const postRoutes = require("./routes/postRoutes");
 const storyRoutes = require("./routes/storyRoutes");
+const searchRoutes = require("./routes/searchRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const notFound = require("./middlewares/notFound");
 const { Server } = require("socket.io");
@@ -76,6 +77,7 @@ const createApp = () => {
   app.use("/api/profile", profileRoutes);
   app.use("/api/posts", postRoutes);
   app.use("/api/stories", storyRoutes);
+  app.use("/api/search", searchRoutes);
   app.use(notFound);
   app.use(errorHandler);
 

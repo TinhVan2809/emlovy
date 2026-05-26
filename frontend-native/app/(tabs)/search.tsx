@@ -1,43 +1,141 @@
-import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
-import { ScreenShell } from '@/components/screen-shell';
-import { VisualTile } from '@/components/visual-tile';
-import { searchTiles } from '@/constants/mock-content';
-import { AppColors, AppFonts } from '@/constants/theme';
+import { ScreenShell } from "@/components/screen-shell";
+import { UserAvatar } from "@/components/user-avatar";
+import { VisualTile } from "@/components/visual-tile";
+import { searchTiles } from "@/constants/mock-content";
+import { AppColors, AppFonts } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+
+import { useEffect, useState } from "react";
+import { searchApi, resolveMediaUrl } from "@/services/api";
+import type { Profile } from "@/types/auth";
 
 const leftColumn = searchTiles.filter((_, index) => index % 2 === 0);
 const rightColumn = searchTiles.filter((_, index) => index % 2 !== 0);
 
 export default function SearchScreen() {
+  const { token } = useAuth();
+  const [results, setResults] = useState<Profile[]>([]);
+  const [query, setQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (text: string) => {
+    setQuery(text);
+  };
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (query.trim() === "") {
+        setResults([]);
+        setIsLoading(false);
+        return;
+      }
+      const handleSearch = async (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+          setResults([]);
+          return;
+        }
+
+        setIsLoading(true);
+        try {
+          const response = await searchApi.searchUsers(searchTerm, token);
+          // The 'results' property exists within the 'data' field of the ApiResponse
+          setResults(response.data.results);
+        } catch (error) {
+          console.error("Search error:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      handleSearch(query);
+    }, 500);
+  }, [query, token]);
+    
   return (
     <ScreenShell
       title="Khám phá"
-      right={<Ionicons color={AppColors.text} name="options-outline" size={24} />}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      right={
+        <Ionicons color={AppColors.text} name="options-outline" size={24} />
+      }
+    >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.searchBar}>
           <Ionicons color={AppColors.muted} name="search-outline" size={18} />
           <TextInput
             placeholder="Search outfits, cafes, travel"
             placeholderTextColor={AppColors.tabInactive}
             style={styles.searchInput}
+            value={query}
+            onChangeText={handleChange}
           />
         </View>
+
+        {isLoading && (
+          <ActivityIndicator color={AppColors.accent} style={styles.loader} />
+        )}
+
+        {!isLoading && results.length > 0 && (
+          <View style={styles.resultsContainer}>
+            {results.map((result) => (
+              <View key={result.user_id} style={styles.resultItem}>
+                <UserAvatar
+                  imageUrl={resolveMediaUrl(
+                    result.avatar_url || (result as any).avata,
+                  )}
+                  name={result.name}
+                  size={44}
+                />
+                <View style={styles.resultInfo}>
+                  <Text style={styles.resultName}>{result.name}</Text>
+                  <Text style={styles.resultUsername}>@{result.username}</Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={18}
+                  color={AppColors.tabInactive}
+                />
+              </View>
+            ))}
+          </View>
+        )}
 
         <ScrollView
           contentContainerStyle={styles.categoryRow}
           horizontal
-          showsHorizontalScrollIndicator={false}>
-          {['For you', 'Style', 'Cafe', 'Travel', 'Creators'].map((category, index) => (
-            <View
-              key={category}
-              style={[styles.categoryChip, index === 0 ? styles.categoryChipActive : null]}>
-              <Text
-                style={[styles.categoryText, index === 0 ? styles.categoryTextActive : null]}>
-                {category}
-              </Text>
-            </View>
-          ))}
+          showsHorizontalScrollIndicator={false}
+        >
+          {["For you", "Style", "Cafe", "Travel", "Creators"].map(
+            (category, index) => (
+              <View
+                key={category}
+                style={[
+                  styles.categoryChip,
+                  index === 0 ? styles.categoryChipActive : null,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.categoryText,
+                    index === 0 ? styles.categoryTextActive : null,
+                  ]}
+                >
+                  {category}
+                </Text>
+              </View>
+            ),
+          )}
         </ScrollView>
 
         <View style={styles.sectionHeader}>
@@ -109,17 +207,17 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   grid: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     paddingHorizontal: 18,
   },
   searchBar: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.surface,
     borderColor: AppColors.border,
     borderRadius: 18,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     marginHorizontal: 18,
     paddingHorizontal: 16,
@@ -133,9 +231,9 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 18,
   },
   sectionMeta: {
@@ -147,5 +245,36 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 20,
+  },
+  loader: {
+    marginVertical: 10,
+  },
+  resultsContainer: {
+    backgroundColor: AppColors.surface,
+    marginHorizontal: 18,
+    borderRadius: 24,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  resultItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  resultInfo: {
+    flex: 1,
+  },
+  resultName: {
+    color: AppColors.text,
+    fontFamily: AppFonts.heading,
+    fontSize: 15,
+  },
+  resultUsername: {
+    color: AppColors.muted,
+    fontFamily: AppFonts.body,
+    fontSize: 13,
   },
 });
