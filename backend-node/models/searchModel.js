@@ -11,7 +11,8 @@ const searchUsers = async (searchTerm, viewerId) => {
     LIMIT 20
   `;
   const params = { searchTerm: `%${searchTerm}%`, viewerId };
-  return execute(sql, params);
+  const rows = await execute(sql, params);
+  return rows;
 };
 
 module.exports = {

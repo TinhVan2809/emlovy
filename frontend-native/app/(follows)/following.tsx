@@ -9,11 +9,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   Pressable,
+  ScrollView,
 } from "react-native";
 import { followApi, resolveMediaUrl } from "@/services/api";
 import { useAuth } from "@/contexts/auth-context";
 import type { Profile } from "@/types/auth";
-import { AppColors, AppFonts } from "@/constants/theme";
+import { AppColors } from "@/constants/theme";
 
 export default function Following() {
   const { token, user } = useAuth();
@@ -29,7 +30,8 @@ export default function Following() {
       setIsLoading(true);
       try {
         const response = await followApi.getFollowing(token, user.user_id);
-        setFollowing(response.data.results);
+        const data = response.data.results;
+        setFollowing(Array.isArray(data) ? data : data ? [data] : []);
       } catch (error) {
         console.error("Error fetching following:", error);
       } finally {
@@ -84,36 +86,38 @@ export default function Following() {
           <ActivityIndicator color="#000" style={{ marginTop: 20 }} />
         )}
 
-        {following.length > 0 && (
-          <View style={styles.listContainer}>
-            {following.map((item) => (
-              <View key={item.user_id} style={styles.userRow}>
-                <UserAvatar
-                  imageUrl={resolveMediaUrl(
-                    item.avatar_url || (item as any).avata,
-                  )}
-                  name={item.name}
-                  size={44}
-                />
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{item.name}</Text>
-                  <Text style={styles.userHandle}>@{item.username}</Text>
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          {!isLoading && following.length > 0 && (
+            <View style={[styles.listContainer, { paddingBottom: 40 }]}>
+              {following.map((item) => (
+                <View key={item.user_id} style={styles.userRow}>
+                  <UserAvatar
+                    imageUrl={resolveMediaUrl(item.avatar_url || (item as any).avata)}
+                    name={item.name}
+                    size={44}
+                  />
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{item.name}</Text>
+                    <Text style={styles.userHandle}>@{item.username}</Text>
+                  </View>
+                    <Pressable
+                        onPress={() => handleUnfollow(item.user_id)}
+                        style={{
+                          paddingVertical: 6,
+                          paddingHorizontal: 16,
+                            backgroundColor: AppColors.accent,
+                            borderRadius: 20,
+                        }}
+                        disabled={unfollowingUserId === item.user_id}
+                    >
+                        <Text style={{ color: "#fff", fontWeight: "600" }}>Unfollow</Text>
+                    </Pressable>
                 </View>
-                <Pressable
-                  onPress={() => handleUnfollow(item.user_id)}
-                  style={styles.unfollowButton}
-                  disabled={unfollowingUserId === item.user_id}
-                >
-                  {unfollowingUserId === item.user_id ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Text style={styles.unfollowButtonText}>Hủy theo dõi</Text>
-                  )}
-                </Pressable>
-              </View>
-            ))}
-          </View>
-        )}
+              ))}
+            </View>
+          )}
+        </ScrollView>
+
       </ScreenShell>
     </>
   );
@@ -167,23 +171,5 @@ const styles = StyleSheet.create({
     color: "#0000008c",
     fontSize: 13,
   },
-  unfollowButton: {
-    backgroundColor: "#efefef", // A light grey background for the button
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 100, // Ensure a consistent width
-  },
-  unfollowButtonText: {
-    color: AppColors.text, // Dark text for contrast
-    fontFamily: AppFonts.heading,
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  followingText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
+ 
 });

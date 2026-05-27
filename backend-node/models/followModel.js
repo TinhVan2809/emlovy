@@ -24,7 +24,7 @@ const unfollow = async ({ followerId, followingId }) =>
 
 // Lấy danh sách người đang theo dõi
 const getFollowing = async (userId, viewerId) => {
-  const [rows] = await execute(
+  const rows = await execute(
     `
       SELECT ${buildProfileSelectFields({ viewerId })}
       FROM (SELECT follower_id, following_id FROM follows) f
@@ -38,7 +38,7 @@ const getFollowing = async (userId, viewerId) => {
 
 // Lấy danh sách người đã theo dõi
 const getFollowers = async (userId, viewerId) => {
-  const [rows] = await execute(
+  const rows = await execute(
     `
       SELECT ${buildProfileSelectFields({ viewerId })}
       FROM (SELECT follower_id, following_id FROM follows) f

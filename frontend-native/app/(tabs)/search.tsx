@@ -33,7 +33,7 @@ export default function SearchScreen() {
   };
 
   useEffect(() => {
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (query.trim() === "") {
         setResults([]);
         setIsLoading(false);
@@ -49,7 +49,8 @@ export default function SearchScreen() {
         try {
           const response = await searchApi.searchUsers(searchTerm, token);
           // The 'results' property exists within the 'data' field of the ApiResponse
-          setResults(response.data.results);
+          const data = response.data.results;
+          setResults(Array.isArray(data) ? data : data ? [data] : []);
         } catch (error) {
           console.error("Search error:", error);
         } finally {
@@ -58,6 +59,9 @@ export default function SearchScreen() {
       };
       handleSearch(query);
     }, 500);
+
+    // Quan trọng: Xóa timeout cũ khi query thay đổi để tránh race condition
+    return () => clearTimeout(timeoutId);
   }, [query, token]);
     
   return (
