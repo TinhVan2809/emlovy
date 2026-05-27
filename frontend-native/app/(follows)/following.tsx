@@ -59,6 +59,7 @@ export default function Following() {
       setUnfollowingUserId(null);
     }
   };
+
   return (
     <>
       <ScreenShell title="Following">
