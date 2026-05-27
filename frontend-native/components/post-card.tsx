@@ -121,11 +121,11 @@ export function PostCard({
         <View style={styles.ownerActions}>
           <Pressable onPress={() => onEdit?.(post)} style={styles.ownerActionButton}>
             <Ionicons color={AppColors.text} name="create-outline" size={17} />
-            <Text style={styles.ownerActionText}>Sua</Text>
+            <Text style={styles.ownerActionText}>Sữa</Text>
           </Pressable>
           <Pressable onPress={handleDelete} style={styles.ownerActionButton}>
             <Ionicons color={AppColors.accent} name="trash-outline" size={17} />
-            <Text style={[styles.ownerActionText, styles.deleteText]}>Xoa</Text>
+            <Text style={[styles.ownerActionText, styles.deleteText]}>Xóa</Text>
           </Pressable>
         </View>
       ) : null}

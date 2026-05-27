@@ -14,7 +14,6 @@ import {
 import { followApi, resolveMediaUrl } from "@/services/api";
 import { useAuth } from "@/contexts/auth-context";
 import type { Profile } from "@/types/auth";
-import { AppColors } from "@/constants/theme";
 
 export default function Following() {
   const { token, user } = useAuth();
@@ -92,7 +91,9 @@ export default function Following() {
               {following.map((item) => (
                 <View key={item.user_id} style={styles.userRow}>
                   <UserAvatar
-                    imageUrl={resolveMediaUrl(item.avatar_url || (item as any).avata)}
+                    imageUrl={resolveMediaUrl(
+                      item.avatar_url || (item as any).avata,
+                    )}
                     name={item.name}
                     size={44}
                   />
@@ -100,24 +101,25 @@ export default function Following() {
                     <Text style={styles.userName}>{item.name}</Text>
                     <Text style={styles.userHandle}>@{item.username}</Text>
                   </View>
-                    <Pressable
-                        onPress={() => handleUnfollow(item.user_id)}
-                        style={{
-                          paddingVertical: 6,
-                          paddingHorizontal: 16,
-                            backgroundColor: AppColors.accent,
-                            borderRadius: 20,
-                        }}
-                        disabled={unfollowingUserId === item.user_id}
-                    >
-                        <Text style={{ color: "#fff", fontWeight: "600" }}>Unfollow</Text>
-                    </Pressable>
+                  <Pressable
+                    onPress={() => handleUnfollow(item.user_id)}
+                    style={{
+                      paddingVertical: 6,
+                      paddingHorizontal: 16,
+                      backgroundColor: "#000",
+                      borderRadius: 20,
+                    }}
+                    disabled={unfollowingUserId === item.user_id}
+                  >
+                    <Text style={{ color: "#fff", fontSize: 13 }}>
+                      Unfollow
+                    </Text>
+                  </Pressable>
                 </View>
               ))}
             </View>
           )}
         </ScrollView>
-
       </ScreenShell>
     </>
   );
@@ -146,6 +148,8 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "#fff",
     borderRadius: 20,
+    borderColor: "#33333321",
+    borderWidth: 1,
   },
   input: {
     width: "100%",
@@ -171,5 +175,8 @@ const styles = StyleSheet.create({
     color: "#0000008c",
     fontSize: 13,
   },
- 
+  unFollowText: {
+    cursor: "#fff",
+    backgroundColor: "#000",
+  },
 });
