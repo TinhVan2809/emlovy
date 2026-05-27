@@ -215,7 +215,7 @@ export default function UserProfileScreen() {
 
   const handleFollowToggle = async () => {
     if (!token) {
-      setError('Ban can dang nhap de follow.');
+      setError('Bạn cần đăng nhập.');
       return;
     }
 
@@ -246,7 +246,7 @@ export default function UserProfileScreen() {
       setError('');
     } catch (followError) {
       setProfile(previousProfile);
-      setError(followError instanceof Error ? followError.message : 'Khong the cap nhat follow.');
+      setError(followError instanceof Error ? followError.message : 'Không thể cập nhật follow.');
     } finally {
       setIsFollowBusy(false);
     }
@@ -282,9 +282,9 @@ export default function UserProfileScreen() {
           </Pressable>
           <View style={styles.headerTitleBlock}>
             <Text numberOfLines={1} style={styles.headerTitle}>
-              {profile?.username ? `@${profile.username}` : 'Profile'}
+              {profile?.name ? `${profile.name}` : 'Profile'}
             </Text>
-            <Text style={styles.headerSubtitle}>Trang ca nhan</Text>
+            <Text style={styles.headerSubtitle}>{profile?.username ? `@${profile.username}` : ''}</Text>
           </View>
         </View>
       }>
