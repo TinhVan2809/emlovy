@@ -75,7 +75,33 @@ const unfollowUser = async (req, res) => {
   });
 };
 
+// TODO: getFollowing
+const getFollowing = async (req, res) => {
+  const userId = parseUserId(req.params.userId);
+  const following = await followModel.getFollowing(userId, req.user.user_id);
+  res.status(200).json({
+    success: true,
+    data: {
+      results: following,
+    },
+  });
+};
+
+// TODO: getFollowers
+const getFollowers = async (req, res) => {
+  const userId = parseUserId(req.params.userId);
+  const followers = await followModel.getFollowers(userId, req.user.user_id);
+  res.status(200).json({
+    success: true,
+    data: {
+      results: followers,
+    },
+  });
+};
+
 module.exports = {
   followUser,
   unfollowUser,
+  getFollowing,
+  getFollowers,
 };

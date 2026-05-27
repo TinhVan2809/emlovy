@@ -10,7 +10,7 @@ const searchUsers = async (searchTerm, viewerId) => {
     ORDER BY u.created_at DESC
     LIMIT 20
   `;
-  const params = { searchTerm: `%${searchTerm}%` };
+  const params = { searchTerm: `%${searchTerm}%`, viewerId };
   return execute(sql, params);
 };
 

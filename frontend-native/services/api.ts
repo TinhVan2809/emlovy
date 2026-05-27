@@ -446,6 +446,18 @@ export const followApi = {
       token,
     });
   },
+  async getFollowing(token: string, userId: number | string) {
+    return request<{ results: Profile[] }>(`/follows/${userId}/following`, {
+      method: 'GET',
+      token,
+    });
+  },
+  async getFollowers(token: string, userId: number | string) {
+    return request<{ results: Profile[] }>(`/follows/${userId}/followers`, {
+      method: 'GET',
+      token,
+    });
+  },
 };
 
 export const storyApi = {
