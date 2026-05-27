@@ -495,6 +495,7 @@ export const storyApi = {
   },
 };
 
+// [Search]
 export const searchApi = {
   async searchUsers(query: string, token?: string | null) {
     return request<{ results: Profile[] }>(`/search/users?q=${encodeURIComponent(query)}`, {
@@ -504,6 +505,12 @@ export const searchApi = {
   },
   async searchPosts(query: string, token?: string | null) {
     return request<{ results: Post[] }>(`/search/posts?q=${encodeURIComponent(query)}`, {
+      method: 'GET',
+      token,
+    });
+  },
+  async searchFollows(token: string, userId: number | string, query: string, type: 'followers' | 'following') {
+    return request<{ results: Profile[] }>(`/search/follows?q=${encodeURIComponent(query)}&type=${type}`, {
       method: 'GET',
       token,
     });
