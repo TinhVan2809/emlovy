@@ -11,6 +11,7 @@ import {
   Text,
   TextInput,
   View,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -109,8 +110,9 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={styles.brand}>emlovy</Text>
-            <Text style={styles.heading}>Đăng ký</Text>
+            <Image source={require('../../assets/images/logo.png')} style={styles.img}/>
+            <Text style={styles.brand}>Create Your Account</Text>
+            <Text style={styles.heading}>Tạo một tài khoản mới để bắt đầu và tận hưởng quyền truy cập liền mạch vào các tính năng của chúng tôi.</Text>
           </View>
 
           <View style={styles.form}>
@@ -272,6 +274,7 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.brand,
     fontSize: 38,
     fontStyle: 'italic',
+    textAlign: 'center',
   },
   content: {
     flexGrow: 1,
@@ -303,20 +306,22 @@ const styles = StyleSheet.create({
   },
   form: {
     backgroundColor: AppColors.surface,
-    borderColor: AppColors.border,
-    borderRadius: 24,
-    borderWidth: 1,
     gap: 16,
-    padding: 18,
+    padding: 5,
   },
   header: {
     gap: 8,
     paddingTop: 14,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   heading: {
     color: AppColors.text,
+    opacity: .5,
     fontFamily: AppFonts.heading,
-    fontSize: 26,
+    fontSize: 14,
+    textAlign: 'center',
   },
   input: {
     color: AppColors.text,
@@ -331,9 +336,9 @@ const styles = StyleSheet.create({
   },
   inputWrap: {
     alignItems: 'center',
-    backgroundColor: AppColors.surfaceMuted,
+    // backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
-    borderRadius: 16,
+    borderRadius: 35,
     borderWidth: 1,
     flexDirection: 'row',
     gap: 10,
@@ -351,11 +356,11 @@ const styles = StyleSheet.create({
   primaryButton: {
     alignItems: 'center',
     backgroundColor: AppColors.text,
-    borderRadius: 16,
+    borderRadius: 30,
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
-    minHeight: 54,
+    minHeight: 50,
   },
   primaryButtonDisabled: {
     opacity: 0.5,
@@ -371,5 +376,9 @@ const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: AppColors.background,
     flex: 1,
+  },
+  img: {
+    width: 120,
+    height: 120,
   },
 });

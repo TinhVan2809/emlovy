@@ -11,6 +11,7 @@ import {
   Text,
   TextInput,
   View,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -57,11 +58,11 @@ export default function LoginScreen() {
 
   useEffect(() => {
     usernameRef.current?.focus();
-  },[]);
+  }, []);
 
   const onSubmitEditing = () => {
     passwordRef.current?.focus();
-  }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -75,13 +76,19 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.brandBlock}>
-            <Text style={styles.brand}>emlovy</Text>
-            <Text style={styles.heading}>Đăng nhập</Text>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.img}
+            />
+            <Text style={styles.brand}>Welcome back</Text>
+            <Text style={styles.heading}>
+              Đăng nhập để xem và khám phá những bài viết mới mẽ dành cho bạn.
+            </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Username hoặc email</Text>
+              <Text style={styles.label}>Username/Email</Text>
               <View style={styles.inputWrap}>
                 <Ionicons
                   color={AppColors.muted}
@@ -104,7 +111,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Mật khẩu</Text>
+              <Text style={styles.label}>Password</Text>
               <View style={styles.inputWrap}>
                 <Ionicons
                   color={AppColors.muted}
@@ -128,7 +135,9 @@ export default function LoginScreen() {
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <View style={styles.forgetPassword}>
-              <Link href={authRoute.forget} style={styles.fotgetText}>Quên mật khẩu?</Link>
+              <Link href={authRoute.forget} style={styles.fotgetText}>
+                Quên mật khẩu?
+              </Link>
             </View>
 
             <Pressable
@@ -156,6 +165,43 @@ export default function LoginScreen() {
             </Pressable>
           </View>
 
+          <View style={styles.orthersLogin}>
+            <View
+              style={{
+                width: 130,
+                backgroundColor: "#000",
+                height: 1,
+                opacity: 0.2,
+              }}
+            />
+            <Text>OR</Text>
+            <View
+              style={{
+                width: 130,
+                backgroundColor: "#000",
+                height: 1,
+                opacity: 0.2,
+              }}
+            />
+          </View>
+
+          <View style={styles.loginOrder}>
+            <Pressable style={styles.orthersBtn}>
+              <Image
+                source={require("../../assets/images/google-logo.png")}
+                style={styles.orthersLogo}
+              />
+              <Text>Đăng nhập bằng Google</Text>
+            </Pressable>
+            <Pressable style={styles.orthersBtn}>
+              <Image
+                source={require("../../assets/images/apple-logo.png")}
+                style={styles.orthersLogo}
+              />
+              <Text>Đăng nhập bằng Apple</Text>
+            </Pressable>
+          </View>
+
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Chưa có tài khoản?</Text>
             <Link href={Routes.register} asChild>
@@ -180,6 +226,13 @@ const styles = StyleSheet.create({
   brandBlock: {
     gap: 10,
     paddingTop: 28,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  img: {
+    width: 120,
+    height: 120,
   },
   content: {
     flexGrow: 1,
@@ -201,8 +254,8 @@ const styles = StyleSheet.create({
   footerRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 6,
     justifyContent: "center",
+    gap: 6,
   },
   footerText: {
     color: AppColors.muted,
@@ -211,16 +264,15 @@ const styles = StyleSheet.create({
   },
   form: {
     backgroundColor: AppColors.surface,
-    borderColor: AppColors.border,
-    borderRadius: 24,
-    borderWidth: 1,
     gap: 18,
-    padding: 18,
+    padding: 5,
   },
   heading: {
     color: AppColors.text,
+    opacity: 0.5,
     fontFamily: AppFonts.heading,
-    fontSize: 26,
+    fontSize: 14,
+    textAlign: "center",
   },
   input: {
     color: AppColors.text,
@@ -235,9 +287,9 @@ const styles = StyleSheet.create({
   },
   inputWrap: {
     alignItems: "center",
-    backgroundColor: AppColors.surfaceMuted,
+    // backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
-    borderRadius: 16,
+    borderRadius: 30,
     borderWidth: 1,
     flexDirection: "row",
     gap: 10,
@@ -262,16 +314,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   icon: {
-    marginTop: 4.5
+    marginTop: 4.5,
   },
   primaryButton: {
     alignItems: "center",
     backgroundColor: AppColors.text,
-    borderRadius: 16,
+    borderRadius: 30,
     flexDirection: "row",
     gap: 8,
     justifyContent: "center",
-    minHeight: 54,
+    minHeight: 50,
   },
   primaryButtonDisabled: {
     opacity: 0.5,
@@ -287,5 +339,32 @@ const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: AppColors.background,
     flex: 1,
+  },
+  orthersLogin: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 10,
+  },
+  loginOrder: {
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 20,
+  },
+  orthersBtn: {
+    flexDirection: "row",
+    justifyContent: 'center',
+    alignItems: "center",
+    display: "flex",
+    backgroundColor: '#cccccc60',
+    width: '100%',
+    borderRadius: 30,
+    gap: 10,
+    padding: 15
+  },
+  orthersLogo: {
+    width: 20,
+    height: 20
   },
 });
