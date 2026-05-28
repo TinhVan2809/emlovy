@@ -62,7 +62,7 @@ export default function Following() {
 
   return (
     <>
-      <ScreenShell title="Following">
+      <ScreenShell title="Followers">
         <View style={styles.conatiner}>
           <View style={styles.headerTitle}>
             <Text style={styles.description}>
@@ -145,12 +145,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     width: "100%",
     backgroundColor: "#fff",
-    borderRadius: 20,
     borderColor: "#33333321",
     borderWidth: 1,
+    borderRadius: 30
   },
   input: {
     width: "100%",

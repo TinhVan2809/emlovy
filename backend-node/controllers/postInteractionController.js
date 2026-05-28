@@ -5,7 +5,7 @@ const parsePositiveInteger = (value, fieldName) => {
   const number = Number.parseInt(value, 10);
 
   if (!Number.isInteger(number) || number <= 0) {
-    throw createHttpError(400, `${fieldName} khong hop le.`);
+    throw createHttpError(400, `${fieldName} không hợp lệ.`);
   }
 
   return number;
@@ -15,11 +15,11 @@ const normalizeContent = (value) => {
   const content = String(value || "").trim();
 
   if (!content) {
-    throw createHttpError(400, "Noi dung binh luan khong duoc de trong.");
+    throw createHttpError(400, "Nội dung bình luận không dược để trống.");
   }
 
   if (content.length > 1000) {
-    throw createHttpError(400, "Noi dung binh luan toi da 1000 ky tu.");
+    throw createHttpError(400, "Nội dung bình luận tối đa 1000 ký tự.");
   }
 
   return content;

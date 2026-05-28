@@ -1,13 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useMemo, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
-import { UserAvatar } from '@/components/user-avatar';
-import { VisualTile } from '@/components/visual-tile';
-import { AppColors, AppFonts } from '@/constants/theme';
-import { resolveMediaUrl } from '@/services/api';
-import type { Post } from '@/types/auth';
+import { UserAvatar } from "@/components/user-avatar";
+import { VisualTile } from "@/components/visual-tile";
+import { AppColors, AppFonts } from "@/constants/theme";
+import { resolveMediaUrl } from "@/services/api";
+import type { Post } from "@/types/auth";
 
 type PostCardProps = {
   currentUserId?: number | null;
@@ -20,10 +28,10 @@ type PostCardProps = {
 };
 
 const palette = [
-  { accent: '#FF7A59', tone: '#FFE1D6' },
-  { accent: '#46B07D', tone: '#D9EFE1' },
-  { accent: '#5B86FF', tone: '#DDE7FF' },
-  { accent: '#D56AE0', tone: '#F5DCF9' },
+  { accent: "#FF7A59", tone: "#FFE1D6" },
+  { accent: "#46B07D", tone: "#D9EFE1" },
+  { accent: "#5B86FF", tone: "#DDE7FF" },
+  { accent: "#D56AE0", tone: "#F5DCF9" },
 ];
 
 const formatRelativeTime = (value: string) => {
@@ -31,7 +39,7 @@ const formatRelativeTime = (value: string) => {
   const diffMs = Date.now() - date.getTime();
 
   if (!Number.isFinite(diffMs)) {
-    return '';
+    return "";
   }
 
   const minute = 60 * 1000;
@@ -39,7 +47,7 @@ const formatRelativeTime = (value: string) => {
   const day = 24 * hour;
 
   if (diffMs < minute) {
-    return 'vua xong';
+    return "vua xong";
   }
 
   if (diffMs < hour) {
@@ -67,26 +75,30 @@ export function PostCard({
   const ownerCanManage = Number(currentUserId) === Number(post.user_id);
   const mediaWidth = Math.max(260, Math.min(width - 68, 520));
   const fallbackTone = palette[post.post_id % palette.length];
-  const authorName = post.author?.name || 'Emlovy User';
-  const authorHandle = post.author?.username ? `@${post.author.username}` : '@emlovy';
-  const avatarUrl = resolveMediaUrl(post.author?.avatar_url || post.author?.avata);
+  const authorName = post.author?.name || "Emlovy User";
+  const authorHandle = post.author?.username
+    ? `@${post.author.username}`
+    : "@emlovy";
+  const avatarUrl = resolveMediaUrl(
+    post.author?.avatar_url || post.author?.avata,
+  );
 
   const imageUrls = useMemo(
     () =>
       post.media
-        .filter((item) => item.type === 'image')
+        .filter((item) => item.type === "image")
         .map((item) => resolveMediaUrl(item.media_url))
         .filter(Boolean) as string[],
     [post.media],
   );
 
   const handleDelete = () => {
-    Alert.alert('Xóa bài viết', 'Bạn chắc chắn muốn xóa bài viết này?', [
-      { style: 'cancel', text: ' Hủy' },
+    Alert.alert("Xóa bài viết", "Bạn chắc chắn muốn xóa bài viết này?", [
+      { style: "cancel", text: " Hủy" },
       {
         onPress: () => onDelete?.(post),
-        style: 'destructive',
-        text: 'Xóa',
+        style: "destructive",
+        text: "Xóa",
       },
     ]);
   };
@@ -97,11 +109,28 @@ export function PostCard({
         <Pressable
           disabled={!onOpenAuthor}
           onPress={() => onOpenAuthor?.(post)}
-          style={styles.userRow}>
+          style={styles.userRow}
+        >
           <UserAvatar imageUrl={avatarUrl} name={authorName} size={48} />
 
           <View style={styles.userMeta}>
-            <Text style={styles.userName}>{authorName}</Text>
+            {post.author.is_verified === 1 ? (
+              <View style={styles.usernameVerified}>
+                <Text style={styles.userName}>{authorName}</Text>
+
+                <Ionicons
+                  name="checkmark"
+                  color={"#ffffff"}
+                  style={{
+                    backgroundColor: "#2040e4",
+                    borderRadius: 100,
+                    padding: 1,
+                  }}
+                />
+              </View>
+            ) : (
+              <Text style={styles.userName}>{authorName}</Text>
+            )}
             <Text style={styles.location} numberOfLines={1}>
               {post.location || authorHandle}
             </Text>
@@ -109,17 +138,31 @@ export function PostCard({
         </Pressable>
 
         {ownerCanManage ? (
-          <Pressable hitSlop={10} onPress={() => setShowOwnerActions((value) => !value)}>
-            <Ionicons color={AppColors.text} name="ellipsis-horizontal" size={20} />
+          <Pressable
+            hitSlop={10}
+            onPress={() => setShowOwnerActions((value) => !value)}
+          >
+            <Ionicons
+              color={AppColors.text}
+              name="ellipsis-horizontal"
+              size={20}
+            />
           </Pressable>
         ) : (
-          <Ionicons color={AppColors.text} name="ellipsis-horizontal" size={20} />
+          <Ionicons
+            color={AppColors.text}
+            name="ellipsis-horizontal"
+            size={20}
+          />
         )}
       </View>
 
       {ownerCanManage && showOwnerActions ? (
         <View style={styles.ownerActions}>
-          <Pressable onPress={() => onEdit?.(post)} style={styles.ownerActionButton}>
+          <Pressable
+            onPress={() => onEdit?.(post)}
+            style={styles.ownerActionButton}
+          >
             <Ionicons color={AppColors.text} name="create-outline" size={17} />
             <Text style={styles.ownerActionText}>Sữa</Text>
           </Pressable>
@@ -135,13 +178,17 @@ export function PostCard({
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          style={styles.mediaFrame}>
+          style={styles.mediaFrame}
+        >
           {imageUrls.map((uri) => (
             <Image
               key={uri}
               contentFit="cover"
               source={{ uri }}
-              style={[styles.mediaImage, { height: mediaWidth * 1.5, width: mediaWidth }]}
+              style={[
+                styles.mediaImage,
+                { height: mediaWidth * 1.5, width: mediaWidth },
+              ]}
             />
           ))}
         </ScrollView>
@@ -149,24 +196,40 @@ export function PostCard({
         <VisualTile
           accent={fallbackTone.accent}
           height={338}
-          label={(post.content || 'emlovy').slice(0, 18)}
+          label={(post.content || "emlovy").slice(0, 18)}
           tone={fallbackTone.tone}
         />
       )}
 
       <View style={styles.actions}>
         <View style={styles.actionGroup}>
-          <Pressable hitSlop={10} onPress={() => onToggleLike?.(post)} style={styles.iconButton}>
+          <Pressable
+            hitSlop={10}
+            onPress={() => onToggleLike?.(post)}
+            style={styles.iconButton}
+          >
             <Ionicons
               color={post.liked_by_me ? AppColors.accent : AppColors.text}
-              name={post.liked_by_me ? 'heart' : 'heart-outline'}
+              name={post.liked_by_me ? "heart" : "heart-outline"}
               size={24}
             />
           </Pressable>
-          <Pressable hitSlop={10} onPress={() => onOpenComments?.(post)} style={styles.iconButton}>
-            <Ionicons color={AppColors.text} name="chatbubble-outline" size={22} />
+          <Pressable
+            hitSlop={10}
+            onPress={() => onOpenComments?.(post)}
+            style={styles.iconButton}
+          >
+            <Ionicons
+              color={AppColors.text}
+              name="chatbubble-outline"
+              size={22}
+            />
           </Pressable>
-          <Ionicons color={AppColors.text} name="paper-plane-outline" size={22} />
+          <Ionicons
+            color={AppColors.text}
+            name="paper-plane-outline"
+            size={22}
+          />
         </View>
 
         <Ionicons color={AppColors.text} name="bookmark-outline" size={22} />
@@ -175,13 +238,15 @@ export function PostCard({
       <Text style={styles.likes}>{post.like_count} likes</Text>
       {post.content ? (
         <Text style={styles.caption}>
-          <Text style={styles.captionUser}>{post.author?.username || authorName} </Text>
+          <Text style={styles.captionUser}>
+            {post.author?.username || authorName}{" "}
+          </Text>
           {post.content}
         </Text>
       ) : null}
       <Pressable onPress={() => onOpenComments?.(post)}>
         <Text style={styles.meta}>
-        {post.comment_count} bình luận - {formatRelativeTime(post.created_at)}
+          {post.comment_count} bình luận - {formatRelativeTime(post.created_at)}
         </Text>
       </Pressable>
     </View>
@@ -190,14 +255,14 @@ export function PostCard({
 
 const styles = StyleSheet.create({
   actionGroup: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 16,
   },
   actions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingTop: 16,
   },
   caption: {
@@ -214,7 +279,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.surface,
     borderRadius: 24,
     elevation: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
     padding: 16,
     shadowColor: AppColors.shadow,
     shadowOffset: { width: 0, height: 12 },
@@ -225,15 +290,15 @@ const styles = StyleSheet.create({
     color: AppColors.accent,
   },
   header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingBottom: 14,
   },
   iconButton: {
-    alignItems: 'center',
+    alignItems: "center",
     height: 32,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 32,
   },
   likes: {
@@ -250,7 +315,7 @@ const styles = StyleSheet.create({
   },
   mediaFrame: {
     borderRadius: 18,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   mediaImage: {
     backgroundColor: AppColors.surfaceMuted,
@@ -262,10 +327,10 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   ownerActionButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.surfaceMuted,
     borderRadius: 999,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 6,
     minHeight: 36,
     paddingHorizontal: 12,
@@ -276,9 +341,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   ownerActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
     paddingBottom: 12,
   },
   userMeta: {
@@ -290,9 +355,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   userRow: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
+  },
+  usernameVerified: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
 });

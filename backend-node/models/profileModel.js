@@ -12,6 +12,7 @@ const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } =
   u.role,
   u.status,
   u.created_at,
+  u.is_verified,
   (
     SELECT COUNT(*)
     FROM posts p
@@ -59,6 +60,7 @@ const toProfile = (row) => {
     role: row.role,
     status: row.status,
     created_at: row.created_at,
+    is_verified: row.is_verified,
     is_following: Boolean(row.is_following),
     stats: {
       posts: Number(row.post_count || 0),

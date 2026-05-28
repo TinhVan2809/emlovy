@@ -11,7 +11,8 @@ const publicUserFields = `
   email,
   role,
   status,
-  created_at
+  created_at,
+  is_verified
 `;
 
 const toPublicUser = (user) => {
@@ -32,6 +33,7 @@ const toPublicUser = (user) => {
     role: user.role,
     status: user.status,
     created_at: user.created_at,
+    is_verified: user.is_verified,
   };
 };
 

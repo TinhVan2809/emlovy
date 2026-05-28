@@ -1,13 +1,7 @@
 import { ScreenShell } from "@/components/screen-shell";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
+import { View, Text, TextInput, StyleSheet, ScrollView } from "react-native";
 import { UserAvatar } from "@/components/user-avatar";
 import { followApi, resolveMediaUrl } from "@/services/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -100,17 +94,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     width: "100%",
     backgroundColor: "#fff",
-    borderRadius: "20px",
-    borderColor: '#33333321',
-    borderWidth: 1
+    borderColor: "#33333321",
+    borderWidth: 1,
+    borderRadius: 30,
   },
   input: {
     width: "100%",
   },
-    listContainer: {
+  listContainer: {
     paddingHorizontal: 20,
     marginTop: 10,
   },

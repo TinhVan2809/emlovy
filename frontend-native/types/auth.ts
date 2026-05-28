@@ -11,6 +11,7 @@ export type User = {
   role: 'admin' | 'customer';
   status: number;
   created_at: string;
+  is_verified: number;
 };
 
 export type ProfileStats = {

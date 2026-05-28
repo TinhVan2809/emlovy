@@ -1,6 +1,6 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from "react-native";
 
-import { AppColors, AppFonts } from '@/constants/theme';
+import { AppColors, AppFonts } from "@/constants/theme";
 
 type UserAvatarProps = {
   imageUrl?: string | null;
@@ -9,22 +9,24 @@ type UserAvatarProps = {
 };
 
 export function UserAvatar({ imageUrl, name, size = 80 }: UserAvatarProps) {
-  const initial = (name || 'E').slice(0, 1).toUpperCase();
-  const innerSize = size - 8;
+  const initial = (name || "E").slice(0, 1).toUpperCase();
 
   return (
-    <View style={[styles.ring, { borderRadius: size / 2, height: size, width: size }]}>
-      <View
-        style={[
-          styles.core,
-          {
-            borderRadius: innerSize / 2,
-          },
-        ]}>
+    <View
+      style={[
+        styles.ring,
+        { borderRadius: size / 2, height: size, width: size },
+      ]}
+    >
+      <View style={styles.core}>
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={styles.image} />
         ) : (
-          <Text style={[styles.initial, { fontSize: Math.max(18, size * 0.32) }]}>{initial}</Text>
+          <Text
+            style={[styles.initial, { fontSize: Math.max(18, size * 0.32) }]}
+          >
+            {initial}
+          </Text>
         )}
       </View>
     </View>
@@ -33,25 +35,22 @@ export function UserAvatar({ imageUrl, name, size = 80 }: UserAvatarProps) {
 
 const styles = StyleSheet.create({
   core: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.accentSoft,
-    borderColor: AppColors.surface,
-    borderWidth: 3,
+    borderRadius: 100,
     flex: 1,
-    justifyContent: 'center',
-    overflow: 'hidden',
+    justifyContent: "center",
+    overflow: "hidden",
   },
   image: {
-    height: '100%',
-    width: '100%',
+    height: "100%",
+    width: "100%",
   },
   initial: {
     color: AppColors.text,
     fontFamily: AppFonts.heading,
   },
   ring: {
-    backgroundColor: AppColors.accent,
-    justifyContent: 'center',
-    padding: 4,
+    justifyContent: "center",
   },
 });

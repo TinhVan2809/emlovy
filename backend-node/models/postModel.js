@@ -39,6 +39,7 @@ const buildPostSelectFields = (viewerId = null) => `
   u.role AS author_role,
   u.status AS author_status,
   u.created_at AS author_created_at,
+  u.is_verified AS author_verified,
   ${
     viewerId
       ? `EXISTS(
@@ -65,6 +66,7 @@ const toPostWithAuthor = (row) => {
     role: row.author_role,
     status: row.author_status,
     created_at: row.author_created_at,
+    is_verified: row.author_verified
   });
 
   const post = toPublicPost(row);

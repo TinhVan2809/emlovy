@@ -89,7 +89,7 @@ export default function ProfileScreen() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Khong the tai profile.",
+          : "Không thể tải profile.",
       );
     }
   }, [token]);
@@ -122,7 +122,7 @@ export default function ProfileScreen() {
         setPostError(
           loadError instanceof Error
             ? loadError.message
-            : "Khong the tai bai viet.",
+            : "Không thể tải bài viết.",
         );
       } finally {
         setIsLoadingPosts(false);
@@ -146,7 +146,7 @@ export default function ProfileScreen() {
       setStoryError(
         loadError instanceof Error
           ? loadError.message
-          : "Khong the tai stories.",
+          : "Không thể tải stories.",
       );
     }
   }, [token]);
@@ -225,9 +225,21 @@ export default function ProfileScreen() {
     displayUser?.avatar_url || displayUser?.avata,
   );
   const stats = [
-    { label: "Posts", value: String(profile?.stats.posts ?? posts.length), route: () => router.push(postRoutes.posts)},
-    { label: "Followers", value: String(profile?.stats.followers ?? 0),  route: () => router.push(followRoutes.followers)},
-    { label: "Following", value: String(profile?.stats.following ?? 0), route: () => router.push(followRoutes.following) },
+    {
+      label: "Posts",
+      value: String(profile?.stats.posts ?? posts.length),
+      route: () => router.push(postRoutes.posts),
+    },
+    {
+      label: "Followers",
+      value: String(profile?.stats.followers ?? 0),
+      route: () => router.push(followRoutes.followers),
+    },
+    {
+      label: "Following",
+      value: String(profile?.stats.following ?? 0),
+      route: () => router.push(followRoutes.following),
+    },
   ];
 
   const openCreateComposer = () => {
@@ -305,7 +317,7 @@ export default function ProfileScreen() {
       setPostError(
         submitError instanceof Error
           ? submitError.message
-          : "Luu bai viet khong thanh cong.",
+          : "Lưu bài viết không thành công.",
       );
     } finally {
       setIsSubmittingPost(false);
@@ -342,7 +354,7 @@ export default function ProfileScreen() {
       setPostError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Xoa bai viet khong thanh cong.",
+          : "Xóa bài viết không thành công.",
       );
     }
   };
@@ -508,7 +520,11 @@ export default function ProfileScreen() {
 
                   <View style={styles.statsRow}>
                     {stats.map((stat) => (
-                      <Pressable key={stat.label} style={styles.statCard} onPress={stat.route}>
+                      <Pressable
+                        key={stat.label}
+                        style={styles.statCard}
+                        onPress={stat.route}
+                      >
                         <Text style={styles.statValue}>{stat.value}</Text>
                         <Text style={styles.statLabel}>{stat.label}</Text>
                       </Pressable>
@@ -516,7 +532,17 @@ export default function ProfileScreen() {
                   </View>
                 </View>
 
-                <Text style={styles.profileName}>{displayName}</Text>
+                {displayUser?.is_verified === 1 ? (
+                  <View style={styles.nameVerified}>
+                    <Text style={styles.profileName}>{displayName}</Text>
+                    <Ionicons name="checkmark" style={styles.checkMark} />
+                  </View>
+                ) : (
+                  <View style={styles.nameVerified}>
+                    <Text style={styles.profileName}>{displayName} </Text>
+                  </View>
+                )}
+
                 <Text style={styles.profileBio}>
                   {displayUser?.email ||
                     displayUser?.phone ||
@@ -536,7 +562,7 @@ export default function ProfileScreen() {
                       ]}
                     >
                       <Text style={styles.actionButtonPrimaryText}>
-                        Edit profile
+                        Chỉnh sửa
                       </Text>
                     </Pressable>
 
@@ -547,7 +573,7 @@ export default function ProfileScreen() {
                         pressed ? styles.actionButtonPressed : null,
                       ]}
                     >
-                      <Text style={styles.actionButtonText}>Share profile</Text>
+                      <Text style={styles.actionButtonText}>Chia sẽ</Text>
                     </Pressable>
                   </View>
 
@@ -1065,11 +1091,22 @@ const styles = StyleSheet.create({
     gap: 18,
     paddingBottom: 18,
   },
+  nameVerified: {
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "center",
+    paddingTop: 16,
+  },
   profileName: {
     color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 18,
-    paddingTop: 16,
+  },
+  checkMark: {
+    color: "#ffffff",
+    backgroundColor: "#2040e4",
+    borderRadius: 30,
+    padding: 1,
   },
   profileStoryIconBadge: {
     alignItems: "center",

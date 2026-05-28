@@ -27,7 +27,7 @@ const normalizeBackgroundColor = (value) => {
   const color = String(value || "#FFE1D6").trim();
 
   if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
-    throw createHttpError(400, "Mau nen story khong hop le.");
+    throw createHttpError(400, "Màu nền story không hợp lệ.");
   }
 
   return color;
@@ -37,7 +37,7 @@ const parseStoryId = (value) => {
   const storyId = Number.parseInt(value, 10);
 
   if (!Number.isInteger(storyId) || storyId <= 0) {
-    throw createHttpError(400, "Story id khong hop le.");
+    throw createHttpError(400, "Story id không hợp lệ.");
   }
 
   return storyId;
@@ -45,7 +45,7 @@ const parseStoryId = (value) => {
 
 const requireUser = (req) => {
   if (!req.user) {
-    throw createHttpError(401, "Ban chua dang nhap.");
+    throw createHttpError(401, "Bạn chưa đăng nhập.");
   }
 
   return req.user;
@@ -88,7 +88,7 @@ const createStory = async (req, res) => {
 
   if (!content && files.length === 0) {
     await cleanupUploadedFiles(files);
-    throw createHttpError(400, "Story can chu hoac hinh anh.");
+    throw createHttpError(400, "Story cần chữ hoặc hình ảnh.");
   }
 
   const story = await storyModel.create({
@@ -132,7 +132,7 @@ const updateStory = async (req, res) => {
   const replaceMedia = files.length > 0 || String(req.body?.replaceMedia || "").toLowerCase() === "true";
 
   if (!Object.keys(fields).length && !replaceMedia) {
-    throw createHttpError(400, "Khong co thay doi nao de cap nhat story.");
+    throw createHttpError(400, "Không có thay đổi nào để cập nhật story.");
   }
 
   const nextContent = Object.prototype.hasOwnProperty.call(fields, "content") ? fields.content : story.content;
@@ -140,7 +140,7 @@ const updateStory = async (req, res) => {
 
   if (!nextContent && nextMediaLength === 0) {
     await cleanupUploadedFiles(files);
-    throw createHttpError(400, "Story can chu hoac hinh anh.");
+    throw createHttpError(400, "Story cần chữ hoặc hình ảnh.");
   }
 
   const updated = await storyModel.update(storyId, fields, mapUploadedMedia(files), replaceMedia);

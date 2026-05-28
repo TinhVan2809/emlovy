@@ -59,7 +59,7 @@ const validateProfilePayload = (body) => {
     const email = normalizeNullableText(body.email)?.toLowerCase() || null;
 
     if (email && !emailPattern.test(email)) {
-      throw createHttpError(400, "Email khong hop le.");
+      throw createHttpError(400, "Email không hợp lệ.");
     }
 
     updates.email = email;
@@ -73,7 +73,7 @@ const validateProfilePayload = (body) => {
     const birthday = normalizeNullableText(body.birthday);
 
     if (birthday && !datePattern.test(birthday)) {
-      throw createHttpError(400, "Ngay sinh phai co dinh dang YYYY-MM-DD.");
+      throw createHttpError(400, "Ngày sinh phải có định dạng YYYY-MM-DD.");
     }
 
     updates.birthday = birthday;
@@ -83,7 +83,7 @@ const validateProfilePayload = (body) => {
     const gender = normalizeNullableText(body.gender);
 
     if (gender && !validGenders.has(gender)) {
-      throw createHttpError(400, "Gioi tinh khong hop le.");
+      throw createHttpError(400, "Giới tính không hợp lệ.");
     }
 
     updates.gender = gender;
@@ -96,12 +96,12 @@ const getMyProfile = async (req, res) => {
   const profile = await profileModel.findByUserId(req.user.user_id);
 
   if (!profile) {
-    throw createHttpError(404, "Khong tim thay profile.");
+    throw createHttpError(404, "Không tìm thấy profile.");
   }
 
   res.status(200).json({
     success: true,
-    message: "Lay profile thanh cong.",
+    message: "Lấy profile thành công.",
     data: {
       profile,
     },
@@ -117,12 +117,12 @@ const getUserProfile = async (req, res) => {
   });
 
   if (!profile) {
-    throw createHttpError(404, "Khong tim thay profile.");
+    throw createHttpError(404, "Không tìm thấy profile.");
   }
 
   res.status(200).json({
     success: true,
-    message: "Lay profile thanh cong.",
+    message: "Lấy profile thành công.",
     data: {
       profile: {
         ...profile,
@@ -145,8 +145,8 @@ const updateMyProfile = async (req, res) => {
     if (duplicateUser) {
       const message =
         updates.username && duplicateUser.username === updates.username
-          ? "Username da duoc su dung."
-          : "Email da duoc su dung.";
+          ? "Username đã được sử dụng."
+          : "Email đã được sử dụng.";
 
       throw createHttpError(409, message);
     }
@@ -158,7 +158,7 @@ const updateMyProfile = async (req, res) => {
     profile = await profileModel.updateByUserId(req.user.user_id, updates);
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
-      throw createHttpError(409, "Username hoac email da duoc su dung.");
+      throw createHttpError(409, "Username hoặc email đã được sử dụng.");
     }
 
     throw error;
@@ -166,7 +166,7 @@ const updateMyProfile = async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: "Cap nhat profile thanh cong.",
+    message: "Cập nhật profile thành công.",
     data: {
       profile,
       user: createUserPayload(profile),
@@ -195,7 +195,7 @@ const removeOldAvatar = async (avatarPath) => {
 
 const uploadAvatar = async (req, res) => {
   if (!req.file) {
-    throw createHttpError(400, "Vui long chon anh avatar.");
+    throw createHttpError(400, "Vui lòng chọn ảnh avatar.");
   }
 
   const oldProfile = await profileModel.findByUserId(req.user.user_id);
