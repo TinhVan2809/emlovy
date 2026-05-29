@@ -18,6 +18,7 @@ const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } =
     FROM posts p
     WHERE p.user_id = u.user_id
       AND p.is_deleted = 0
+      AND p.post_type = 'post'
       ${publicPostsOnly ? "AND p.visibility = 'public'" : ""}
   ) AS post_count,
   (

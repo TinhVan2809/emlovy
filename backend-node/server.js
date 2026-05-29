@@ -13,6 +13,7 @@ const chatRoutes = require("./routes/chatRoutes");
 const followRoutes = require("./routes/followRoute");
 const profileRoutes = require("./routes/profileRoutes");
 const postRoutes = require("./routes/postRoutes");
+const reelRoutes = require("./routes/reelRoutes");
 const storyRoutes = require("./routes/storyRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const errorHandler = require("./middlewares/errorHandler");
@@ -76,6 +77,7 @@ const createApp = () => {
   app.use("/api/follows", followRoutes);
   app.use("/api/profile", profileRoutes);
   app.use("/api/posts", postRoutes);
+  app.use("/api/reels", reelRoutes);
   app.use("/api/stories", storyRoutes);
   app.use("/api/search", searchRoutes);
   app.use(notFound);

@@ -7,6 +7,7 @@ const toPublicPost = (post) => {
   return {
     post_id: post.post_id,
     user_id: post.user_id,
+    post_type: post.post_type || "post",
     content: post.content,
     like_count: Number(post.like_count || 0),
     comment_count: Number(post.comment_count || 0),
@@ -134,11 +135,23 @@ const insertMedia = async (connection, postId, media = []) => {
   }
 };
 
-const createWithMedia = async ({ user_id, content = null, visibility = "public", location = null, latitude = null, longitude = null, media = [] }) => {
+const createWithMedia = async ({
+  user_id,
+  post_type = "post",
+  content = null,
+  visibility = "public",
+  location = null,
+  latitude = null,
+  longitude = null,
+  media = [],
+}) => {
   const postId = await withTransaction(async (connection) => {
     const [result] = await connection.execute(
-      `INSERT INTO posts (user_id, content, visibility, location, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)`,
-      [user_id, content, visibility, location, latitude, longitude],
+      `
+        INSERT INTO posts (user_id, post_type, content, visibility, location, latitude, longitude)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `,
+      [user_id, post_type, content, visibility, location, latitude, longitude],
     );
 
     await insertMedia(connection, result.insertId, media);
@@ -149,14 +162,23 @@ const createWithMedia = async ({ user_id, content = null, visibility = "public",
   return findById(postId);
 };
 
-const getFeed = async ({ page = 1, limit = 10, userId = null, includePrivate = false, viewerId = null }) => {
+const getFeed = async ({
+  page = 1,
+  limit = 10,
+  userId = null,
+  includePrivate = false,
+  viewerId = null,
+  postType = "post",
+  requireVideo = false,
+}) => {
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.min(30, Math.max(1, Number(limit) || 10));
   const offset = (safePage - 1) * safeLimit;
-  const where = ["p.is_deleted = 0"];
+  const where = ["p.is_deleted = 0", "p.post_type = :postType"];
   const params = {
     limit: safeLimit,
     offset,
+    postType,
   };
 
   if (userId) {
@@ -166,6 +188,17 @@ const getFeed = async ({ page = 1, limit = 10, userId = null, includePrivate = f
 
   if (!includePrivate) {
     where.push("p.visibility = 'public'");
+  }
+
+  if (requireVideo) {
+    where.push(`
+      EXISTS (
+        SELECT 1
+        FROM post_media pmv
+        WHERE pmv.post_id = p.post_id
+          AND pmv.type = 'video'
+      )
+    `);
   }
 
   const whereClause = where.join(" AND ");

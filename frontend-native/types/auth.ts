@@ -75,6 +75,7 @@ export type PostMedia = {
 export type Post = {
   post_id: number;
   user_id: number;
+  post_type?: 'post' | 'reel';
   content: string | null;
   like_count: number;
   comment_count: number;
@@ -93,6 +94,12 @@ export type Post = {
   updated_at: string;
   author: User;
   media: PostMedia[];
+};
+
+export type Reel = Post & {
+  post_type: 'reel';
+  video: PostMedia | null;
+  video_url: string | null;
 };
 
 export type StoryMedia = {
@@ -156,6 +163,11 @@ export type PostsPagination = {
 
 export type PostsPage = {
   items: Post[];
+  pagination: PostsPagination;
+};
+
+export type ReelsPage = {
+  items: Reel[];
   pagination: PostsPagination;
 };
 
@@ -271,6 +283,11 @@ export type CreatePostInput = {
 
 export type UpdatePostInput = CreatePostInput & {
   replaceMedia?: boolean;
+};
+
+export type CreateReelInput = {
+  caption?: string | null;
+  video: PostMediaInput;
 };
 
 export type StoryMediaInput = {

@@ -28,7 +28,7 @@ const errorHandler = (error, req, res, _next) => {
     success: false,
     message:
       error.code === "LIMIT_FILE_SIZE"
-        ? "Avatar vuot qua dung luong cho phep."
+        ? "File vuot qua dung luong cho phep."
         : isServerError
           ? "Service unavailable"
           : error.message,

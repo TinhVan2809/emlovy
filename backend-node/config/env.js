@@ -71,6 +71,9 @@ const config = Object.freeze({
       min: 100 * 1024,
     }),
     postMediaMaxFiles: readInteger("POST_MEDIA_MAX_FILES", 10, { min: 1, max: 50 }),
+    reelVideoMaxFileSize: readInteger("REEL_VIDEO_MAX_FILE_SIZE", 80 * 1024 * 1024, {
+      min: 1024 * 1024,
+    }),
   }),
   database: Object.freeze({
     host: readRequiredString("DB_HOST"),

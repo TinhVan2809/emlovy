@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { UserAvatar } from '@/components/user-avatar';
 import { AppColors, AppFonts } from '@/constants/theme';
-import { postApi, resolveMediaUrl } from '@/services/api';
+import { postApi, reelApi, resolveMediaUrl } from '@/services/api';
 import type { Post, PostComment } from '@/types/auth';
 
 const COMMENT_LIMIT = 20;
@@ -25,6 +25,7 @@ type CommentsSheetProps = {
   onClose: () => void;
   onPostCommentCountChange?: (postId: number, commentCount: number) => void;
   post: Post | null;
+  kind?: 'post' | 'reel';
   token?: string | null;
   visible: boolean;
 };
@@ -86,6 +87,7 @@ const appendReply = (comments: PostComment[], reply: PostComment) =>
   });
 
 export function CommentsSheet({
+  kind = 'post',
   onClose,
   onPostCommentCountChange,
   post,
@@ -119,12 +121,19 @@ export function CommentsSheet({
       }
 
       try {
-        const response = await postApi.getComments(postId, {
-          limit: COMMENT_LIMIT,
-          page: nextPage,
-          sort: 'top',
-          token,
-        });
+        const response =
+          kind === 'reel'
+            ? await reelApi.getComments(postId, {
+                limit: COMMENT_LIMIT,
+                page: nextPage,
+                token,
+              })
+            : await postApi.getComments(postId, {
+                limit: COMMENT_LIMIT,
+                page: nextPage,
+                sort: 'top',
+                token,
+              });
 
         setComments((current) => (replace ? response.data.items : [...current, ...response.data.items]));
         setPage(response.data.pagination.page);
@@ -137,7 +146,7 @@ export function CommentsSheet({
         setIsLoadingMore(false);
       }
     },
-    [postId, token],
+    [kind, postId, token],
   );
 
   useEffect(() => {
@@ -174,7 +183,9 @@ export function CommentsSheet({
     try {
       const response = parent
         ? await postApi.reply(token, post.post_id, parent.id, content)
-        : await postApi.comment(token, post.post_id, content);
+        : kind === 'reel'
+          ? await reelApi.comment(token, post.post_id, content)
+          : await postApi.comment(token, post.post_id, content);
 
       const nextComment = response.data.comment;
       setInput('');

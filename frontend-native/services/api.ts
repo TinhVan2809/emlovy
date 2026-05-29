@@ -14,6 +14,7 @@ import type {
   CommentsPage,
   CreateConversationInput,
   CreatePostInput,
+  CreateReelInput,
   CreateStoryInput,
   LoginInput,
   Post,
@@ -21,6 +22,8 @@ import type {
   PostMediaInput,
   PostsPage,
   Profile,
+  Reel,
+  ReelsPage,
   RegisterInput,
   SendMessageInput,
   StoryGroup,
@@ -149,6 +152,15 @@ const getStoryMediaFileName = (input: PostMediaInput, index: number) => {
   return nameFromUri || `story-media-${Date.now()}-${index}.jpg`;
 };
 
+const getReelVideoFileName = (input: PostMediaInput) => {
+  if (input.fileName) {
+    return input.fileName;
+  }
+
+  const nameFromUri = input.uri.split('/').pop();
+  return nameFromUri || `reel-${Date.now()}.mp4`;
+};
+
 const createPostFormData = (input: CreatePostInput | UpdatePostInput) => {
   const formData = new FormData();
 
@@ -209,7 +221,37 @@ const createStoryFormData = (input: CreateStoryInput | UpdateStoryInput) => {
   return formData;
 };
 
+const createReelFormData = (input: CreateReelInput) => {
+  const formData = new FormData();
+
+  formData.append('caption', input.caption ?? '');
+  formData.append('video', {
+    uri: input.video.uri,
+    name: getReelVideoFileName(input.video),
+    type: input.video.mimeType || 'video/mp4',
+  } as unknown as Blob);
+
+  return formData;
+};
+
 const normalizePostsPage = (data: PostsPage | Post[], page: number, limit: number): PostsPage => {
+  if (!Array.isArray(data)) {
+    return data;
+  }
+
+  return {
+    items: data,
+    pagination: {
+      page,
+      limit,
+      total: data.length,
+      totalPages: 1,
+      hasMore: false,
+    },
+  };
+};
+
+const normalizeReelsPage = (data: ReelsPage | Reel[], page: number, limit: number): ReelsPage => {
   if (!Array.isArray(data)) {
     return data;
   }
@@ -389,6 +431,56 @@ export const postApi = {
   },
   async unlikeComment(token: string, commentId: number) {
     return request<CommentLikeSummary>(`/posts/comments/${commentId}/like`, {
+      method: 'DELETE',
+      token,
+    });
+  },
+};
+
+// [Reels]
+export const reelApi = {
+  async getFeed({ page = 1, limit = 6, token }: { page?: number; limit?: number; token?: string | null } = {}) {
+    const response = await request<ReelsPage | Reel[]>(`/reels?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      token,
+    });
+
+    return {
+      ...response,
+      data: normalizeReelsPage(response.data, page, limit),
+    };
+  },
+  async create(token: string, input: CreateReelInput) {
+    return request<Reel>('/reels', {
+      method: 'POST',
+      token,
+      body: createReelFormData(input),
+    });
+  },
+  async toggleLike(token: string, reelId: number) {
+    return request<PostLikeSummary>(`/reels/${reelId}/like`, {
+      method: 'POST',
+      token,
+    });
+  },
+  async getComments(
+    reelId: number,
+    { page = 1, limit = 20, token }: { page?: number; limit?: number; token?: string | null } = {},
+  ) {
+    return request<CommentsPage>(`/reels/${reelId}/comments?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      token,
+    });
+  },
+  async comment(token: string, reelId: number, content: string) {
+    return request<CommentMutationResult & { comments?: CommentsPage }>(`/reels/${reelId}/comment`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ content }),
+    });
+  },
+  async delete(token: string, reelId: number) {
+    return request<null>(`/reels/${reelId}`, {
       method: 'DELETE',
       token,
     });

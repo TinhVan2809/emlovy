@@ -1,128 +1,899 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useIsFocused } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { StatusBar } from 'expo-status-bar';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ComponentProps } from 'react';
+import type { ViewToken } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenShell } from '@/components/screen-shell';
-import { VisualTile } from '@/components/visual-tile';
-import { reels } from '@/constants/mock-content';
+import { CommentsSheet } from '@/components/comments-sheet';
+import { UserAvatar } from '@/components/user-avatar';
 import { AppColors, AppFonts } from '@/constants/theme';
+import { useAuth } from '@/contexts/auth-context';
+import { reelApi, resolveMediaUrl } from '@/services/api';
+import type { CreateReelInput, PostMediaInput, PostsPagination, Reel } from '@/types/auth';
+
+const REELS_LIMIT = 6;
+
+const mergeReels = (current: Reel[], incoming: Reel[]) => {
+  const seen = new Set<number>();
+
+  return [...current, ...incoming].filter((reel) => {
+    if (seen.has(reel.post_id)) {
+      return false;
+    }
+
+    seen.add(reel.post_id);
+    return true;
+  });
+};
+
+const formatCount = (value: number) => {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(value >= 10000000 ? 0 : 1)}M`;
+  }
+
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}K`;
+  }
+
+  return String(value);
+};
+
+const getReelVideoUrl = (reel: Reel) =>
+  resolveMediaUrl(reel.video_url || reel.video?.media_url || reel.media.find((item) => item.type === 'video')?.media_url);
 
 export default function ReelsScreen() {
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
+  const isFocused = useIsFocused();
+  const { token, user } = useAuth();
+  const [reels, setReels] = useState<Reel[]>([]);
+  const [pagination, setPagination] = useState<PostsPagination | null>(null);
+  const [activeReelId, setActiveReelId] = useState<number | null>(null);
+  const [commentReelId, setCommentReelId] = useState<number | null>(null);
+  const [error, setError] = useState('');
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isComposerVisible, setIsComposerVisible] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [likingIds, setLikingIds] = useState<Set<number>>(() => new Set());
+
+  const reelHeight = Math.max(520, height - tabBarHeight);
+  const selectedCommentReel = commentReelId
+    ? reels.find((reel) => reel.post_id === commentReelId) || null
+    : null;
+
+  const patchReel = useCallback((reelId: number, patch: Partial<Reel>) => {
+    setReels((current) => current.map((reel) => (reel.post_id === reelId ? { ...reel, ...patch } : reel)));
+  }, []);
+
+  const loadReels = useCallback(
+    async (page = 1, replace = true) => {
+      if (replace) {
+        setIsInitialLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      try {
+        const response = await reelApi.getFeed({ limit: REELS_LIMIT, page, token });
+        const nextItems = response.data.items;
+
+        setPagination(response.data.pagination);
+        setReels((current) => (replace ? nextItems : mergeReels(current, nextItems)));
+        setActiveReelId((current) => (replace ? nextItems[0]?.post_id || null : current || nextItems[0]?.post_id || null));
+        setError('');
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'Khong the tai reels.');
+      } finally {
+        setIsInitialLoading(false);
+        setIsRefreshing(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [token],
+  );
+
+  useEffect(() => {
+    loadReels();
+  }, [loadReels]);
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 82 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    const nextVisible = viewableItems.find((item) => item.isViewable)?.item as Reel | undefined;
+
+    if (nextVisible) {
+      setActiveReelId(nextVisible.post_id);
+    }
+  }).current;
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadReels(1, true);
+  };
+
+  const handleLoadMore = () => {
+    if (!pagination?.hasMore || isLoadingMore || isInitialLoading) {
+      return;
+    }
+
+    loadReels(pagination.page + 1, false);
+  };
+
+  const handleToggleLike = async (reel: Reel) => {
+    if (!token) {
+      setError('Ban can dang nhap de thich reel.');
+      return;
+    }
+
+    if (likingIds.has(reel.post_id)) {
+      return;
+    }
+
+    const likedByMe = !reel.liked_by_me;
+    const likeCount = Math.max(0, reel.like_count + (likedByMe ? 1 : -1));
+
+    setLikingIds((current) => {
+      const next = new Set(current);
+      next.add(reel.post_id);
+      return next;
+    });
+    patchReel(reel.post_id, { liked_by_me: likedByMe, like_count: likeCount });
+
+    try {
+      const response = await reelApi.toggleLike(token, reel.post_id);
+      patchReel(reel.post_id, {
+        liked_by_me: response.data.liked_by_me,
+        like_count: response.data.like_count,
+      });
+      setError('');
+    } catch (likeError) {
+      patchReel(reel.post_id, {
+        liked_by_me: reel.liked_by_me,
+        like_count: reel.like_count,
+      });
+      setError(likeError instanceof Error ? likeError.message : 'Khong the cap nhat luot thich.');
+    } finally {
+      setLikingIds((current) => {
+        const next = new Set(current);
+        next.delete(reel.post_id);
+        return next;
+      });
+    }
+  };
+
+  const handleDelete = (reel: Reel) => {
+    if (!token) {
+      setError('Ban can dang nhap de xoa reel.');
+      return;
+    }
+
+    Alert.alert('Delete reel', 'Remove this reel from your profile and the feed?', [
+      { style: 'cancel', text: 'Cancel' },
+      {
+        onPress: async () => {
+          setReels((current) => current.filter((item) => item.post_id !== reel.post_id));
+
+          try {
+            await reelApi.delete(token, reel.post_id);
+            setError('');
+          } catch (deleteError) {
+            setError(deleteError instanceof Error ? deleteError.message : 'Khong the xoa reel.');
+            loadReels(1, true);
+          }
+        },
+        style: 'destructive',
+        text: 'Delete',
+      },
+    ]);
+  };
+
+  const handleCreateReel = async (input: CreateReelInput) => {
+    if (!token) {
+      setError('Ban can dang nhap de dang reel.');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const response = await reelApi.create(token, input);
+      setReels((current) => mergeReels([response.data], current));
+      setActiveReelId(response.data.post_id);
+      setIsComposerVisible(false);
+      setError('');
+      loadReels(1, true);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'Khong the dang reel.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCommentCountChange = (postId: number, commentCount: number) => {
+    patchReel(postId, { comment_count: commentCount });
+  };
+
+  const renderReel = ({ item }: { item: Reel }) => (
+    <ReelCard
+      currentUserId={user?.user_id}
+      height={reelHeight}
+      isActive={isFocused && activeReelId === item.post_id}
+      onDelete={handleDelete}
+      onOpenComments={(reel) => setCommentReelId(reel.post_id)}
+      onToggleLike={handleToggleLike}
+      reel={item}
+    />
+  );
+
   return (
-    <ScreenShell
-      title="Reels"
-      right={<Ionicons color={AppColors.text} name="camera-outline" size={24} />}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {reels.map((reel) => (
-          <View key={reel.id} style={styles.card}>
-            <VisualTile accent={reel.accent} height={430} label={reel.label} tone={reel.tone} />
+    <View style={styles.screen}>
+      <StatusBar style="light" />
+      <View pointerEvents="box-none" style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <Text style={styles.headerTitle}>Reels</Text>
+        <Pressable hitSlop={10} onPress={() => setIsComposerVisible(true)} style={styles.headerButton}>
+          <Ionicons color={AppColors.surface} name="camera" size={22} />
+        </Pressable>
+      </View>
 
-            <View pointerEvents="none" style={styles.overlay}>
-              <View style={styles.topTag}>
-                <Ionicons color={AppColors.text} name="sparkles-outline" size={14} />
-                <Text style={styles.topTagText}>Trending now</Text>
-              </View>
+      {error ? (
+        <View style={[styles.errorBanner, { top: insets.top + 58 }]}>
+          <Text numberOfLines={2} style={styles.errorText}>
+            {error}
+          </Text>
+        </View>
+      ) : null}
 
-              <View style={styles.sideRail}>
-                <View style={styles.sideAction}>
-                  <Ionicons color={AppColors.surface} name="heart" size={22} />
-                  <Text style={styles.sideText}>{reel.likes}</Text>
-                </View>
-                <View style={styles.sideAction}>
-                  <Ionicons color={AppColors.surface} name="chatbubble" size={20} />
-                  <Text style={styles.sideText}>{reel.comments}</Text>
-                </View>
-                <View style={styles.sideAction}>
-                  <Ionicons color={AppColors.surface} name="paper-plane" size={20} />
-                  <Text style={styles.sideText}>Share</Text>
-                </View>
-              </View>
-
-              <View style={styles.bottomInfo}>
-                <Text style={styles.reelTitle}>{reel.title}</Text>
-                <Text style={styles.reelMeta}>
-                  {reel.creator} · {reel.audio} · {reel.views} views
-                </Text>
-              </View>
+      <FlatList
+        ListEmptyComponent={
+          isInitialLoading ? (
+            <ActivityIndicator color={AppColors.surface} style={[styles.emptyState, { height: reelHeight }]} />
+          ) : (
+            <View style={[styles.emptyState, { height: reelHeight }]}>
+              <Ionicons color="rgba(255,255,255,0.72)" name="film-outline" size={38} />
+              <Text style={styles.emptyText}>No reels yet.</Text>
             </View>
-          </View>
-        ))}
-      </ScrollView>
-    </ScreenShell>
+          )
+        }
+        ListFooterComponent={
+          isLoadingMore ? <ActivityIndicator color={AppColors.surface} style={styles.footerLoader} /> : null
+        }
+        data={reels}
+        decelerationRate="fast"
+        getItemLayout={(_data, index) => ({
+          index,
+          length: reelHeight,
+          offset: reelHeight * index,
+        })}
+        keyExtractor={(item) => String(item.post_id)}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.7}
+        onViewableItemsChanged={onViewableItemsChanged}
+        pagingEnabled
+        refreshControl={
+          <RefreshControl
+            colors={[AppColors.accent]}
+            onRefresh={handleRefresh}
+            refreshing={isRefreshing}
+            tintColor={AppColors.surface}
+          />
+        }
+        renderItem={renderReel}
+        showsVerticalScrollIndicator={false}
+        snapToAlignment="start"
+        snapToInterval={reelHeight}
+        viewabilityConfig={viewabilityConfig}
+      />
+
+      <ReelComposerModal
+        isSubmitting={isUploading}
+        onClose={() => setIsComposerVisible(false)}
+        onSubmit={handleCreateReel}
+        visible={isComposerVisible}
+      />
+
+      <CommentsSheet
+        kind="reel"
+        onClose={() => setCommentReelId(null)}
+        onPostCommentCountChange={handleCommentCountChange}
+        post={selectedCommentReel}
+        token={token}
+        visible={Boolean(selectedCommentReel)}
+      />
+    </View>
   );
 }
 
+function ReelCard({
+  currentUserId,
+  height,
+  isActive,
+  onDelete,
+  onOpenComments,
+  onToggleLike,
+  reel,
+}: {
+  currentUserId?: number | null;
+  height: number;
+  isActive: boolean;
+  onDelete: (reel: Reel) => void;
+  onOpenComments: (reel: Reel) => void;
+  onToggleLike: (reel: Reel) => void;
+  reel: Reel;
+}) {
+  const videoUrl = getReelVideoUrl(reel);
+  const authorName = reel.author?.name || 'Emlovy User';
+  const authorHandle = reel.author?.username ? `@${reel.author.username}` : '@emlovy';
+  const avatarUrl = resolveMediaUrl(reel.author?.avatar_url || reel.author?.avata);
+  const ownerCanDelete = Number(currentUserId) === Number(reel.user_id);
+
+  return (
+    <View style={[styles.reelPage, { height }]}>
+      {videoUrl ? (
+        <ReelVideo isActive={isActive} uri={videoUrl} />
+      ) : (
+        <View style={styles.videoFallback}>
+          <Ionicons color="rgba(255,255,255,0.76)" name="videocam-off-outline" size={36} />
+        </View>
+      )}
+
+      <View pointerEvents="none" style={styles.topShade} />
+      <View pointerEvents="none" style={styles.bottomShade} />
+
+      <View style={styles.sideRail}>
+        <RailButton
+          active={reel.liked_by_me}
+          icon={reel.liked_by_me ? 'heart' : 'heart-outline'}
+          label={formatCount(reel.like_count)}
+          onPress={() => onToggleLike(reel)}
+        />
+        <RailButton
+          icon="chatbubble-outline"
+          label={formatCount(reel.comment_count)}
+          onPress={() => onOpenComments(reel)}
+        />
+        {ownerCanDelete ? (
+          <RailButton destructive icon="trash-outline" label="Delete" onPress={() => onDelete(reel)} />
+        ) : null}
+      </View>
+
+      <View style={styles.reelInfo}>
+        <View style={styles.authorRow}>
+          <UserAvatar imageUrl={avatarUrl} name={authorName} size={42} />
+          <View style={styles.authorMeta}>
+            <Text numberOfLines={1} style={styles.authorName}>
+              {authorName}
+            </Text>
+            <Text numberOfLines={1} style={styles.authorHandle}>
+              {authorHandle}
+            </Text>
+          </View>
+        </View>
+
+        {reel.content ? (
+          <Text numberOfLines={3} style={styles.caption}>
+            {reel.content}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function ReelVideo({ isActive, uri }: { isActive: boolean; uri: string }) {
+  const [isManuallyPaused, setIsManuallyPaused] = useState(false);
+  const player = useVideoPlayer(uri, (nextPlayer) => {
+    nextPlayer.loop = true;
+    nextPlayer.muted = false;
+  });
+
+  useEffect(() => {
+    if (!isActive) {
+      player.pause();
+      setIsManuallyPaused(false);
+      return;
+    }
+
+    if (isManuallyPaused) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  }, [isActive, isManuallyPaused, player]);
+
+  const handleTogglePlayback = () => {
+    if (!isActive) {
+      return;
+    }
+
+    setIsManuallyPaused((value) => !value);
+  };
+
+  return (
+    <Pressable onPress={handleTogglePlayback} style={styles.videoSurface}>
+      <VideoView
+        allowsFullscreen={false}
+        contentFit="cover"
+        nativeControls={false}
+        player={player}
+        style={StyleSheet.absoluteFill}
+      />
+      {isActive && isManuallyPaused ? (
+        <View pointerEvents="none" style={styles.pauseBadge}>
+          <Ionicons color={AppColors.surface} name="play" size={26} />
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+function RailButton({
+  active = false,
+  destructive = false,
+  icon,
+  label,
+  onPress,
+}: {
+  active?: boolean;
+  destructive?: boolean;
+  icon: ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  onPress: () => void;
+}) {
+  const color = destructive ? '#FF6F61' : active ? AppColors.accent : AppColors.surface;
+
+  return (
+    <Pressable hitSlop={10} onPress={onPress} style={styles.railButton}>
+      <View style={styles.railIconShell}>
+        <Ionicons color={color} name={icon} size={26} />
+      </View>
+      <Text numberOfLines={1} style={styles.railText}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ReelComposerModal({
+  isSubmitting,
+  onClose,
+  onSubmit,
+  visible,
+}: {
+  isSubmitting: boolean;
+  onClose: () => void;
+  onSubmit: (input: CreateReelInput) => Promise<void>;
+  visible: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+  const [caption, setCaption] = useState('');
+  const [video, setVideo] = useState<PostMediaInput | null>(null);
+  const [error, setError] = useState('');
+  const canSubmit = Boolean(video) && !isSubmitting;
+
+  useEffect(() => {
+    if (!visible) {
+      setCaption('');
+      setVideo(null);
+      setError('');
+    }
+  }, [visible]);
+
+  const pickVideo = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      setError('Ung dung can quyen truy cap thu vien video.');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: false,
+        allowsMultipleSelection: false,
+        mediaTypes: ['videos'] as ImagePicker.MediaType[],
+        quality: 1,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      setVideo({
+        fileName: asset.fileName,
+        mimeType: asset.mimeType || 'video/mp4',
+        uri: asset.uri,
+      });
+      setError('');
+    } catch (pickError) {
+      setError(pickError instanceof Error ? pickError.message : 'Khong the chon video.');
+    }
+  };
+
+  const submit = async () => {
+    if (!video) {
+      setError('Hay chon mot video.');
+      return;
+    }
+
+    await onSubmit({
+      caption: caption.trim() || null,
+      video,
+    });
+  };
+
+  return (
+    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
+      <KeyboardAvoidingView
+        behavior={Platform.select({ ios: 'padding', default: undefined })}
+        style={styles.composerBackdrop}>
+        <SafeAreaView edges={['top']} style={styles.composerSheet}>
+          <View style={styles.composerHeader}>
+            <Pressable disabled={isSubmitting} hitSlop={10} onPress={onClose} style={styles.composerIconButton}>
+              <Ionicons color={AppColors.text} name="close" size={24} />
+            </Pressable>
+            <Text style={styles.composerTitle}>New reel</Text>
+            <Pressable disabled={!canSubmit} hitSlop={10} onPress={submit} style={styles.composerPostButton}>
+              {isSubmitting ? (
+                <ActivityIndicator color={AppColors.accent} size="small" />
+              ) : (
+                <Text style={[styles.composerPostText, !canSubmit ? styles.disabledText : null]}>Post</Text>
+              )}
+            </Pressable>
+          </View>
+
+          <View style={[styles.composerContent, { paddingBottom: Math.max(insets.bottom, 18) }]}>
+            <Pressable disabled={isSubmitting} onPress={pickVideo} style={styles.videoPicker}>
+              {video ? (
+                <PreviewVideo uri={video.uri} />
+              ) : (
+                <View style={styles.videoPickerEmpty}>
+                  <Ionicons color={AppColors.muted} name="cloud-upload-outline" size={32} />
+                  <Text style={styles.videoPickerText}>Tải video lên</Text>
+                </View>
+              )}
+            </Pressable>
+
+            <TextInput
+              maxLength={2200}
+              multiline
+              onChangeText={setCaption}
+              placeholder="Write a caption..."
+              placeholderTextColor={AppColors.tabInactive}
+              style={styles.captionInput}
+              value={caption}
+            />
+
+            {error ? <Text style={styles.composerError}>{error}</Text> : null}
+
+            <Pressable
+              disabled={!canSubmit}
+              onPress={submit}
+              style={[styles.primaryButton, !canSubmit ? styles.primaryButtonDisabled : null]}>
+              {isSubmitting ? (
+                <ActivityIndicator color={AppColors.surface} />
+              ) : (
+                <>
+                  <Ionicons color={AppColors.surface} name="arrow-up-circle" size={19} />
+                  <Text style={styles.primaryButtonText}>Upload reel</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function PreviewVideo({ uri }: { uri: string }) {
+  const player = useVideoPlayer(uri, (nextPlayer) => {
+    nextPlayer.loop = true;
+    nextPlayer.muted = true;
+    nextPlayer.play();
+  });
+
+  return <VideoView contentFit="cover" nativeControls={false} player={player} style={StyleSheet.absoluteFill} />;
+}
+
 const styles = StyleSheet.create({
-  bottomInfo: {
-    backgroundColor: 'rgba(22,22,22,0.58)',
-    borderRadius: 22,
-    bottom: 18,
-    left: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    position: 'absolute',
-    right: 88,
+  authorHandle: {
+    color: 'rgba(255,255,255,0.72)',
+    fontFamily: AppFonts.body,
+    fontSize: 12,
   },
-  card: {
+  authorMeta: {
+    flex: 1,
+    gap: 2,
+  },
+  authorName: {
+    color: AppColors.surface,
+    fontFamily: AppFonts.heading,
+    fontSize: 15,
+  },
+  authorRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  bottomShade: {
+    backgroundColor: 'rgba(0,0,0,0.34)',
+    bottom: 0,
+    height: 230,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+  },
+  caption: {
+    color: AppColors.surface,
+    fontFamily: AppFonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    maxWidth: '88%',
+    paddingTop: 12,
+  },
+  captionInput: {
+    backgroundColor: AppColors.surfaceMuted,
+    borderColor: AppColors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    color: AppColors.text,
+    fontFamily: AppFonts.body,
+    fontSize: 15,
+    minHeight: 94,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
+  composerBackdrop: {
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  composerContent: {
+    gap: 14,
+    padding: 16,
+  },
+  composerError: {
+    color: AppColors.accent,
+    fontFamily: AppFonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  composerHeader: {
+    alignItems: 'center',
+    borderBottomColor: AppColors.border,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    minHeight: 58,
+    paddingHorizontal: 12,
+  },
+  composerIconButton: {
+    alignItems: 'center',
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
+  },
+  composerPostButton: {
+    alignItems: 'center',
+    height: 42,
+    justifyContent: 'center',
+    minWidth: 52,
+  },
+  composerPostText: {
+    color: AppColors.accent,
+    fontFamily: AppFonts.heading,
+    fontSize: 15,
+  },
+  composerSheet: {
+    backgroundColor: AppColors.surface,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    maxHeight: '94%',
+    overflow: 'hidden',
+  },
+  composerTitle: {
+    color: AppColors.text,
+    flex: 1,
+    fontFamily: AppFonts.heading,
+    fontSize: 17,
+    textAlign: 'center',
+  },
+  disabledText: {
+    opacity: 0.45,
+  },
+  emptyState: {
+    alignItems: 'center',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: 'rgba(255,255,255,0.76)',
+    fontFamily: AppFonts.heading,
+    fontSize: 15,
+  },
+  errorBanner: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(242,95,76,0.92)',
+    borderRadius: 8,
+    left: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    position: 'absolute',
+    right: 18,
+    zIndex: 20,
+  },
+  errorText: {
+    color: AppColors.surface,
+    fontFamily: AppFonts.heading,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
+  footerLoader: {
+    backgroundColor: '#050505',
+    paddingVertical: 20,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    left: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 10,
+  },
+  headerButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.28)',
+    borderColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 20,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  headerTitle: {
+    color: AppColors.surface,
+    fontFamily: AppFonts.heading,
+    fontSize: 23,
+  },
+  pauseBadge: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.42)',
+    borderRadius: 34,
+    height: 68,
+    justifyContent: 'center',
+    left: '50%',
+    marginLeft: -34,
+    marginTop: -34,
+    position: 'absolute',
+    top: '50%',
+    width: 68,
+  },
+  primaryButton: {
+    alignItems: 'center',
+    backgroundColor: AppColors.text,
+    borderRadius: 8,
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    minHeight: 52,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.45,
+  },
+  primaryButtonText: {
+    color: AppColors.surface,
+    fontFamily: AppFonts.heading,
+    fontSize: 15,
+  },
+  railButton: {
+    alignItems: 'center',
+    gap: 5,
+    minWidth: 58,
+  },
+  railIconShell: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.28)',
+    borderColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 24,
+    borderWidth: 1,
+    height: 48,
+    justifyContent: 'center',
+    width: 48,
+  },
+  railText: {
+    color: AppColors.surface,
+    fontFamily: AppFonts.heading,
+    fontSize: 11,
+    maxWidth: 62,
+  },
+  reelInfo: {
+    bottom: 28,
+    left: 16,
+    position: 'absolute',
+    right: 86,
+  },
+  reelPage: {
+    backgroundColor: '#050505',
     overflow: 'hidden',
     position: 'relative',
   },
-  content: {
-    gap: 18,
-    paddingBottom: 28,
-    paddingHorizontal: 18,
-    paddingTop: 18,
+  screen: {
+    backgroundColor: '#050505',
+    flex: 1,
   },
-  overlay: {
-    bottom: 0,
+  sideRail: {
+    alignItems: 'center',
+    bottom: 34,
+    gap: 18,
+    position: 'absolute',
+    right: 12,
+  },
+  topShade: {
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    height: 130,
     left: 0,
     position: 'absolute',
     right: 0,
     top: 0,
   },
-  reelMeta: {
-    color: AppColors.surface,
-    fontFamily: AppFonts.body,
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  reelTitle: {
-    color: AppColors.surface,
-    fontFamily: AppFonts.heading,
-    fontSize: 18,
-    paddingBottom: 4,
-  },
-  sideAction: {
+  videoFallback: {
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: '#151515',
+    flex: 1,
+    justifyContent: 'center',
   },
-  sideRail: {
+  videoPicker: {
+    alignSelf: 'center',
+    aspectRatio: 9 / 14,
+    backgroundColor: AppColors.surfaceMuted,
+    borderColor: AppColors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    maxHeight: 420,
+    minHeight: 300,
+    overflow: 'hidden',
+    width: '72%',
+  },
+  videoPickerEmpty: {
     alignItems: 'center',
-    bottom: 24,
-    gap: 18,
-    position: 'absolute',
-    right: 24,
+    flex: 1,
+    gap: 9,
+    justifyContent: 'center',
   },
-  sideText: {
-    color: AppColors.surface,
+  videoPickerText: {
+    color: AppColors.muted,
     fontFamily: AppFonts.heading,
-    fontSize: 11,
+    fontSize: 14,
   },
-  topTag: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 999,
-    flexDirection: 'row',
-    gap: 6,
-    left: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    position: 'absolute',
-    top: 18,
-  },
-  topTagText: {
-    color: AppColors.text,
-    fontFamily: AppFonts.heading,
-    fontSize: 12,
+  videoSurface: {
+    backgroundColor: '#050505',
+    flex: 1,
   },
 });
