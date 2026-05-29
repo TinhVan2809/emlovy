@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Platform, RefreshControl, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Routes } from '@/constants/routes';
 
@@ -19,6 +19,7 @@ import { subscribeToStoryEvents } from '@/services/story-socket';
 import type { CreateStoryInput, Post, PostsPagination, StoryGroup, UpdatePostInput } from '@/types/auth';
 
 const FEED_LIMIT = 10;
+const FEED_FILTERS = ['DÃ nh cho báº¡n', 'Following', 'Fresh drops', 'Saved'];
 
 const mergePosts = (current: Post[], incoming: Post[]) => {
   const seen = new Set<number>();
@@ -44,7 +45,7 @@ export default function HomeScreen() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [commentPostId, setCommentPostId] = useState<number | null>(null);
-  const [likingPostIds, setLikingPostIds] = useState<Set<number>>(() => new Set());
+  const likingPostIdsRef = useRef<Set<number>>(new Set());
   const [storyGroups, setStoryGroups] = useState<StoryGroup[]>([]);
   const [storyError, setStoryError] = useState('');
   const [storyComposerVisible, setStoryComposerVisible] = useState(false);
@@ -146,21 +147,21 @@ export default function HomeScreen() {
     [],
   );
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     loadStories();
     loadFeed(1, true);
-  };
+  }, [loadFeed, loadStories]);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!pagination?.hasMore || isLoadingMore || isInitialLoading) {
       return;
     }
 
     loadFeed(pagination.page + 1, false);
-  };
+  }, [isInitialLoading, isLoadingMore, loadFeed, pagination?.hasMore, pagination?.page]);
 
-  const handleDeletePost = async (post: Post) => {
+  const handleDeletePost = useCallback(async (post: Post) => {
     if (!token) {
       setError('Bạn cần đăng nhập để xóa bài viết.');
       return;
@@ -174,9 +175,9 @@ export default function HomeScreen() {
       setError(deleteError instanceof Error ? deleteError.message : 'Xóa bài viết thành công.');
       loadFeed(1, true);
     }
-  };
+  }, [loadFeed, token]);
 
-  const handleSubmitEdit = async (input: UpdatePostInput) => {
+  const handleSubmitEdit = useCallback(async (input: UpdatePostInput) => {
     if (!token || !editingPost) {
       return;
     }
@@ -194,34 +195,31 @@ export default function HomeScreen() {
     } finally {
       setIsSubmittingEdit(false);
     }
-  };
+  }, [editingPost, token]);
 
-  const selectedCommentPost = commentPostId
-    ? posts.find((post) => post.post_id === commentPostId) || null
-    : null;
+  const selectedCommentPost = useMemo(
+    () => (commentPostId ? posts.find((post) => post.post_id === commentPostId) || null : null),
+    [commentPostId, posts],
+  );
 
-  const patchPost = (postId: number, patch: Partial<Post>) => {
+  const patchPost = useCallback((postId: number, patch: Partial<Post>) => {
     setPosts((current) => current.map((post) => (post.post_id === postId ? { ...post, ...patch } : post)));
-  };
+  }, []);
 
-  const handleTogglePostLike = async (post: Post) => {
+  const handleTogglePostLike = useCallback(async (post: Post) => {
     if (!token) {
       setError('Bạn cần đăng nhập.');
       return;
     }
 
-    if (likingPostIds.has(post.post_id)) {
+    if (likingPostIdsRef.current.has(post.post_id)) {
       return;
     }
 
     const shouldLike = !post.liked_by_me;
     const optimisticLikeCount = Math.max(0, post.like_count + (shouldLike ? 1 : -1));
 
-    setLikingPostIds((current) => {
-      const next = new Set(current);
-      next.add(post.post_id);
-      return next;
-    });
+    likingPostIdsRef.current.add(post.post_id);
     patchPost(post.post_id, {
       liked_by_me: shouldLike,
       like_count: optimisticLikeCount,
@@ -244,19 +242,15 @@ export default function HomeScreen() {
       });
       setError(likeError instanceof Error ? likeError.message : 'Không thể cập nhật tym bài viết.');
     } finally {
-      setLikingPostIds((current) => {
-        const next = new Set(current);
-        next.delete(post.post_id);
-        return next;
-      });
+      likingPostIdsRef.current.delete(post.post_id);
     }
-  };
+  }, [patchPost, token]);
 
-  const handlePostCommentCountChange = (postId: number, commentCount: number) => {
+  const handlePostCommentCountChange = useCallback((postId: number, commentCount: number) => {
     patchPost(postId, { comment_count: commentCount });
-  };
+  }, [patchPost]);
 
-  const handleOpenAuthor = (post: Post) => {
+  const handleOpenAuthor = useCallback((post: Post) => {
     if (Number(post.user_id) === Number(user?.user_id)) {
       router.push(Routes.profile);
       return;
@@ -266,9 +260,9 @@ export default function HomeScreen() {
       pathname: '/(users)/[userId]',
       params: { userId: String(post.user_id) },
     });
-  };
+  }, [user?.user_id]);
 
-  const handleSubmitStory = async (input: CreateStoryInput) => {
+  const handleSubmitStory = useCallback(async (input: CreateStoryInput) => {
     if (!token) {
       setStoryError('Bạn cần đăng nhập để tạo story.');
       return;
@@ -285,7 +279,80 @@ export default function HomeScreen() {
     } finally {
       setIsSubmittingStory(false);
     }
-  };
+  }, [loadStories, token]);
+
+  const handleOpenStoryComposer = useCallback(() => {
+    setStoryComposerVisible(true);
+  }, []);
+
+  const handleOpenComments = useCallback((post: Post) => {
+    setCommentPostId(post.post_id);
+  }, []);
+
+  const handleCloseComments = useCallback(() => {
+    setCommentPostId(null);
+  }, []);
+
+  const handleCloseEdit = useCallback(() => {
+    setEditingPost(null);
+  }, []);
+
+  const keyExtractor = useCallback((item: Post) => String(item.post_id), []);
+
+  const renderPostItem = useCallback(
+    ({ item }: { item: Post }) => (
+      <FeedPostItem
+        currentUserId={user?.user_id}
+        onDelete={handleDeletePost}
+        onEdit={setEditingPost}
+        onOpenAuthor={handleOpenAuthor}
+        onOpenComments={handleOpenComments}
+        onToggleLike={handleTogglePostLike}
+        post={item}
+      />
+    ),
+    [handleDeletePost, handleOpenAuthor, handleOpenComments, handleTogglePostLike, user?.user_id],
+  );
+
+  const listHeader = useMemo(
+    () => (
+      <FeedHeader
+        count={pagination?.total || posts.length}
+        error={error}
+        onCreateStory={handleOpenStoryComposer}
+        storyError={storyError}
+        storyGroups={storyGroups}
+      />
+    ),
+    [error, handleOpenStoryComposer, pagination?.total, posts.length, storyError, storyGroups],
+  );
+
+  const listEmpty = useMemo(
+    () =>
+      isInitialLoading ? (
+        <ActivityIndicator color={AppColors.accent} style={styles.emptyState} />
+      ) : (
+        <Text style={styles.emptyText}>Chưa có vài viết nào.</Text>
+      ),
+    [isInitialLoading],
+  );
+
+  const listFooter = useMemo(
+    () => (isLoadingMore ? <ActivityIndicator color={AppColors.accent} style={styles.footerLoader} /> : null),
+    [isLoadingMore],
+  );
+
+  const refreshControl = useMemo(
+    () => (
+      <RefreshControl
+        colors={[AppColors.accent]}
+        onRefresh={handleRefresh}
+        refreshing={isRefreshing}
+        tintColor={AppColors.accent}
+      />
+    ),
+    [handleRefresh, isRefreshing],
+  );
 
   return (
     <ScreenShell
@@ -302,65 +369,35 @@ export default function HomeScreen() {
         </View>
       }>
       <FlatList
-        ListEmptyComponent={
-          isInitialLoading ? (
-            <ActivityIndicator color={AppColors.accent} style={styles.emptyState} />
-          ) : (
-            <Text style={styles.emptyText}>Chưa có bài viết nào.</Text>
-          )
-        }
-        ListFooterComponent={
-          isLoadingMore ? <ActivityIndicator color={AppColors.accent} style={styles.footerLoader} /> : null
-        }
-        ListHeaderComponent={
-          <FeedHeader
-            count={pagination?.total || posts.length}
-            error={error}
-            onCreateStory={() => setStoryComposerVisible(true)}
-            storyError={storyError}
-            storyGroups={storyGroups}
-          />
-        }
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
+        ListHeaderComponent={listHeader}
         contentContainerStyle={styles.content}
         data={posts}
-        keyExtractor={(item) => String(item.post_id)}
+        initialNumToRender={4}
+        keyExtractor={keyExtractor}
+        maxToRenderPerBatch={4}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.55}
-        refreshControl={
-          <RefreshControl
-            colors={[AppColors.accent]}
-            onRefresh={handleRefresh}
-            refreshing={isRefreshing}
-            tintColor={AppColors.accent}
-          />
-        }
-        renderItem={({ item }) => (
-          <View style={styles.feedItem}>
-            <PostCard
-              currentUserId={user?.user_id}
-              onDelete={handleDeletePost}
-              onEdit={setEditingPost}
-              onOpenAuthor={handleOpenAuthor}
-              onOpenComments={(post) => setCommentPostId(post.post_id)}
-              onToggleLike={handleTogglePostLike}
-              post={item}
-            />
-          </View>
-        )}
+        refreshControl={refreshControl}
+        renderItem={renderPostItem}
+        removeClippedSubviews={Platform.OS === 'android'}
         showsVerticalScrollIndicator={false}
+        updateCellsBatchingPeriod={60}
+        windowSize={7}
       />
 
       <PostComposerModal
         initialPost={editingPost}
         isSubmitting={isSubmittingEdit}
         mode="edit"
-        onClose={() => setEditingPost(null)}
+        onClose={handleCloseEdit}
         onSubmit={(input) => handleSubmitEdit(input as UpdatePostInput)}
         visible={Boolean(editingPost)}
       />
 
       <CommentsSheet
-        onClose={() => setCommentPostId(null)}
+        onClose={handleCloseComments}
         onPostCommentCountChange={handlePostCommentCountChange}
         post={selectedCommentPost}
         token={token}
@@ -378,7 +415,39 @@ export default function HomeScreen() {
   );
 }
 
-function FeedHeader({
+const FeedPostItem = memo(function FeedPostItem({
+  currentUserId,
+  onDelete,
+  onEdit,
+  onOpenAuthor,
+  onOpenComments,
+  onToggleLike,
+  post,
+}: {
+  currentUserId?: number | null;
+  onDelete: (post: Post) => void;
+  onEdit: (post: Post) => void;
+  onOpenAuthor: (post: Post) => void;
+  onOpenComments: (post: Post) => void;
+  onToggleLike: (post: Post) => void;
+  post: Post;
+}) {
+  return (
+    <View style={styles.feedItem}>
+      <PostCard
+        currentUserId={currentUserId}
+        onDelete={onDelete}
+        onEdit={onEdit}
+        onOpenAuthor={onOpenAuthor}
+        onOpenComments={onOpenComments}
+        onToggleLike={onToggleLike}
+        post={post}
+      />
+    </View>
+  );
+});
+
+const FeedHeader = memo(function FeedHeader({
   count,
   error,
   onCreateStory,
@@ -399,7 +468,7 @@ function FeedHeader({
       </View>
 
       <ScrollView contentContainerStyle={styles.filterRow} horizontal showsHorizontalScrollIndicator={false}>
-        {['Dành cho bạn', 'Following', 'Fresh drops', 'Saved'].map((filter, index) => (
+        {FEED_FILTERS.map((filter, index) => (
           <View key={filter} style={[styles.filterChip, index === 0 ? styles.filterChipActive : null]}>
             <Text style={[styles.filterText, index === 0 ? styles.filterTextActive : null]}>{filter}</Text>
           </View>
@@ -414,7 +483,7 @@ function FeedHeader({
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   badge: {
