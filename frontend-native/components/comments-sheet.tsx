@@ -296,7 +296,7 @@ export function CommentsSheet({
           style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           <View style={styles.grabber} />
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Binh luan</Text>
+            <Text style={styles.sheetTitle}>Bình luận</Text>
             <Pressable hitSlop={10} onPress={onClose} style={styles.closeButton}>
               <Ionicons color={AppColors.text} name="close" size={22} />
             </Pressable>

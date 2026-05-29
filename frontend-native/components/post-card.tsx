@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -47,7 +48,7 @@ const formatRelativeTime = (value: string) => {
   const day = 24 * hour;
 
   if (diffMs < minute) {
-    return "vua xong";
+    return "vừa xong";
   }
 
   if (diffMs < hour) {
@@ -55,7 +56,7 @@ const formatRelativeTime = (value: string) => {
   }
 
   if (diffMs < day) {
-    return `${Math.floor(diffMs / hour)} giò trước`;
+    return `${Math.floor(diffMs / hour)} giờ trước`;
   }
 
   return `${Math.floor(diffMs / day)} ngày trước`;
@@ -72,6 +73,7 @@ const PostCard = memo(function PostCard({
 }: PostCardProps) {
   const { width } = useWindowDimensions();
   const [showOwnerActions, setShowOwnerActions] = useState(false);
+  const [showUsersACtions, setShowUsersActions] = useState(false);
   const ownerCanManage = Number(currentUserId) === Number(post.user_id);
   const mediaWidth = Math.max(260, Math.min(width - 68, 520));
   const fallbackTone = palette[post.post_id % palette.length];
@@ -149,29 +151,126 @@ const PostCard = memo(function PostCard({
             />
           </Pressable>
         ) : (
-          <Ionicons
-            color={AppColors.text}
-            name="ellipsis-horizontal"
-            size={20}
-          />
+          <Pressable
+            hitSlop={10}
+            onPress={() => setShowUsersActions((value) => !value)}
+          >
+            <Ionicons
+              color={AppColors.text}
+              name="ellipsis-horizontal"
+              size={20}
+            />
+          </Pressable>
         )}
       </View>
 
+      {/* Hiển thị actions khi bài post này là của người đang đăng nhập*/}
       {ownerCanManage && showOwnerActions ? (
-        <View style={styles.ownerActions}>
+        <Modal transparent animationType="fade">
           <Pressable
-            onPress={() => onEdit?.(post)}
-            style={styles.ownerActionButton}
+            style={styles.modal}
+            onPress={() => setShowOwnerActions((value) => !value)}
           >
-            <Ionicons color={AppColors.text} name="create-outline" size={17} />
-            <Text style={styles.ownerActionText}>Sữa</Text>
+            <View style={styles.ownerActions}>
+              <Pressable
+                onPress={() => onEdit?.(post)}
+                style={styles.ownerActionButton}
+              >
+                <Ionicons
+                  color={AppColors.text}
+                  name="create-outline"
+                  size={17}
+                />
+                <Text style={styles.actionText}>Sữa</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleDelete}
+                style={styles.ownerActionButton}
+              >
+                <Ionicons
+                  color={AppColors.accent}
+                  name="trash-outline"
+                  size={17}
+                />
+                <Text style={[styles.actionText, styles.deleteText]}>
+                  Xóa
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setShowOwnerActions((value) => !value)}
+                style={styles.ownerActionButton}
+              >
+                <Text style={[styles.actionText]}>
+                  Hủy
+                </Text>
+              </Pressable>
+            </View>
           </Pressable>
-          <Pressable onPress={handleDelete} style={styles.ownerActionButton}>
-            <Ionicons color={AppColors.accent} name="trash-outline" size={17} />
-            <Text style={[styles.ownerActionText, styles.deleteText]}>Xóa</Text>
-          </Pressable>
-        </View>
+        </Modal>
       ) : null}
+
+      {/* Hiển thị actions khi bài posts này là của người khác */}
+      {showUsersACtions && (
+        <Modal transparent animationType="fade">
+          <Pressable
+            style={styles.modal}
+            onPress={() => setShowUsersActions((value) => !value)}
+          >
+            <View style={styles.ownerActions}>
+              <Pressable
+                onPress={() => onEdit?.(post)}
+                style={styles.ownerActionButton}
+              >
+                <Text style={styles.actionText}>Lưu bài viết</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleDelete}
+                style={styles.ownerActionButton}
+              >
+                <Text style={[styles.actionText, styles.deleteText]}>
+                  Báo cáo
+                </Text>
+              </Pressable>
+              <Pressable
+               style={styles.ownerActionButton}
+              >
+                <Text style={[styles.actionText]}>
+                  Chia sẽ lên
+                </Text>
+              </Pressable>
+              <Pressable
+               style={styles.ownerActionButton}
+              >
+                <Text style={[styles.actionText]}>
+                  Sao chép liên kết
+                </Text>
+              </Pressable>
+              <Pressable
+               style={styles.ownerActionButton}
+              >
+                <Text style={[styles.actionText]}>
+                  Đi đến bài viết
+                </Text>
+              </Pressable>
+              <Pressable
+               style={styles.ownerActionButton}
+              >
+                <Text style={[styles.actionText]}>
+                  Xem profile
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setShowUsersActions((value) => !value)}
+                style={styles.ownerActionButton}
+              >
+                <Text style={[styles.actionText]}>
+                  Hủy
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
+      )}
 
       {imageUrls.length > 0 ? (
         <ScrollView
@@ -208,22 +307,28 @@ const PostCard = memo(function PostCard({
             onPress={() => onToggleLike?.(post)}
             style={styles.iconButton}
           >
-            <Ionicons
-              color={post.liked_by_me ? AppColors.accent : AppColors.text}
-              name={post.liked_by_me ? "heart" : "heart-outline"}
-              size={24}
-            />
+            <View style={styles.likeContainer}>
+              <Ionicons
+                color={post.liked_by_me ? AppColors.accent : AppColors.text}
+                name={post.liked_by_me ? "heart" : "heart-outline"}
+                size={24}
+              />
+              <Text style={styles.likes}>{post.like_count}</Text>
+            </View>
           </Pressable>
           <Pressable
             hitSlop={10}
             onPress={() => onOpenComments?.(post)}
             style={styles.iconButton}
           >
-            <Ionicons
-              color={AppColors.text}
-              name="chatbubble-outline"
-              size={22}
-            />
+            <View style={styles.commentContainer}>
+              <Ionicons
+                color={AppColors.text}
+                name="chatbubble-outline"
+                size={22}
+              />
+              <Text>{post.comment_count}</Text>
+            </View>
           </Pressable>
           <Ionicons
             color={AppColors.text}
@@ -235,7 +340,6 @@ const PostCard = memo(function PostCard({
         <Ionicons color={AppColors.text} name="bookmark-outline" size={22} />
       </View>
 
-      <Text style={styles.likes}>{post.like_count} likes</Text>
       {post.content ? (
         <Text style={styles.caption}>
           <Text style={styles.captionUser}>
@@ -245,9 +349,7 @@ const PostCard = memo(function PostCard({
         </Text>
       ) : null}
       <Pressable onPress={() => onOpenComments?.(post)}>
-        <Text style={styles.meta}>
-          {post.comment_count} bình luận - {formatRelativeTime(post.created_at)}
-        </Text>
+        <Text style={styles.meta}>{formatRelativeTime(post.created_at)}</Text>
       </Pressable>
     </View>
   );
@@ -259,7 +361,7 @@ const styles = StyleSheet.create({
   actionGroup: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 16,
+    gap: 20,
   },
   actions: {
     alignItems: "center",
@@ -276,17 +378,18 @@ const styles = StyleSheet.create({
   },
   captionUser: {
     fontFamily: AppFonts.heading,
+    fontWeight: "600",
   },
   card: {
     backgroundColor: AppColors.surface,
     borderRadius: 24,
-    elevation: 4,
     overflow: "hidden",
     padding: 16,
-    shadowColor: AppColors.shadow,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+    // elevation: 4,
+    // shadowColor: AppColors.shadow,
+    // shadowOffset: { width: 0, height: 12 },
+    // shadowOpacity: 0.08,
+    // shadowRadius: 20,
   },
   deleteText: {
     color: AppColors.accent,
@@ -303,11 +406,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 32,
   },
+  likeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    justifyContent: "center",
+  },
   likes: {
     color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 14,
-    paddingTop: 14,
+  },
+  commentContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
   },
   location: {
     color: AppColors.muted,
@@ -316,7 +429,7 @@ const styles = StyleSheet.create({
     maxWidth: 210,
   },
   mediaFrame: {
-    borderRadius: 18,
+    borderRadius: 8,
     overflow: "hidden",
   },
   mediaImage: {
@@ -330,23 +443,33 @@ const styles = StyleSheet.create({
   },
   ownerActionButton: {
     alignItems: "center",
-    backgroundColor: AppColors.surfaceMuted,
+    // backgroundColor: AppColors.surfaceMuted,
     borderRadius: 999,
     flexDirection: "row",
     gap: 6,
     minHeight: 36,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    justifyContent: "center",
   },
-  ownerActionText: {
+  actionText: {
     color: AppColors.text,
     fontFamily: AppFonts.heading,
-    fontSize: 13,
+    fontSize: 16,
+  },
+  modal: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.22)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   ownerActions: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 8,
-    justifyContent: "flex-end",
-    paddingBottom: 12,
+    backgroundColor: "#fff",
+    justifyContent: "space-around",
+    borderRadius: 12,
+    padding: 12,
+    minWidth: "70%",
   },
   userMeta: {
     gap: 3,
