@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -61,7 +61,7 @@ const formatRelativeTime = (value: string) => {
   return `${Math.floor(diffMs / day)} ngày trước`;
 };
 
-export function PostCard({
+const PostCard = memo(function PostCard({
   currentUserId,
   onDelete,
   onEdit,
@@ -92,7 +92,7 @@ export function PostCard({
     [post.media],
   );
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     Alert.alert("Xóa bài viết", "Bạn chắc chắn muốn xóa bài viết này?", [
       { style: "cancel", text: " Hủy" },
       {
@@ -101,7 +101,7 @@ export function PostCard({
         text: "Xóa",
       },
     ]);
-  };
+  }, [onDelete, post]);
 
   return (
     <View style={styles.card}>
@@ -251,7 +251,9 @@ export function PostCard({
       </Pressable>
     </View>
   );
-}
+});
+
+export default PostCard;
 
 const styles = StyleSheet.create({
   actionGroup: {
