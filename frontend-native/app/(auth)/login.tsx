@@ -25,6 +25,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const usernameRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -123,12 +124,27 @@ export default function LoginScreen() {
                   placeholder="••••••••"
                   placeholderTextColor={AppColors.tabInactive}
                   returnKeyType="done"
-                  secureTextEntry
+                 {...(!showPassword ? { secureTextEntry: true } : {})}
                   style={styles.input}
                   value={password}
                   onSubmitEditing={handleSubmit}
                   ref={passwordRef}
                 />
+                <Pressable  onPress={() => setShowPassword((value) => !value)} hitSlop={10}>
+                  {showPassword ? (
+                    <Ionicons
+                      color={AppColors.muted}
+                      name="eye-outline"
+                      size={20}
+                    />
+                  ) : (
+                    <Ionicons
+                      color={AppColors.muted}
+                      name="eye-off-outline"
+                      size={20}
+                    />
+                  )}
+                </Pressable>
               </View>
             </View>
 
