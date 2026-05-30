@@ -570,6 +570,8 @@ const FeedPostItem = memo(function FeedPostItem({
   );
 });
 
+FeedPostItem.displayName = "FeedPostItem";
+
 const FeedHeader = memo(function FeedHeader({
   count,
   error,
@@ -630,6 +632,8 @@ const FeedHeader = memo(function FeedHeader({
     </View>
   );
 });
+
+FeedHeader.displayName = "FeedHeader";
 
 const styles = StyleSheet.create({
   badge: {

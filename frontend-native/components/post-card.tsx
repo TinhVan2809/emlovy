@@ -181,7 +181,7 @@ const PostCard = memo(function PostCard({
                   name="create-outline"
                   size={17}
                 />
-                <Text style={styles.actionText}>Sữa</Text>
+                <Text style={styles.actionText}>Sửa</Text>
               </Pressable>
               <Pressable
                 onPress={handleDelete}
@@ -354,6 +354,8 @@ const PostCard = memo(function PostCard({
     </View>
   );
 });
+
+PostCard.displayName = "PostCard";
 
 export default PostCard;
 

@@ -61,6 +61,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="reels"
         options={{
+          tabBarActiveTintColor: AppColors.surface, // Màu trắng cho icon khi ở tab Reels
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
+          tabBarStyle: {
+            ...styles.tabBar,
+            backgroundColor: '#000000',
+            position: 'absolute',
+            borderTopWidth: 0,
+            elevation: 0, 
+            bottom: 0,
+          },
           tabBarIcon: ({ color, focused }) => renderIcon('reels', focused, color),
         }}
       />
