@@ -300,7 +300,6 @@ export default function ReelsScreen() {
       <ReelCard
         currentUserId={user?.user_id}
         height={reelHeight}
-        tabBarHeight={tabBarHeight}
         isActive={isFocused && activeReelId === item.post_id}
         shouldLoad={shouldLoad}
         onDelete={handleDelete}
@@ -427,7 +426,6 @@ export default function ReelsScreen() {
 function ReelCard({
   currentUserId,
   height,
-  tabBarHeight,
   isActive,
   shouldLoad,
   onDelete,
@@ -439,7 +437,6 @@ function ReelCard({
 }: {
   currentUserId?: number | null;
   height: number;
-  tabBarHeight: number;
   isActive: boolean;
   shouldLoad: boolean;
   onDelete: (reel: Reel) => void;
@@ -474,7 +471,7 @@ function ReelCard({
         </View>
       )}
 
-      <View style={[styles.sideRail, { bottom: 34 + tabBarHeight }]}>
+      <View style={styles.sideRail}>
         <RailButton
           active={reel.liked_by_me}
           icon={reel.liked_by_me ? "heart" : "heart-outline"}
@@ -489,19 +486,19 @@ function ReelCard({
         {/* More options */}
         <RailButton
           icon="ellipsis-horizontal"
-          label="More"
+          label=""
           onPress={() => setShowActions(true)}
         />
-        <Pressable onPress={onToggleMute}>
+        <Pressable onPress={onToggleMute} hitSlop={10}>
           <Ionicons
             color={AppColors.surface}
             name={isMuted ? "volume-mute" : "volume-high"}
-            size={19}
+            size={22}
           />
         </Pressable>
       </View>
 
-      <View style={[styles.reelInfo, { bottom: 28 + tabBarHeight }]}>
+      <View style={styles.reelInfo}>
         <View style={styles.authorRow}>
           <UserAvatar imageUrl={avatarUrl} name={authorName} size={42} />
           <View style={styles.authorMeta}>
@@ -600,11 +597,41 @@ function ReelVideo({
 }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const containerWidth = useRef(0);
 
   const player = useVideoPlayer(uri, (nextPlayer) => {
     nextPlayer.loop = true;
     nextPlayer.muted = isMuted;
   });
+
+  const handleSeek = (event: any) => {
+    const touchX = event.nativeEvent.locationX;
+    if (containerWidth.current > 0 && player.duration > 0) {
+      const seekPercentage = Math.max(
+        0,
+        Math.min(1, touchX / containerWidth.current),
+      );
+      player.currentTime = seekPercentage * player.duration;
+      setProgress(seekPercentage);
+    }
+  };
+
+  // Theo dõi tiến trình video
+  useEffect(() => {
+    if (!isActive) {
+      setProgress(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (player.duration > 0) {
+        setProgress(player.currentTime / player.duration);
+      }
+    }, 100); // Cập nhật mỗi 100ms để thanh chạy mượt mà
+
+    return () => clearInterval(interval);
+  }, [isActive, player]);
 
   useEffect(() => {
     player.muted = isMuted;
@@ -650,6 +677,18 @@ function ReelVideo({
         player={player}
         style={StyleSheet.absoluteFill}
       />
+
+      {/* Thanh tiến trình (Progress Bar) */}
+      <Pressable
+        onLayout={(e) => (containerWidth.current = e.nativeEvent.layout.width)}
+        onPress={handleSeek}
+        style={styles.progressBarContainer}
+      >
+        <View style={styles.progressBarTrack}>
+          <View style={[styles.progressBar, { width: `${progress * 100}%` }]} />
+        </View>
+      </Pressable>
+
       {isBuffering && isActive && !isManuallyPaused ? (
         <View pointerEvents="none" style={styles.loadingOverlay}>
           <ActivityIndicator color="rgba(255,255,255,0.6)" size="small" />
@@ -1211,5 +1250,23 @@ const styles = StyleSheet.create({
   },
   destructiveText: {
     color: AppColors.accent,
+  },
+  progressBarContainer: {
+    bottom: 0,
+    height: 30, // Vùng chạm rộng hơn để dễ thao tác
+    left: 0,
+    position: "absolute",
+    right: 0,
+    zIndex: 10,
+    justifyContent: "flex-end",
+  },
+  progressBarTrack: {
+    backgroundColor: "rgba(255, 255, 255, 0.24)",
+    height: 2,
+    width: "100%",
+  },
+  progressBar: {
+    backgroundColor: AppColors.surface,
+    height: "100%",
   },
 });
