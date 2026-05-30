@@ -4,6 +4,7 @@ import { useIsFocused } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ComponentProps } from "react";
 import type { ViewToken } from "react-native";
@@ -91,10 +92,14 @@ export default function ReelsScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<number>>(() => new Set());
 
-  const reelHeight = Math.max(520, height - tabBarHeight);
+  // Sử dụng toàn bộ chiều cao màn hình để video tràn dưới Tab Bar
+  const reelHeight = height;
   const selectedCommentReel = commentReelId
     ? reels.find((reel) => reel.post_id === commentReelId) || null
     : null;
+
+  // Tìm index của reel đang hoạt động để tính toán load lân cận
+  const activeIndex = reels.findIndex((r) => r.post_id === activeReelId);
 
   const patchReel = useCallback((reelId: number, patch: Partial<Reel>) => {
     setReels((current) =>
@@ -286,21 +291,37 @@ export default function ReelsScreen() {
     patchReel(postId, { comment_count: commentCount });
   };
 
-  const renderReel = ({ item }: { item: Reel }) => (
-    <ReelCard
-      currentUserId={user?.user_id}
-      height={reelHeight}
-      isActive={isFocused && activeReelId === item.post_id}
-      onDelete={handleDelete}
-      onOpenComments={(reel) => setCommentReelId(reel.post_id)}
-      onToggleLike={handleToggleLike}
-      reel={item}
-    />
-  );
+  const renderReel = ({ item, index }: { item: Reel; index: number }) => {
+    // Chỉ load video cho item hiện tại, item trước đó và item kế tiếp (Preload 1)
+    const shouldLoad = Math.abs(index - activeIndex) <= 1;
+
+    return (
+      <ReelCard
+        currentUserId={user?.user_id}
+        height={reelHeight}
+        tabBarHeight={tabBarHeight}
+        isActive={isFocused && activeReelId === item.post_id}
+        shouldLoad={shouldLoad}
+        onDelete={handleDelete}
+        onOpenComments={(reel) => setCommentReelId(reel.post_id)}
+        onToggleLike={handleToggleLike}
+        reel={item}
+      />
+    );
+  };
 
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
+
+      {/* Đổ bóng gradient cố định giúp hiển thị Status Bar và Header rõ nét hơn */}
+      <LinearGradient
+        colors={["rgba(0,0,0,0.7)", "rgba(0,0,0,0.3)", "transparent"]}
+        locations={[0, 0.4, 1]}
+        pointerEvents="none"
+        style={styles.fixedTopShade}
+      />
+
       <View
         pointerEvents="box-none"
         style={[styles.header, { paddingTop: insets.top + 8 }]}
@@ -350,6 +371,10 @@ export default function ReelsScreen() {
           ) : null
         }
         data={reels}
+        windowSize={5} // Giữ 5 item trong bộ nhớ (vừa đủ cho preload)
+        initialNumToRender={2}
+        maxToRenderPerBatch={2}
+        disableIntervalMomentum={true}
         decelerationRate="fast"
         getItemLayout={(_data, index) => ({
           index,
@@ -371,6 +396,7 @@ export default function ReelsScreen() {
         }
         renderItem={renderReel}
         showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="never" // Ngăn chặn iOS tự động thêm padding cho an toàn
         snapToAlignment="start"
         snapToInterval={reelHeight}
         viewabilityConfig={viewabilityConfig}
@@ -398,7 +424,9 @@ export default function ReelsScreen() {
 function ReelCard({
   currentUserId,
   height,
+  tabBarHeight,
   isActive,
+  shouldLoad,
   onDelete,
   onOpenComments,
   onToggleLike,
@@ -406,13 +434,16 @@ function ReelCard({
 }: {
   currentUserId?: number | null;
   height: number;
+  tabBarHeight: number;
   isActive: boolean;
+  shouldLoad: boolean;
   onDelete: (reel: Reel) => void;
   onOpenComments: (reel: Reel) => void;
   onToggleLike: (reel: Reel) => void;
   reel: Reel;
 }) {
   const videoUrl = getReelVideoUrl(reel);
+  const [showActions, setShowActions] = useState(false);
   const authorName = reel.author?.name || "Emlovy User";
   const authorHandle = reel.author?.username
     ? `@${reel.author.username}`
@@ -424,7 +455,7 @@ function ReelCard({
 
   return (
     <View style={[styles.reelPage, { height }]}>
-      {videoUrl ? (
+      {videoUrl && shouldLoad ? (
         <ReelVideo isActive={isActive} uri={videoUrl} />
       ) : (
         <View style={styles.videoFallback}>
@@ -436,10 +467,9 @@ function ReelCard({
         </View>
       )}
 
-      <View pointerEvents="none" style={styles.topShade} />
       <View pointerEvents="none" style={styles.bottomShade} />
 
-      <View style={styles.sideRail}>
+      <View style={[styles.sideRail, { bottom: 34 + tabBarHeight }]}>
         <RailButton
           active={reel.liked_by_me}
           icon={reel.liked_by_me ? "heart" : "heart-outline"}
@@ -451,6 +481,19 @@ function ReelCard({
           label={formatCount(reel.comment_count)}
           onPress={() => onOpenComments(reel)}
         />
+        <RailButton
+          icon="share-social-outline"
+          label="Share"
+          onPress={() => {
+            // Handle share action
+          }}
+        />
+        {/* More options */}
+        <RailButton
+          icon="ellipsis-horizontal"
+          label="More"
+          onPress={() => setShowActions(true)}
+        />
         {ownerCanDelete ? (
           <RailButton
             destructive
@@ -461,13 +504,18 @@ function ReelCard({
         ) : null}
       </View>
 
-      <View style={styles.reelInfo}>
+      <View style={[styles.reelInfo, { bottom: 28 + tabBarHeight }]}>
         <View style={styles.authorRow}>
           <UserAvatar imageUrl={avatarUrl} name={authorName} size={42} />
           <View style={styles.authorMeta}>
-            <Text numberOfLines={1} style={styles.authorName}>
-              {authorName}
-            </Text>
+            <View style={styles.authorContainer}>
+              <Text numberOfLines={1} style={styles.authorName}>
+                {authorName}
+              </Text>
+              <Pressable style={styles.followBox}>
+                <Text style={styles.followText}>Follow</Text>
+              </Pressable>
+            </View>
             <Text numberOfLines={1} style={styles.authorHandle}>
               {authorHandle}
             </Text>
@@ -480,16 +528,67 @@ function ReelCard({
           </Text>
         ) : null}
       </View>
+
+      <Modal animationType="fade" transparent visible={showActions}>
+        <Pressable
+          style={styles.actionModalBackdrop}
+          onPress={() => setShowActions(false)}
+        >
+          <View style={styles.actionMenu}>
+            <Pressable
+              style={styles.actionItem}
+              onPress={() => {
+                setShowActions(false); /* Logic lưu Reel */
+              }}
+            >
+              <Text style={styles.actionItemText}>Lưu Reel</Text>
+            </Pressable>
+            <Pressable
+              style={styles.actionItem}
+              onPress={() => {
+                setShowActions(false); /* Logic copy link */
+              }}
+            >
+              <Text style={styles.actionItemText}>Sao chép liên kết</Text>
+            </Pressable>
+            <Pressable
+              style={styles.actionItem}
+              onPress={() => {
+                setShowActions(false); /* Logic báo cáo */
+              }}
+            >
+              <Text style={[styles.actionItemText, styles.destructiveText]}>
+                Báo cáo
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.actionItem, { borderBottomWidth: 0 }]}
+              onPress={() => setShowActions(false)}
+            >
+              <Text style={styles.actionItemText}>Hủy</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 function ReelVideo({ isActive, uri }: { isActive: boolean; uri: string }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
+
   const player = useVideoPlayer(uri, (nextPlayer) => {
     nextPlayer.loop = true;
     nextPlayer.muted = false;
   });
+
+  useEffect(() => {
+    const sub = player.addListener("statusChange", ({ status }) => {
+      setIsBuffering(status === "loading");
+    });
+    return () => sub.remove();
+  }, [player]);
 
   useEffect(() => {
     if (!isActive) {
@@ -517,13 +616,18 @@ function ReelVideo({ isActive, uri }: { isActive: boolean; uri: string }) {
     <Pressable onPress={handleTogglePlayback} style={styles.videoSurface}>
       <VideoView
         fullscreenOptions={{
-         enable: true
+          enable: true,
         }}
         contentFit="cover"
         nativeControls={false}
         player={player}
         style={StyleSheet.absoluteFill}
       />
+      {isBuffering && isActive && !isManuallyPaused ? (
+        <View pointerEvents="none" style={styles.loadingOverlay}>
+          <ActivityIndicator color="rgba(255,255,255,0.6)" size="small" />
+        </View>
+      ) : null}
       {isActive && isManuallyPaused ? (
         <View pointerEvents="none" style={styles.pauseBadge}>
           <Ionicons color={AppColors.surface} name="play" size={26} />
@@ -772,6 +876,21 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  authorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  followBox: {
+    borderWidth: 1,
+    borderColor: "#fff",
+    paddingHorizontal: 8,
+    borderRadius: 20,
+  },
+  followText: {
+    color: "#fff",
+    fontSize: 12,
+  },
   authorName: {
     color: AppColors.surface,
     fontFamily: AppFonts.heading,
@@ -999,13 +1118,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 12,
   },
-  topShade: {
-    backgroundColor: "rgba(0,0,0,0.22)",
-    height: 130,
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
+  },
+  fixedTopShade: {
+    // Đổ bóng gradient hoặc đặc hơn một chút ở vùng Dynamic Island
+    // backgroundColor: "rgba(0,0,0,0.3)",
+    height: 140,
     left: 0,
     position: "absolute",
     right: 0,
     top: 0,
+    zIndex: 9, // Nằm dưới Header (zIndex 10) nhưng trên FlatList
   },
   videoFallback: {
     alignItems: "center",
@@ -1039,5 +1166,31 @@ const styles = StyleSheet.create({
   videoSurface: {
     backgroundColor: "#050505",
     flex: 1,
+  },
+  actionModalBackdrop: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    flex: 1,
+    justifyContent: "center",
+  },
+  actionMenu: {
+    backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    overflow: "hidden",
+    width: "75%",
+  },
+  actionItem: {
+    alignItems: "center",
+    borderBottomColor: AppColors.border,
+    borderBottomWidth: 1,
+    paddingVertical: 16,
+  },
+  actionItemText: {
+    color: AppColors.text,
+    fontFamily: AppFonts.heading,
+    fontSize: 16,
+  },
+  destructiveText: {
+    color: AppColors.accent,
   },
 });

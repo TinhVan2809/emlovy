@@ -61,6 +61,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="reels"
         options={{
+          tabBarActiveTintColor: AppColors.surface, // Màu trắng cho icon khi ở tab Reels
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
+          tabBarStyle: {
+            ...styles.tabBar,
+            backgroundColor: 'transparent',
+            position: 'absolute',
+            borderTopWidth: 0,
+            elevation: 0, // Xóa shadow trên Android
+            bottom: 0,
+          },
           tabBarIcon: ({ color, focused }) => renderIcon('reels', focused, color),
         }}
       />
