@@ -355,6 +355,8 @@ const PostCard = memo(function PostCard({
   );
 });
 
+PostCard.displayName = "PostCard";
+
 export default PostCard;
 
 const styles = StyleSheet.create({

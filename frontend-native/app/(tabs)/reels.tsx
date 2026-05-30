@@ -5,8 +5,8 @@ import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { ComponentProps } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import type { ComponentProps} from "react";
 import type { ViewToken } from "react-native";
 import {
   ActivityIndicator,
@@ -181,7 +181,7 @@ export default function ReelsScreen() {
     loadReels(pagination.page + 1, false);
   };
 
-  const handleToggleLike = async (reel: Reel) => {
+  const handleToggleLike = useCallback(async (reel: Reel) => {
     if (!token) {
       setError("Ban can dang nhap de thich reel.");
       return;
@@ -225,9 +225,9 @@ export default function ReelsScreen() {
         return next;
       });
     }
-  };
+  }, [token, likingIds, patchReel]);
 
-  const handleDelete = (reel: Reel) => {
+  const handleDelete = useCallback((reel: Reel) => {
     if (!token) {
       setError("Ban can dang nhap de xoa reel.");
       return;
@@ -261,7 +261,7 @@ export default function ReelsScreen() {
         },
       ],
     );
-  };
+  }, [token, loadReels]);
 
   const handleCreateReel = async (input: CreateReelInput) => {
     if (!token) {
@@ -293,7 +293,7 @@ export default function ReelsScreen() {
     patchReel(postId, { comment_count: commentCount });
   };
 
-  const renderReel = ({ item, index }: { item: Reel; index: number }) => {
+   const renderReel = useCallback(({ item, index }: { item: Reel; index: number }) => {
     // Chỉ load video cho item hiện tại, item trước đó và item kế tiếp (Preload 1)
     const shouldLoad = Math.abs(index - activeIndex) <= 1;
 
@@ -312,7 +312,7 @@ export default function ReelsScreen() {
         tabBarHeight={tabBarHeight}
       />
     );
-  };
+  }, [activeIndex, isFocused, activeReelId, isGlobalMuted, reelHeight, tabBarHeight, user?.user_id, handleDelete, handleToggleLike]);
 
   const handleLayout = useCallback((e: any) => {
     const { height: layoutHeight } = e.nativeEvent.layout;
@@ -382,9 +382,11 @@ export default function ReelsScreen() {
           ) : null
         }
         data={reels}
-        windowSize={5} // Giữ 5 item trong bộ nhớ (vừa đủ cho preload)
-        initialNumToRender={2}
-        maxToRenderPerBatch={2}
+          windowSize={3} // Giảm xuống 3 để tiết kiệm RAM (1 hiện tại, 1 trên, 1 dưới)
+        initialNumToRender={1}
+        maxToRenderPerBatch={1}
+        updateCellsBatchingPeriod={100}
+        removeClippedSubviews={Platform.OS === 'android'}
         disableIntervalMomentum={true}
         decelerationRate="fast"
         getItemLayout={(_data, index) => ({
@@ -432,7 +434,7 @@ export default function ReelsScreen() {
   );
 }
 
-function ReelCard({
+ const ReelCard = memo(({
   currentUserId,
   height,
   isActive,
@@ -456,7 +458,7 @@ function ReelCard({
   onToggleMute: () => void;
   reel: Reel;
   tabBarHeight: number;
-}) {
+}) => {
   const videoUrl = getReelVideoUrl(reel);
   const [showActions, setShowActions] = useState(false);
   const authorName = reel.author?.name || "Emlovy User";
@@ -600,7 +602,9 @@ function ReelCard({
       </Modal>
     </View>
   );
-}
+});
+
+ReelCard.displayName = "ReelCard";
 
 function ReelVideo({
   isActive,
