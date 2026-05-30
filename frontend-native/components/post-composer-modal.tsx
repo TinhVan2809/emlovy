@@ -236,7 +236,7 @@ export function PostComposerModal({
 
             <View style={styles.mediaBlock}>
               <View style={styles.mediaHeader}>
-                <Text style={styles.mediaTitle}>Hinh anh</Text>
+                <Text style={styles.mediaTitle}>Hình ảnh</Text>
                 <Pressable disabled={isSubmitting} onPress={handlePickImages} style={styles.mediaButton}>
                   <Ionicons color={AppColors.surface} name="images-outline" size={18} />
                   <Text style={styles.mediaButtonText}>
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   contentInput: {
-    backgroundColor: AppColors.surfaceMuted,
+    // backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
     borderRadius: 18,
     borderWidth: 1,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   emptyPicker: {
     alignItems: 'center',
-    backgroundColor: AppColors.surfaceMuted,
+    // backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
     borderRadius: 18,
     borderStyle: 'dashed',
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     alignItems: 'center',
-    backgroundColor: AppColors.surfaceMuted,
+    // backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
     borderRadius: 16,
     borderWidth: 1,
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   },
   visibilityChip: {
     alignItems: 'center',
-    backgroundColor: AppColors.surfaceMuted,
+    // backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
     borderRadius: 999,
     borderWidth: 1,

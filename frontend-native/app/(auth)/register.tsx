@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
-import { useState, useRef, useEffect, forwardRef } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { Link } from "expo-router";
+import { useState, useRef, useEffect, forwardRef } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,24 +11,25 @@ import {
   Text,
   TextInput,
   View,
-  Image
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  Image,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Routes } from '@/constants/routes';
-import { AppColors, AppFonts } from '@/constants/theme';
-import { useAuth } from '@/contexts/auth-context';
+import { Routes } from "@/constants/routes";
+import { AppColors, AppFonts } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function RegisterScreen() {
   const { register } = useAuth();
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const nameRef = useRef<TextInput>(null);
   const usernameRef = useRef<TextInput>(null);
@@ -39,31 +40,30 @@ export default function RegisterScreen() {
 
   useEffect(() => {
     nameRef.current?.focus();
-  },[]);
-
+  }, []);
 
   // 1. name => username
   const onSubmitNameEditing = () => {
     usernameRef.current?.focus();
-  }
+  };
 
   // 2. username => email
   const onSubmitUsernameEditing = () => {
     emailRef.current?.focus();
-  }
-  
-  // 3. email => number phone 
+  };
+
+  // 3. email => number phone
   const onSubmitEmailediting = () => {
     phoneRef.current?.focus();
-  }
+  };
   // 4. number phone => passowrd
   const onSubmitPhoneEditing = () => {
     passwordRef.current?.focus();
-  }
+  };
   // 5. passowrd => confirm passowrd
   const onSubmitPasswordEditing = () => {
     confirmPasswordRef.current?.focus();
-  }
+  };
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -78,12 +78,12 @@ export default function RegisterScreen() {
     }
 
     if (password !== confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp.');
+      setError("Mật khẩu xác nhận không khớp.");
       return;
     }
 
     setIsSubmitting(true);
-    setError('');
+    setError("");
 
     try {
       await register({
@@ -94,7 +94,11 @@ export default function RegisterScreen() {
         username,
       });
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Đăng ký không thành công.');
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Đăng ký không thành công.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -103,16 +107,24 @@ export default function RegisterScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.select({ ios: 'padding', default: undefined })}
-        style={styles.keyboard}>
+        behavior={Platform.select({ ios: "padding", default: undefined })}
+        style={styles.keyboard}
+      >
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.header}>
-            <Image source={require('../../assets/images/logo.png')} style={styles.img}/>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.img}
+            />
             <Text style={styles.brand}>Create Your Account</Text>
-            <Text style={styles.heading}>Tạo một tài khoản mới để bắt đầu và tận hưởng quyền truy cập liền mạch vào các tính năng của chúng tôi.</Text>
+            <Text style={styles.heading}>
+              Tạo một tài khoản mới để bắt đầu và tận hưởng quyền truy cập liền
+              mạch vào các tính năng của chúng tôi.
+            </Text>
           </View>
 
           <View style={styles.form}>
@@ -124,7 +136,6 @@ export default function RegisterScreen() {
               value={name}
               onSubmitEditing={onSubmitNameEditing}
               ref={nameRef}
-
             />
             <AuthInput
               autoCapitalize="none"
@@ -157,23 +168,29 @@ export default function RegisterScreen() {
               onSubmitEditing={onSubmitPhoneEditing}
               ref={phoneRef}
             />
+
             <AuthInput
               icon="lock-closed-outline"
               label="Mật khẩu"
               onChangeText={setPassword}
               placeholder="••••••••"
-              secureTextEntry
               value={password}
               onSubmitEditing={onSubmitPasswordEditing}
               ref={passwordRef}
+              onTogglePassword={() => setShowPassword((v) => !v)}
+              showPassword={showPassword}
+              {...(!showPassword ? { secureTextEntry: true } : {})}
             />
+
             <AuthInput
               icon="shield-checkmark-outline"
               label="Xác nhận mật khẩu"
               onChangeText={setConfirmPassword}
               onSubmitEditing={handleSubmit}
               placeholder="••••••••"
-              secureTextEntry
+              {...(!showPassword ? { secureTextEntry: true } : {})}
+              onTogglePassword={() => setShowPassword((v) => !v)}
+              showPassword={showPassword}
               value={confirmPassword}
               ref={confirmPasswordRef}
             />
@@ -187,13 +204,18 @@ export default function RegisterScreen() {
                 styles.primaryButton,
                 !canSubmit ? styles.primaryButtonDisabled : null,
                 pressed ? styles.primaryButtonPressed : null,
-              ]}>
+              ]}
+            >
               {isSubmitting ? (
                 <ActivityIndicator color={AppColors.surface} />
               ) : (
                 <>
                   <Text style={styles.primaryButtonText}>Tạo tài khoản</Text>
-                  <Ionicons color={AppColors.surface} name="arrow-forward" size={18} />
+                  <Ionicons
+                    color={AppColors.surface}
+                    name="arrow-forward"
+                    size={18}
+                  />
                 </>
               )}
             </Pressable>
@@ -214,14 +236,16 @@ export default function RegisterScreen() {
 }
 
 type AuthInputProps = {
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
   icon: keyof typeof Ionicons.glyphMap;
-  keyboardType?: 'default' | 'email-address' | 'phone-pad';
+  keyboardType?: "default" | "email-address" | "phone-pad";
   label: string;
   onChangeText: (value: string) => void;
   onSubmitEditing?: () => void;
   placeholder: string;
   secureTextEntry?: boolean;
+  showPassword?: boolean;
+  onTogglePassword?: () => void;
   value: string;
 };
 
@@ -236,9 +260,11 @@ const AuthInput = forwardRef<TextInput, AuthInputProps>(
       onSubmitEditing,
       placeholder,
       secureTextEntry,
+      showPassword,
+      onTogglePassword,
       value,
     },
-    ref
+    ref,
   ) => {
     return (
       <View style={styles.inputGroup}>
@@ -260,10 +286,20 @@ const AuthInput = forwardRef<TextInput, AuthInputProps>(
             value={value}
             ref={ref}
           />
+
+          {onTogglePassword && (
+            <Pressable hitSlop={10} onPress={onTogglePassword}>
+              <Ionicons
+                color={AppColors.muted}
+                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                size={20}
+              />
+            </Pressable>
+          )}
         </View>
       </View>
     );
-  }
+  },
 );
 
 AuthInput.displayName = "AuthInput";
@@ -273,13 +309,13 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontFamily: AppFonts.brand,
     fontSize: 38,
-    fontStyle: 'italic',
-    textAlign: 'center',
+    fontStyle: "italic",
+    textAlign: "center",
   },
   content: {
     flexGrow: 1,
     gap: 24,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 22,
   },
   errorText: {
@@ -294,10 +330,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   footerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 6,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   footerText: {
     color: AppColors.muted,
@@ -312,16 +348,16 @@ const styles = StyleSheet.create({
   header: {
     gap: 8,
     paddingTop: 14,
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
   },
   heading: {
     color: AppColors.text,
-    opacity: .5,
+    opacity: 0.5,
     fontFamily: AppFonts.heading,
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   input: {
     color: AppColors.text,
@@ -335,12 +371,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   inputWrap: {
-    alignItems: 'center',
+    alignItems: "center",
     // backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
     borderRadius: 35,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     minHeight: 54,
     paddingHorizontal: 14,
@@ -354,12 +390,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   primaryButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.text,
     borderRadius: 30,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
     minHeight: 50,
   },
   primaryButtonDisabled: {
