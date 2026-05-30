@@ -75,7 +75,8 @@ const getReelVideoUrl = (reel: Reel) =>
   );
 
 export default function ReelsScreen() {
-  const { height } = useWindowDimensions();
+  const { height: windowHeight } = useWindowDimensions();
+  const [containerHeight, setContainerHeight] = useState(windowHeight);
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
@@ -93,8 +94,8 @@ export default function ReelsScreen() {
   const [isGlobalMuted, setIsGlobalMuted] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<number>>(() => new Set());
 
-  // Sử dụng toàn bộ chiều cao màn hình để video tràn dưới Tab Bar
-  const reelHeight = height;
+  // Sử dụng chiều cao đo được thực tế để tránh sai lệch Snap-to-interval
+  const reelHeight = containerHeight;
   const selectedCommentReel = commentReelId
     ? reels.find((reel) => reel.post_id === commentReelId) || null
     : null;
@@ -313,8 +314,15 @@ export default function ReelsScreen() {
     );
   };
 
+  const handleLayout = useCallback((e: any) => {
+    const { height: layoutHeight } = e.nativeEvent.layout;
+    if (layoutHeight > 0 && Math.abs(containerHeight - layoutHeight) > 1) {
+      setContainerHeight(layoutHeight);
+    }
+  }, [containerHeight]);
+
   return (
-    <View style={styles.screen}>
+    <View onLayout={handleLayout} style={styles.screen}>
       <StatusBar style="light" />
 
       {/* Đổ bóng gradient cố định giúp hiển thị Status Bar và Header rõ nét hơn */}
@@ -352,10 +360,10 @@ export default function ReelsScreen() {
           isInitialLoading ? (
             <ActivityIndicator
               color={AppColors.surface}
-              style={[styles.emptyState, { height: reelHeight }]}
+              style={[styles.emptyState, { height: containerHeight }]}
             />
           ) : (
-            <View style={[styles.emptyState, { height: reelHeight }]}>
+            <View style={[styles.emptyState, { height: containerHeight }]}>
               <Ionicons
                 color="rgba(255,255,255,0.72)"
                 name="film-outline"
