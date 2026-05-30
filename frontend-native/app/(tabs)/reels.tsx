@@ -90,6 +90,7 @@ export default function ReelsScreen() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isComposerVisible, setIsComposerVisible] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGlobalMuted, setIsGlobalMuted] = useState(false);
   const [likingIds, setLikingIds] = useState<Set<number>>(() => new Set());
 
   // Sử dụng toàn bộ chiều cao màn hình để video tràn dưới Tab Bar
@@ -305,6 +306,8 @@ export default function ReelsScreen() {
         onDelete={handleDelete}
         onOpenComments={(reel) => setCommentReelId(reel.post_id)}
         onToggleLike={handleToggleLike}
+        isMuted={isGlobalMuted}
+        onToggleMute={() => setIsGlobalMuted((prev) => !prev)}
         reel={item}
       />
     );
@@ -430,6 +433,8 @@ function ReelCard({
   onDelete,
   onOpenComments,
   onToggleLike,
+  isMuted,
+  onToggleMute,
   reel,
 }: {
   currentUserId?: number | null;
@@ -440,6 +445,8 @@ function ReelCard({
   onDelete: (reel: Reel) => void;
   onOpenComments: (reel: Reel) => void;
   onToggleLike: (reel: Reel) => void;
+  isMuted: boolean;
+  onToggleMute: () => void;
   reel: Reel;
 }) {
   const videoUrl = getReelVideoUrl(reel);
@@ -456,7 +463,7 @@ function ReelCard({
   return (
     <View style={[styles.reelPage, { height }]}>
       {videoUrl && shouldLoad ? (
-        <ReelVideo isActive={isActive} uri={videoUrl} />
+        <ReelVideo isActive={isActive} isMuted={isMuted} uri={videoUrl} />
       ) : (
         <View style={styles.videoFallback}>
           <Ionicons
@@ -466,8 +473,6 @@ function ReelCard({
           />
         </View>
       )}
-
-      <View pointerEvents="none" style={styles.bottomShade} />
 
       <View style={[styles.sideRail, { bottom: 34 + tabBarHeight }]}>
         <RailButton
@@ -481,27 +486,19 @@ function ReelCard({
           label={formatCount(reel.comment_count)}
           onPress={() => onOpenComments(reel)}
         />
-        <RailButton
-          icon="share-social-outline"
-          label="Share"
-          onPress={() => {
-            // Handle share action
-          }}
-        />
         {/* More options */}
         <RailButton
           icon="ellipsis-horizontal"
           label="More"
           onPress={() => setShowActions(true)}
         />
-        {ownerCanDelete ? (
-          <RailButton
-            destructive
-            icon="trash-outline"
-            label="Delete"
-            onPress={() => onDelete(reel)}
+        <Pressable onPress={onToggleMute}>
+          <Ionicons
+            color={AppColors.surface}
+            name={isMuted ? "volume-mute" : "volume-high"}
+            size={19}
           />
-        ) : null}
+        </Pressable>
       </View>
 
       <View style={[styles.reelInfo, { bottom: 28 + tabBarHeight }]}>
@@ -554,6 +551,14 @@ function ReelCard({
             <Pressable
               style={styles.actionItem}
               onPress={() => {
+                setShowActions(false); /* Logic share */
+              }}
+            >
+              <Text style={styles.actionItemText}>Chia sẻ</Text>
+            </Pressable>
+            <Pressable
+              style={styles.actionItem}
+              onPress={() => {
                 setShowActions(false); /* Logic báo cáo */
               }}
             >
@@ -561,11 +566,21 @@ function ReelCard({
                 Báo cáo
               </Text>
             </Pressable>
+            {ownerCanDelete ? (
+              <Pressable
+                style={styles.actionItem}
+                onPress={() => onDelete(reel)}
+              >
+                <Text style={[styles.actionItemText, styles.destructiveText]}>
+                  Xóa
+                </Text>
+              </Pressable>
+            ) : null}
             <Pressable
               style={[styles.actionItem, { borderBottomWidth: 0 }]}
               onPress={() => setShowActions(false)}
             >
-              <Text style={styles.actionItemText}>Hủy</Text>
+              <Text style={[styles.actionItemText]}>Hủy</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -574,14 +589,26 @@ function ReelCard({
   );
 }
 
-function ReelVideo({ isActive, uri }: { isActive: boolean; uri: string }) {
+function ReelVideo({
+  isActive,
+  uri,
+  isMuted,
+}: {
+  isActive: boolean;
+  uri: string;
+  isMuted: boolean;
+}) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
 
   const player = useVideoPlayer(uri, (nextPlayer) => {
     nextPlayer.loop = true;
-    nextPlayer.muted = false;
+    nextPlayer.muted = isMuted;
   });
+
+  useEffect(() => {
+    player.muted = isMuted;
+  }, [isMuted, player]);
 
   useEffect(() => {
     const sub = player.addListener("statusChange", ({ status }) => {
@@ -618,7 +645,7 @@ function ReelVideo({ isActive, uri }: { isActive: boolean; uri: string }) {
         fullscreenOptions={{
           enable: true,
         }}
-        contentFit="cover"
+        contentFit="contain"
         nativeControls={false}
         player={player}
         style={StyleSheet.absoluteFill}
@@ -900,14 +927,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 10,
-  },
-  bottomShade: {
-    backgroundColor: "rgba(0,0,0,0.34)",
-    bottom: 0,
-    height: 230,
-    left: 0,
-    position: "absolute",
-    right: 0,
   },
   caption: {
     color: AppColors.surface,
