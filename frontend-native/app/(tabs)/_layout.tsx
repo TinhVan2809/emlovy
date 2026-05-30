@@ -68,7 +68,7 @@ export default function TabLayout() {
             backgroundColor: '#000000',
             position: 'absolute',
             borderTopWidth: 0,
-            elevation: 0, // Xóa shadow trên Android
+            elevation: 0, 
             bottom: 0,
           },
           tabBarIcon: ({ color, focused }) => renderIcon('reels', focused, color),

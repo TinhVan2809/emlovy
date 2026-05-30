@@ -76,8 +76,8 @@ const getReelVideoUrl = (reel: Reel) =>
 
 export default function ReelsScreen() {
   const { height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
   const { token, user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
@@ -308,6 +308,7 @@ export default function ReelsScreen() {
         isMuted={isGlobalMuted}
         onToggleMute={() => setIsGlobalMuted((prev) => !prev)}
         reel={item}
+        tabBarHeight={tabBarHeight}
       />
     );
   };
@@ -434,6 +435,7 @@ function ReelCard({
   isMuted,
   onToggleMute,
   reel,
+  tabBarHeight,
 }: {
   currentUserId?: number | null;
   height: number;
@@ -445,6 +447,7 @@ function ReelCard({
   isMuted: boolean;
   onToggleMute: () => void;
   reel: Reel;
+  tabBarHeight: number;
 }) {
   const videoUrl = getReelVideoUrl(reel);
   const [showActions, setShowActions] = useState(false);
@@ -460,7 +463,12 @@ function ReelCard({
   return (
     <View style={[styles.reelPage, { height }]}>
       {videoUrl && shouldLoad ? (
-        <ReelVideo isActive={isActive} isMuted={isMuted} uri={videoUrl} />
+        <ReelVideo
+          isActive={isActive}
+          isMuted={isMuted}
+          tabBarHeight={tabBarHeight}
+          uri={videoUrl}
+        />
       ) : (
         <View style={styles.videoFallback}>
           <Ionicons
@@ -471,7 +479,7 @@ function ReelCard({
         </View>
       )}
 
-      <View style={styles.sideRail}>
+      <View style={[styles.sideRail, { bottom: tabBarHeight + 12 }]}>
         <RailButton
           active={reel.liked_by_me}
           icon={reel.liked_by_me ? "heart" : "heart-outline"}
@@ -498,7 +506,7 @@ function ReelCard({
         </Pressable>
       </View>
 
-      <View style={styles.reelInfo}>
+      <View style={[styles.reelInfo, { bottom: tabBarHeight + 8 }]}>
         <View style={styles.authorRow}>
           <UserAvatar imageUrl={avatarUrl} name={authorName} size={42} />
           <View style={styles.authorMeta}>
@@ -590,10 +598,12 @@ function ReelVideo({
   isActive,
   uri,
   isMuted,
+  tabBarHeight,
 }: {
   isActive: boolean;
   uri: string;
   isMuted: boolean;
+  tabBarHeight: number;
 }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -682,7 +692,7 @@ function ReelVideo({
       <Pressable
         onLayout={(e) => (containerWidth.current = e.nativeEvent.layout.width)}
         onPress={handleSeek}
-        style={styles.progressBarContainer}
+        style={[styles.progressBarContainer, { bottom: tabBarHeight }]}
       >
         <View style={styles.progressBarTrack}>
           <View style={[styles.progressBar, { width: `${progress * 100}%` }]} />
