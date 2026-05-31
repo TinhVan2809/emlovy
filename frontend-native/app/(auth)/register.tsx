@@ -31,16 +31,12 @@ export default function RegisterScreen() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const nameRef = useRef<TextInput>(null);
   const usernameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const phoneRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
-  useEffect(() => {
-    nameRef.current?.focus();
-  }, []);
 
   // 1. name => username
   const onSubmitNameEditing = () => {
@@ -135,7 +131,6 @@ export default function RegisterScreen() {
               placeholder="Nguyễn Minh Anh"
               value={name}
               onSubmitEditing={onSubmitNameEditing}
-              ref={nameRef}
             />
             <AuthInput
               autoCapitalize="none"

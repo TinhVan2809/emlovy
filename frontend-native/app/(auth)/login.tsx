@@ -27,7 +27,6 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const usernameRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
   const canSubmit =
@@ -56,10 +55,6 @@ export default function LoginScreen() {
       setIsSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    usernameRef.current?.focus();
-  }, []);
 
   const onSubmitEditing = () => {
     passwordRef.current?.focus();
@@ -105,7 +100,6 @@ export default function LoginScreen() {
                   returnKeyType="next"
                   style={styles.input}
                   value={loginName}
-                  ref={usernameRef}
                   onSubmitEditing={onSubmitEditing}
                 />
               </View>
