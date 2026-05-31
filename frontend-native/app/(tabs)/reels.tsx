@@ -6,6 +6,14 @@ import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { LinearGradient } from "expo-linear-gradient";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+  type SharedValue,
+} from "react-native-reanimated";
 import type { ComponentProps} from "react";
 import type { ViewToken } from "react-native";
 import {
@@ -82,6 +90,12 @@ export default function ReelsScreen() {
   const isFocused = useIsFocused();
   const { token, user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
+  const scrollY = useSharedValue(0);
+  const onScrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
   const [pagination, setPagination] = useState<PostsPagination | null>(null);
   const [activeReelId, setActiveReelId] = useState<number | null>(null);
   const [commentReelId, setCommentReelId] = useState<number | null>(null);
@@ -156,7 +170,11 @@ export default function ReelsScreen() {
     loadReels();
   }, [loadReels]);
 
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 82 }).current;
+  const viewabilityConfig = useRef({ 
+    itemVisiblePercentThreshold: 80,
+    minimumViewTime: 150, // Chỉ xác nhận là "đang xem" nếu dừng lại ít nhất 150ms
+  }).current;
+
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       const nextVisible = viewableItems.find((item) => item.isViewable)
@@ -294,13 +312,16 @@ export default function ReelsScreen() {
   };
 
    const renderReel = useCallback(({ item, index }: { item: Reel; index: number }) => {
-    // Chỉ load video cho item hiện tại, item trước đó và item kế tiếp (Preload 1)
-    const shouldLoad = Math.abs(index - activeIndex) <= 1;
+    // Tối ưu: Chỉ load video đang xem và video tiếp theo. 
+    // Video phía trên sẽ bị hủy player ngay để giải phóng RAM.
+    const shouldLoad = index === activeIndex || index === activeIndex + 1;
 
     return (
       <ReelCard
         currentUserId={user?.user_id}
         height={reelHeight}
+        index={index}
+        scrollY={scrollY}
         isActive={isFocused && activeReelId === item.post_id}
         shouldLoad={shouldLoad}
         onDelete={handleDelete}
@@ -310,9 +331,10 @@ export default function ReelsScreen() {
         onToggleMute={() => setIsGlobalMuted((prev) => !prev)}
         reel={item}
         tabBarHeight={tabBarHeight}
+       
       />
     );
-  }, [activeIndex, isFocused, activeReelId, isGlobalMuted, reelHeight, tabBarHeight, user?.user_id, handleDelete, handleToggleLike]);
+  }, [activeIndex, isFocused, activeReelId, isGlobalMuted, reelHeight, tabBarHeight, user?.user_id, handleDelete, handleToggleLike, scrollY]);
 
   const handleLayout = useCallback((e: any) => {
     const { height: layoutHeight } = e.nativeEvent.layout;
@@ -355,7 +377,7 @@ export default function ReelsScreen() {
         </View>
       ) : null}
 
-      <FlatList
+      <Animated.FlatList
         ListEmptyComponent={
           isInitialLoading ? (
             <ActivityIndicator
@@ -382,10 +404,12 @@ export default function ReelsScreen() {
           ) : null
         }
         data={reels}
-          windowSize={3} // Giảm xuống 3 để tiết kiệm RAM (1 hiện tại, 1 trên, 1 dưới)
+        onScroll={onScrollHandler}
+        scrollEventThrottle={16}
+        windowSize={3} // Giữ ít item trong bộ nhớ
         initialNumToRender={1}
         maxToRenderPerBatch={1}
-        updateCellsBatchingPeriod={100}
+        updateCellsBatchingPeriod={150}
         removeClippedSubviews={Platform.OS === 'android'}
         disableIntervalMomentum={true}
         decelerationRate="fast"
@@ -446,9 +470,11 @@ export default function ReelsScreen() {
   onToggleMute,
   reel,
   tabBarHeight,
+  index,
+  scrollY,
+  height: cardHeight,
 }: {
   currentUserId?: number | null;
-  height: number;
   isActive: boolean;
   shouldLoad: boolean;
   onDelete: (reel: Reel) => void;
@@ -458,6 +484,9 @@ export default function ReelsScreen() {
   onToggleMute: () => void;
   reel: Reel;
   tabBarHeight: number;
+  index: number;
+  scrollY: SharedValue<number>;
+  height: number;
 }) => {
   const videoUrl = getReelVideoUrl(reel);
   const [showActions, setShowActions] = useState(false);
@@ -470,13 +499,42 @@ export default function ReelsScreen() {
   );
   const ownerCanDelete = Number(currentUserId) === Number(reel.user_id);
 
+  const animatedStyle = useAnimatedStyle(() => {
+    const inputRange = [
+      (index - 1) * height,
+      index * height,
+      (index + 1) * height,
+    ];
+
+    const scale = interpolate(
+      scrollY.value,
+      inputRange,
+      // [0.9, 1, 0.9],
+      [0.95, 1, 0.95],
+      Extrapolation.CLAMP
+    );
+
+    const opacity = interpolate(
+      scrollY.value,
+      inputRange,
+      [0.6, 1, 0.6],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      transform: [{ scale }],
+      opacity,
+    };
+  });
+
   return (
-    <View style={[styles.reelPage, { height }]}>
+    <Animated.View style={[styles.reelPage, { height: cardHeight }, animatedStyle]}>
       {videoUrl && shouldLoad ? (
         <ReelVideo
           isActive={isActive}
           isMuted={isMuted}
           tabBarHeight={tabBarHeight}
+          height={cardHeight}
           uri={videoUrl}
         />
       ) : (
@@ -600,7 +658,7 @@ export default function ReelsScreen() {
           </View>
         </Pressable>
       </Modal>
-    </View>
+    </Animated.View>
   );
 });
 
@@ -611,11 +669,13 @@ function ReelVideo({
   uri,
   isMuted,
   tabBarHeight,
+  height,
 }: {
   isActive: boolean;
   uri: string;
   isMuted: boolean;
   tabBarHeight: number;
+  height: number;
 }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -689,7 +749,10 @@ function ReelVideo({
   };
 
   return (
-    <Pressable onPress={handleTogglePlayback} style={styles.videoSurface}>
+    <Pressable 
+      onPress={handleTogglePlayback} 
+      style={styles.videoSurface}
+    >
       <VideoView
         fullscreenOptions={{
           enable: true,
@@ -998,7 +1061,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   captionInput: {
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.surface,
     borderColor: AppColors.border,
     borderRadius: 8,
     borderWidth: 1,
@@ -1045,7 +1108,7 @@ const styles = StyleSheet.create({
     minWidth: 52,
   },
   composerPostText: {
-    color: AppColors.accent,
+    color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 15,
   },
@@ -1223,7 +1286,7 @@ const styles = StyleSheet.create({
   videoPicker: {
     alignSelf: "center",
     aspectRatio: 9 / 14,
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.surface,
     borderColor: AppColors.border,
     borderRadius: 8,
     borderWidth: 1,

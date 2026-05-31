@@ -267,7 +267,7 @@ export function PostComposerModal({
               ) : (
                 <Pressable onPress={handlePickImages} style={styles.emptyPicker}>
                   <Ionicons color={AppColors.muted} name="image-outline" size={24} />
-                  <Text style={styles.emptyPickerText}>Chọn nhiều ảnh cùng lúc</Text>
+                  <Text style={styles.emptyPickerText}>Tải lên hình ảnh của bạn</Text>
                 </Pressable>
               )}
             </View>
