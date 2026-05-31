@@ -4,8 +4,17 @@ import { useIsFocused } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+  type SharedValue,
+} from "react-native-reanimated";
 import type { ComponentProps} from "react";
 import type { ViewToken } from "react-native";
 import {
@@ -74,6 +83,12 @@ const getReelVideoUrl = (reel: Reel) =>
       reel.media.find((item) => item.type === "video")?.media_url,
   );
 
+const getReelThumbnailUrl = (reel: Reel) =>
+  (resolveMediaUrl(
+    (reel as any).thumbnail_url ||
+      reel.media.find((item) => item.type === "image")?.media_url,
+  ) ?? undefined);
+
 export default function ReelsScreen() {
   const { height: windowHeight } = useWindowDimensions();
   const [containerHeight, setContainerHeight] = useState(windowHeight);
@@ -82,6 +97,12 @@ export default function ReelsScreen() {
   const isFocused = useIsFocused();
   const { token, user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
+  const scrollY = useSharedValue(0);
+  const onScrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
   const [pagination, setPagination] = useState<PostsPagination | null>(null);
   const [activeReelId, setActiveReelId] = useState<number | null>(null);
   const [commentReelId, setCommentReelId] = useState<number | null>(null);
@@ -156,7 +177,11 @@ export default function ReelsScreen() {
     loadReels();
   }, [loadReels]);
 
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 82 }).current;
+  const viewabilityConfig = useRef({ 
+    itemVisiblePercentThreshold: 80,
+    minimumViewTime: 150, // Chỉ xác nhận là "đang xem" nếu dừng lại ít nhất 150ms
+  }).current;
+
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       const nextVisible = viewableItems.find((item) => item.isViewable)
@@ -294,13 +319,17 @@ export default function ReelsScreen() {
   };
 
    const renderReel = useCallback(({ item, index }: { item: Reel; index: number }) => {
-    // Chỉ load video cho item hiện tại, item trước đó và item kế tiếp (Preload 1)
-    const shouldLoad = Math.abs(index - activeIndex) <= 1;
+    // Tối ưu Preloading: 
+    // Load reel hiện tại, 1 reel phía trước (để vuốt ngược lại mượt) 
+    // và 2 reel tiếp theo (để vuốt xuống không phải chờ).
+    const shouldLoad = index >= activeIndex - 1 && index <= activeIndex + 2;
 
     return (
       <ReelCard
         currentUserId={user?.user_id}
         height={reelHeight}
+        index={index}
+        scrollY={scrollY}
         isActive={isFocused && activeReelId === item.post_id}
         shouldLoad={shouldLoad}
         onDelete={handleDelete}
@@ -310,9 +339,11 @@ export default function ReelsScreen() {
         onToggleMute={() => setIsGlobalMuted((prev) => !prev)}
         reel={item}
         tabBarHeight={tabBarHeight}
+        thumbnailUri={getReelThumbnailUrl(item)}
+       
       />
     );
-  }, [activeIndex, isFocused, activeReelId, isGlobalMuted, reelHeight, tabBarHeight, user?.user_id, handleDelete, handleToggleLike]);
+  }, [activeIndex, isFocused, activeReelId, isGlobalMuted, reelHeight, tabBarHeight, user?.user_id, handleDelete, handleToggleLike, scrollY]);
 
   const handleLayout = useCallback((e: any) => {
     const { height: layoutHeight } = e.nativeEvent.layout;
@@ -355,7 +386,7 @@ export default function ReelsScreen() {
         </View>
       ) : null}
 
-      <FlatList
+      <Animated.FlatList
         ListEmptyComponent={
           isInitialLoading ? (
             <ActivityIndicator
@@ -382,7 +413,9 @@ export default function ReelsScreen() {
           ) : null
         }
         data={reels}
-          windowSize={3} // Giảm xuống 3 để tiết kiệm RAM (1 hiện tại, 1 trên, 1 dưới)
+        onScroll={onScrollHandler}
+        scrollEventThrottle={16}
+        windowSize={5} // Tăng nhẹ để giữ các player đã preload trong bộ nhớ
         initialNumToRender={1}
         maxToRenderPerBatch={1}
         updateCellsBatchingPeriod={100}
@@ -436,7 +469,6 @@ export default function ReelsScreen() {
 
  const ReelCard = memo(({
   currentUserId,
-  height,
   isActive,
   shouldLoad,
   onDelete,
@@ -446,9 +478,12 @@ export default function ReelsScreen() {
   onToggleMute,
   reel,
   tabBarHeight,
+  index,
+  scrollY,
+  thumbnailUri,
+  height: cardHeight,
 }: {
   currentUserId?: number | null;
-  height: number;
   isActive: boolean;
   shouldLoad: boolean;
   onDelete: (reel: Reel) => void;
@@ -458,6 +493,10 @@ export default function ReelsScreen() {
   onToggleMute: () => void;
   reel: Reel;
   tabBarHeight: number;
+  index: number;
+  scrollY: SharedValue<number>;
+  height: number;
+  thumbnailUri?: string;
 }) => {
   const videoUrl = getReelVideoUrl(reel);
   const [showActions, setShowActions] = useState(false);
@@ -470,14 +509,44 @@ export default function ReelsScreen() {
   );
   const ownerCanDelete = Number(currentUserId) === Number(reel.user_id);
 
+  const animatedStyle = useAnimatedStyle(() => {
+    const inputRange = [
+      (index - 1) * cardHeight,
+      index * cardHeight,
+      (index + 1) * cardHeight,
+    ];
+
+    const scale = interpolate(
+      scrollY.value,
+      inputRange,
+      // [0.9, 1, 0.9],
+      [0.95, 1, 0.95],
+      Extrapolation.CLAMP
+    );
+
+    const opacity = interpolate(
+      scrollY.value,
+      inputRange,
+      [0.6, 1, 0.6],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      transform: [{ scale }],
+      opacity,
+    };
+  });
+
   return (
-    <View style={[styles.reelPage, { height }]}>
+    <Animated.View style={[styles.reelPage, { height: cardHeight }, animatedStyle]}>
       {videoUrl && shouldLoad ? (
         <ReelVideo
           isActive={isActive}
           isMuted={isMuted}
           tabBarHeight={tabBarHeight}
-          uri={videoUrl}
+          height={cardHeight}
+          uri={videoUrl!}
+          thumbnailUri={thumbnailUri}
         />
       ) : (
         <View style={styles.videoFallback}>
@@ -600,7 +669,7 @@ export default function ReelsScreen() {
           </View>
         </Pressable>
       </Modal>
-    </View>
+    </Animated.View>
   );
 });
 
@@ -611,14 +680,19 @@ function ReelVideo({
   uri,
   isMuted,
   tabBarHeight,
+  height,
+  thumbnailUri,
 }: {
   isActive: boolean;
   uri: string;
   isMuted: boolean;
   tabBarHeight: number;
+  height: number;
+  thumbnailUri?: string;
 }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isReadyToPlay, setIsReadyToPlay] = useState(false);
   const [progress, setProgress] = useState(0);
   const containerWidth = useRef(0);
 
@@ -662,6 +736,9 @@ function ReelVideo({
   useEffect(() => {
     const sub = player.addListener("statusChange", ({ status }) => {
       setIsBuffering(status === "loading");
+      if (status === "readyToPlay") {
+        setIsReadyToPlay(true);
+      }
     });
     return () => sub.remove();
   }, [player]);
@@ -689,7 +766,10 @@ function ReelVideo({
   };
 
   return (
-    <Pressable onPress={handleTogglePlayback} style={styles.videoSurface}>
+    <Pressable 
+      onPress={handleTogglePlayback} 
+      style={styles.videoSurface}
+    >
       <VideoView
         fullscreenOptions={{
           enable: true,
@@ -699,6 +779,15 @@ function ReelVideo({
         player={player}
         style={StyleSheet.absoluteFill}
       />
+
+      {thumbnailUri && !isReadyToPlay && (
+        <Image
+          source={{ uri: thumbnailUri }}
+          style={StyleSheet.absoluteFill}
+          contentFit="contain"
+          transition={200}
+        />
+      )}
 
       {/* Thanh tiến trình (Progress Bar) */}
       <Pressable
@@ -998,7 +1087,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   captionInput: {
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.surface,
     borderColor: AppColors.border,
     borderRadius: 8,
     borderWidth: 1,
@@ -1045,7 +1134,7 @@ const styles = StyleSheet.create({
     minWidth: 52,
   },
   composerPostText: {
-    color: AppColors.accent,
+    color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 15,
   },
@@ -1223,7 +1312,7 @@ const styles = StyleSheet.create({
   videoPicker: {
     alignSelf: "center",
     aspectRatio: 9 / 14,
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.surface,
     borderColor: AppColors.border,
     borderRadius: 8,
     borderWidth: 1,

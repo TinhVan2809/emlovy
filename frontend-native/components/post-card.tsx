@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     maxWidth: 210,
   },
   mediaFrame: {
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: "hidden",
   },
   mediaImage: {
