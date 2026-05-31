@@ -4,6 +4,7 @@ import { useIsFocused } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Animated, {
@@ -81,6 +82,12 @@ const getReelVideoUrl = (reel: Reel) =>
       reel.video?.media_url ||
       reel.media.find((item) => item.type === "video")?.media_url,
   );
+
+const getReelThumbnailUrl = (reel: Reel) =>
+  (resolveMediaUrl(
+    (reel as any).thumbnail_url ||
+      reel.media.find((item) => item.type === "image")?.media_url,
+  ) ?? undefined);
 
 export default function ReelsScreen() {
   const { height: windowHeight } = useWindowDimensions();
@@ -312,9 +319,10 @@ export default function ReelsScreen() {
   };
 
    const renderReel = useCallback(({ item, index }: { item: Reel; index: number }) => {
-    // Tối ưu: Chỉ load video đang xem và video tiếp theo. 
-    // Video phía trên sẽ bị hủy player ngay để giải phóng RAM.
-    const shouldLoad = index === activeIndex || index === activeIndex + 1;
+    // Tối ưu Preloading: 
+    // Load reel hiện tại, 1 reel phía trước (để vuốt ngược lại mượt) 
+    // và 2 reel tiếp theo (để vuốt xuống không phải chờ).
+    const shouldLoad = index >= activeIndex - 1 && index <= activeIndex + 2;
 
     return (
       <ReelCard
@@ -331,6 +339,7 @@ export default function ReelsScreen() {
         onToggleMute={() => setIsGlobalMuted((prev) => !prev)}
         reel={item}
         tabBarHeight={tabBarHeight}
+        thumbnailUri={getReelThumbnailUrl(item)}
        
       />
     );
@@ -406,10 +415,10 @@ export default function ReelsScreen() {
         data={reels}
         onScroll={onScrollHandler}
         scrollEventThrottle={16}
-        windowSize={3} // Giữ ít item trong bộ nhớ
+        windowSize={5} // Tăng nhẹ để giữ các player đã preload trong bộ nhớ
         initialNumToRender={1}
         maxToRenderPerBatch={1}
-        updateCellsBatchingPeriod={150}
+        updateCellsBatchingPeriod={100}
         removeClippedSubviews={Platform.OS === 'android'}
         disableIntervalMomentum={true}
         decelerationRate="fast"
@@ -460,7 +469,6 @@ export default function ReelsScreen() {
 
  const ReelCard = memo(({
   currentUserId,
-  height,
   isActive,
   shouldLoad,
   onDelete,
@@ -472,6 +480,7 @@ export default function ReelsScreen() {
   tabBarHeight,
   index,
   scrollY,
+  thumbnailUri,
   height: cardHeight,
 }: {
   currentUserId?: number | null;
@@ -487,6 +496,7 @@ export default function ReelsScreen() {
   index: number;
   scrollY: SharedValue<number>;
   height: number;
+  thumbnailUri?: string;
 }) => {
   const videoUrl = getReelVideoUrl(reel);
   const [showActions, setShowActions] = useState(false);
@@ -501,9 +511,9 @@ export default function ReelsScreen() {
 
   const animatedStyle = useAnimatedStyle(() => {
     const inputRange = [
-      (index - 1) * height,
-      index * height,
-      (index + 1) * height,
+      (index - 1) * cardHeight,
+      index * cardHeight,
+      (index + 1) * cardHeight,
     ];
 
     const scale = interpolate(
@@ -535,7 +545,8 @@ export default function ReelsScreen() {
           isMuted={isMuted}
           tabBarHeight={tabBarHeight}
           height={cardHeight}
-          uri={videoUrl}
+          uri={videoUrl!}
+          thumbnailUri={thumbnailUri}
         />
       ) : (
         <View style={styles.videoFallback}>
@@ -670,15 +681,18 @@ function ReelVideo({
   isMuted,
   tabBarHeight,
   height,
+  thumbnailUri,
 }: {
   isActive: boolean;
   uri: string;
   isMuted: boolean;
   tabBarHeight: number;
   height: number;
+  thumbnailUri?: string;
 }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isReadyToPlay, setIsReadyToPlay] = useState(false);
   const [progress, setProgress] = useState(0);
   const containerWidth = useRef(0);
 
@@ -722,6 +736,9 @@ function ReelVideo({
   useEffect(() => {
     const sub = player.addListener("statusChange", ({ status }) => {
       setIsBuffering(status === "loading");
+      if (status === "readyToPlay") {
+        setIsReadyToPlay(true);
+      }
     });
     return () => sub.remove();
   }, [player]);
@@ -762,6 +779,15 @@ function ReelVideo({
         player={player}
         style={StyleSheet.absoluteFill}
       />
+
+      {thumbnailUri && !isReadyToPlay && (
+        <Image
+          source={{ uri: thumbnailUri }}
+          style={StyleSheet.absoluteFill}
+          contentFit="contain"
+          transition={200}
+        />
+      )}
 
       {/* Thanh tiến trình (Progress Bar) */}
       <Pressable
