@@ -6,7 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -15,12 +15,12 @@ import Animated, {
   Extrapolation,
   type SharedValue,
 } from "react-native-reanimated";
-import type { ComponentProps} from "react";
+import type { ComponentProps } from "react";
 import type { ViewToken } from "react-native";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
+  // FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -84,10 +84,10 @@ const getReelVideoUrl = (reel: Reel) =>
   );
 
 const getReelThumbnailUrl = (reel: Reel) =>
-  (resolveMediaUrl(
+  resolveMediaUrl(
     (reel as any).thumbnail_url ||
       reel.media.find((item) => item.type === "image")?.media_url,
-  ) ?? undefined);
+  ) ?? undefined;
 
 export default function ReelsScreen() {
   const { height: windowHeight } = useWindowDimensions();
@@ -177,7 +177,7 @@ export default function ReelsScreen() {
     loadReels();
   }, [loadReels]);
 
-  const viewabilityConfig = useRef({ 
+  const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 80,
     minimumViewTime: 150, // Chỉ xác nhận là "đang xem" nếu dừng lại ít nhất 150ms
   }).current;
@@ -206,87 +206,96 @@ export default function ReelsScreen() {
     loadReels(pagination.page + 1, false);
   };
 
-  const handleToggleLike = useCallback(async (reel: Reel) => {
-    if (!token) {
-      setError("Ban can dang nhap de thich reel.");
-      return;
-    }
+  const handleToggleLike = useCallback(
+    async (reel: Reel) => {
+      if (!token) {
+        setError("Ban can dang nhap de thich reel.");
+        return;
+      }
 
-    if (likingIds.has(reel.post_id)) {
-      return;
-    }
+      if (likingIds.has(reel.post_id)) {
+        return;
+      }
 
-    const likedByMe = !reel.liked_by_me;
-    const likeCount = Math.max(0, reel.like_count + (likedByMe ? 1 : -1));
+      const likedByMe = !reel.liked_by_me;
+      const likeCount = Math.max(0, reel.like_count + (likedByMe ? 1 : -1));
 
-    setLikingIds((current) => {
-      const next = new Set(current);
-      next.add(reel.post_id);
-      return next;
-    });
-    patchReel(reel.post_id, { liked_by_me: likedByMe, like_count: likeCount });
-
-    try {
-      const response = await reelApi.toggleLike(token, reel.post_id);
-      patchReel(reel.post_id, {
-        liked_by_me: response.data.liked_by_me,
-        like_count: response.data.like_count,
-      });
-      setError("");
-    } catch (likeError) {
-      patchReel(reel.post_id, {
-        liked_by_me: reel.liked_by_me,
-        like_count: reel.like_count,
-      });
-      setError(
-        likeError instanceof Error
-          ? likeError.message
-          : "Khong the cap nhat luot thich.",
-      );
-    } finally {
       setLikingIds((current) => {
         const next = new Set(current);
-        next.delete(reel.post_id);
+        next.add(reel.post_id);
         return next;
       });
-    }
-  }, [token, likingIds, patchReel]);
+      patchReel(reel.post_id, {
+        liked_by_me: likedByMe,
+        like_count: likeCount,
+      });
 
-  const handleDelete = useCallback((reel: Reel) => {
-    if (!token) {
-      setError("Ban can dang nhap de xoa reel.");
-      return;
-    }
+      try {
+        const response = await reelApi.toggleLike(token, reel.post_id);
+        patchReel(reel.post_id, {
+          liked_by_me: response.data.liked_by_me,
+          like_count: response.data.like_count,
+        });
+        setError("");
+      } catch (likeError) {
+        patchReel(reel.post_id, {
+          liked_by_me: reel.liked_by_me,
+          like_count: reel.like_count,
+        });
+        setError(
+          likeError instanceof Error
+            ? likeError.message
+            : "Khong the cap nhat luot thich.",
+        );
+      } finally {
+        setLikingIds((current) => {
+          const next = new Set(current);
+          next.delete(reel.post_id);
+          return next;
+        });
+      }
+    },
+    [token, likingIds, patchReel],
+  );
 
-    Alert.alert(
-      "Delete reel",
-      "Remove this reel from your profile and the feed?",
-      [
-        { style: "cancel", text: "Cancel" },
-        {
-          onPress: async () => {
-            setReels((current) =>
-              current.filter((item) => item.post_id !== reel.post_id),
-            );
+  const handleDelete = useCallback(
+    (reel: Reel) => {
+      if (!token) {
+        setError("Ban can dang nhap de xoa reel.");
+        return;
+      }
 
-            try {
-              await reelApi.delete(token, reel.post_id);
-              setError("");
-            } catch (deleteError) {
-              setError(
-                deleteError instanceof Error
-                  ? deleteError.message
-                  : "Khong the xoa reel.",
+      Alert.alert(
+        "Delete reel",
+        "Remove this reel from your profile and the feed?",
+        [
+          { style: "cancel", text: "Cancel" },
+          {
+            onPress: async () => {
+              setReels((current) =>
+                current.filter((item) => item.post_id !== reel.post_id),
               );
-              loadReels(1, true);
-            }
+
+              try {
+                await reelApi.delete(token, reel.post_id);
+                setError("");
+              } catch (deleteError) {
+                setError(
+                  deleteError instanceof Error
+                    ? deleteError.message
+                    : "Khong the xoa reel.",
+                );
+                loadReels(1, true);
+              }
+            },
+            style: "destructive",
+            text: "Delete",
           },
-          style: "destructive",
-          text: "Delete",
-        },
-      ],
-    );
-  }, [token, loadReels]);
+        ],
+      );
+    },
+    [token, loadReels],
+  );
 
   const handleCreateReel = async (input: CreateReelInput) => {
     if (!token) {
@@ -318,39 +327,130 @@ export default function ReelsScreen() {
     patchReel(postId, { comment_count: commentCount });
   };
 
-   const renderReel = useCallback(({ item, index }: { item: Reel; index: number }) => {
-    // Tối ưu Preloading: 
-    // Load reel hiện tại, 1 reel phía trước (để vuốt ngược lại mượt) 
-    // và 2 reel tiếp theo (để vuốt xuống không phải chờ).
-    const shouldLoad = index >= activeIndex - 1 && index <= activeIndex + 2;
+  // Mang activeIndex ra ngoài deps của useCallback tránh re-render toàn bộ list
+  const activeIndexRef = useRef(activeIndex);
 
-    return (
-      <ReelCard
-        currentUserId={user?.user_id}
-        height={reelHeight}
-        index={index}
-        scrollY={scrollY}
-        isActive={isFocused && activeReelId === item.post_id}
-        shouldLoad={shouldLoad}
-        onDelete={handleDelete}
-        onOpenComments={(reel) => setCommentReelId(reel.post_id)}
-        onToggleLike={handleToggleLike}
-        isMuted={isGlobalMuted}
-        onToggleMute={() => setIsGlobalMuted((prev) => !prev)}
-        reel={item}
-        tabBarHeight={tabBarHeight}
-        thumbnailUri={getReelThumbnailUrl(item)}
-       
-      />
-    );
-  }, [activeIndex, isFocused, activeReelId, isGlobalMuted, reelHeight, tabBarHeight, user?.user_id, handleDelete, handleToggleLike, scrollY]);
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
 
-  const handleLayout = useCallback((e: any) => {
-    const { height: layoutHeight } = e.nativeEvent.layout;
-    if (layoutHeight > 0 && Math.abs(containerHeight - layoutHeight) > 1) {
-      setContainerHeight(layoutHeight);
-    }
-  }, [containerHeight]);
+  const activeReelIdRef = useRef(activeReelId);
+  // Đồng bộ ref ngay trong body để renderReel luôn thấy giá trị mới nhất khi FlatList gọi renderItem
+  activeReelIdRef.current = activeReelId;
+
+  const isMutedRef = useRef(isGlobalMuted);
+  // isGlobalMuted vẫn là state để trigger re-render, nhưng ta dùng ref để renderReel không bị tạo lại
+  isMutedRef.current = isGlobalMuted;
+
+  // Tách ListEmptyComponent và ListFooterComponent ra ngoài bằng useMemo tránh tạo object mới sau mỗi lần render
+  const listEmpty = useMemo(
+    () =>
+      isInitialLoading ? (
+        <ActivityIndicator
+          color={AppColors.surface}
+          style={[styles.emptyState, { height: containerHeight }]}
+        />
+      ) : (
+        <View style={[styles.emptyState, { height: containerHeight }]}>
+          <Ionicons
+            color="rgba(255,255,255,0.72)"
+            name="film-outline"
+            size={38}
+          />
+          <Text style={styles.emptyText}>No reels yet.</Text>
+        </View>
+      ),
+    [isInitialLoading, containerHeight],
+  );
+
+  const listFooter = useMemo(
+    () =>
+      isLoadingMore ? (
+        <ActivityIndicator
+          color={AppColors.surface}
+          style={styles.footerLoader}
+        />
+      ) : null,
+    [isLoadingMore],
+  );
+
+  // extraData giúp FlatList biết khi nào cần yêu cầu renderReel tính toán lại prop cho các item
+  const listExtraData = useMemo(
+    () => ({ activeReelId, isGlobalMuted }),
+    [activeReelId, isGlobalMuted],
+  );
+
+  const getItemLayout = useCallback(
+    (_: any, index: number) => ({
+      index,
+      length: reelHeight,
+      offset: reelHeight * index,
+    }),
+    [reelHeight],
+  );
+
+  const handleOpenComments = useCallback(
+    (reel: Reel) => setCommentReelId(reel.post_id),
+    [],
+  );
+
+  const handleToggleMute = useCallback(
+    () => setIsGlobalMuted((prev) => !prev),
+    [],
+  );
+
+  const renderReel = useCallback(
+    ({ item, index }: { item: Reel; index: number }) => {
+      // Tối ưu Preloading:
+      // Load reel hiện tại, 1 reel phía trước (để vuốt ngược lại mượt)
+      // và 2 reel tiếp theo (để vuốt xuống không phải chờ).
+      const shouldLoad =
+        index >= activeIndexRef.current - 1 &&
+        index <= activeIndexRef.current + 2;
+
+      return (
+        <ReelCard
+          currentUserId={user?.user_id}
+          height={reelHeight}
+          index={index}
+          scrollY={scrollY}
+          isActive={isFocused && activeReelIdRef.current === item.post_id}
+          shouldLoad={shouldLoad}
+          onDelete={handleDelete}
+          onOpenComments={handleOpenComments}
+          onToggleLike={handleToggleLike}
+          isMuted={isMutedRef.current}
+          onToggleMute={handleToggleMute}
+          reel={item}
+          tabBarHeight={tabBarHeight}
+          thumbnailUri={getReelThumbnailUrl(item)}
+        />
+      );
+    },
+    [
+      isFocused,
+      reelHeight,
+      tabBarHeight,
+      user?.user_id,
+      scrollY,
+      handleDelete,
+      handleToggleLike,
+      handleOpenComments,
+      handleToggleMute,
+    ],
+  );
+
+  const handleLayout = useCallback(
+    (e: any) => {
+      const { height: layoutHeight } = e.nativeEvent.layout;
+      if (layoutHeight > 0 && Math.abs(containerHeight - layoutHeight) > 1) {
+        setContainerHeight(layoutHeight);
+      }
+    },
+    [containerHeight],
+  );
+
+  const keyExtractor = useCallback((item: Reel) => String(item.post_id), []);
 
   return (
     <View onLayout={handleLayout} style={styles.screen}>
@@ -387,47 +487,21 @@ export default function ReelsScreen() {
       ) : null}
 
       <Animated.FlatList
-        ListEmptyComponent={
-          isInitialLoading ? (
-            <ActivityIndicator
-              color={AppColors.surface}
-              style={[styles.emptyState, { height: containerHeight }]}
-            />
-          ) : (
-            <View style={[styles.emptyState, { height: containerHeight }]}>
-              <Ionicons
-                color="rgba(255,255,255,0.72)"
-                name="film-outline"
-                size={38}
-              />
-              <Text style={styles.emptyText}>No reels yet.</Text>
-            </View>
-          )
-        }
-        ListFooterComponent={
-          isLoadingMore ? (
-            <ActivityIndicator
-              color={AppColors.surface}
-              style={styles.footerLoader}
-            />
-          ) : null
-        }
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
         data={reels}
+        extraData={listExtraData}
         onScroll={onScrollHandler}
         scrollEventThrottle={16}
         windowSize={5} // Tăng nhẹ để giữ các player đã preload trong bộ nhớ
         initialNumToRender={1}
         maxToRenderPerBatch={1}
         updateCellsBatchingPeriod={100}
-        removeClippedSubviews={Platform.OS === 'android'}
+        removeClippedSubviews={Platform.OS === "android"}
         disableIntervalMomentum={true}
         decelerationRate="fast"
-        getItemLayout={(_data, index) => ({
-          index,
-          length: reelHeight,
-          offset: reelHeight * index,
-        })}
-        keyExtractor={(item) => String(item.post_id)}
+        getItemLayout={getItemLayout}
+        keyExtractor={keyExtractor}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.7}
         onViewableItemsChanged={onViewableItemsChanged}
@@ -467,211 +541,270 @@ export default function ReelsScreen() {
   );
 }
 
- const ReelCard = memo(({
-  currentUserId,
-  isActive,
-  shouldLoad,
-  onDelete,
-  onOpenComments,
-  onToggleLike,
-  isMuted,
-  onToggleMute,
-  reel,
-  tabBarHeight,
-  index,
-  scrollY,
-  thumbnailUri,
-  height: cardHeight,
-}: {
-  currentUserId?: number | null;
-  isActive: boolean;
-  shouldLoad: boolean;
-  onDelete: (reel: Reel) => void;
-  onOpenComments: (reel: Reel) => void;
-  onToggleLike: (reel: Reel) => void;
-  isMuted: boolean;
-  onToggleMute: () => void;
-  reel: Reel;
-  tabBarHeight: number;
-  index: number;
-  scrollY: SharedValue<number>;
-  height: number;
-  thumbnailUri?: string;
-}) => {
-  const videoUrl = getReelVideoUrl(reel);
-  const [showActions, setShowActions] = useState(false);
-  const authorName = reel.author?.name || "Emlovy User";
-  const authorHandle = reel.author?.username
-    ? `@${reel.author.username}`
-    : "@emlovy";
-  const avatarUrl = resolveMediaUrl(
-    reel.author?.avatar_url || reel.author?.avata,
-  );
-  const ownerCanDelete = Number(currentUserId) === Number(reel.user_id);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const inputRange = [
-      (index - 1) * cardHeight,
-      index * cardHeight,
-      (index + 1) * cardHeight,
-    ];
-
-    const scale = interpolate(
-      scrollY.value,
-      inputRange,
-      // [0.9, 1, 0.9],
-      [0.95, 1, 0.95],
-      Extrapolation.CLAMP
+const ReelCard = memo(
+  ({
+    currentUserId,
+    isActive,
+    shouldLoad,
+    onDelete,
+    onOpenComments,
+    onToggleLike,
+    isMuted,
+    onToggleMute,
+    reel,
+    tabBarHeight,
+    index,
+    scrollY,
+    thumbnailUri,
+    height: cardHeight,
+  }: {
+    currentUserId?: number | null;
+    isActive: boolean;
+    shouldLoad: boolean;
+    onDelete: (reel: Reel) => void;
+    onOpenComments: (reel: Reel) => void;
+    onToggleLike: (reel: Reel) => void;
+    isMuted: boolean;
+    onToggleMute: () => void;
+    reel: Reel;
+    tabBarHeight: number;
+    index: number;
+    scrollY: SharedValue<number>;
+    height: number;
+    thumbnailUri?: string;
+  }) => {
+    const videoUrl = getReelVideoUrl(reel);
+    const [showActions, setShowActions] = useState(false);
+    // const authorName = reel.author?.name || "Emlovy User";
+    // const authorHandle = reel.author?.username
+    //   ? `@${reel.author.username}`
+    //   : "@emlovy";
+    // const avatarUrl = resolveMediaUrl(
+    //   reel.author?.avatar_url || reel.author?.avata,
+    // );
+    // const ownerCanDelete = Number(currentUserId) === Number(reel.user_id);
+    const { authorName, authorHandle, avatarUrl, ownerCanDelete } = useMemo(
+      () => ({
+        authorName: reel.author?.name || "Emlovy User",
+        authorHandle: reel.author?.username
+          ? `@${reel.author.username}`
+          : "@emlovy",
+        avatarUrl: resolveMediaUrl(
+          reel.author?.avatar_url || reel.author?.avata,
+        ),
+        ownerCanDelete: Number(currentUserId) === Number(reel.user_id),
+      }),
+      [reel.author, reel.user_id, currentUserId],
     );
 
-    const opacity = interpolate(
-      scrollY.value,
-      inputRange,
-      [0.6, 1, 0.6],
-      Extrapolation.CLAMP
+    // Hiệu ứng khi vuốt lên
+    const animatedStyle = useAnimatedStyle(() => {
+      const inputRange = [
+        (index - 1) * cardHeight,
+        index * cardHeight,
+        (index + 1) * cardHeight,
+      ];
+
+      const scale = interpolate(
+        scrollY.value,
+        inputRange,
+        // [0.9, 1, 0.9],
+        [0.95, 1, 0.95],
+        Extrapolation.CLAMP,
+      );
+
+      const opacity = interpolate(
+        scrollY.value,
+        inputRange,
+        [0.6, 1, 0.6],
+        Extrapolation.CLAMP,
+      );
+
+      return {
+        transform: [{ scale }],
+        opacity,
+      };
+    });
+
+    const handleToggleLike = useCallback(
+      () => onToggleLike(reel),
+      [onToggleLike, reel.post_id], // dùng reel.post_id thay vì cả object reel
     );
 
-    return {
-      transform: [{ scale }],
-      opacity,
-    };
-  });
+    const handleOpenComments = useCallback(
+      () => onOpenComments(reel),
+      [onOpenComments, reel.post_id],
+    );
 
-  return (
-    <Animated.View style={[styles.reelPage, { height: cardHeight }, animatedStyle]}>
-      {videoUrl && shouldLoad ? (
-        <ReelVideo
-          isActive={isActive}
-          isMuted={isMuted}
-          tabBarHeight={tabBarHeight}
-          height={cardHeight}
-          uri={videoUrl!}
-          thumbnailUri={thumbnailUri}
-        />
-      ) : (
-        <View style={styles.videoFallback}>
-          <Ionicons
-            color="rgba(255,255,255,0.76)"
-            name="videocam-off-outline"
-            size={36}
+    const handleDelete = useCallback(
+      () => onDelete(reel),
+      [onDelete, reel.post_id],
+    );
+
+    return (
+      <Animated.View
+        style={[styles.reelPage, { height: cardHeight }, animatedStyle]}
+      >
+        {videoUrl && shouldLoad ? (
+          <ReelVideo
+            isActive={isActive}
+            isMuted={isMuted}
+            tabBarHeight={tabBarHeight}
+            height={cardHeight}
+            uri={videoUrl!}
+            thumbnailUri={thumbnailUri}
           />
-        </View>
-      )}
-
-      <View style={[styles.sideRail, { bottom: tabBarHeight + 12 }]}>
-        <RailButton
-          active={reel.liked_by_me}
-          icon={reel.liked_by_me ? "heart" : "heart-outline"}
-          label={formatCount(reel.like_count)}
-          onPress={() => onToggleLike(reel)}
-        />
-        <RailButton
-          icon="chatbubble-outline"
-          label={formatCount(reel.comment_count)}
-          onPress={() => onOpenComments(reel)}
-        />
-        {/* More options */}
-        <RailButton
-          icon="ellipsis-horizontal"
-          label=""
-          onPress={() => setShowActions(true)}
-        />
-        <Pressable onPress={onToggleMute} hitSlop={10}>
-          <Ionicons
-            color={AppColors.surface}
-            name={isMuted ? "volume-mute" : "volume-high"}
-            size={22}
-          />
-        </Pressable>
-      </View>
-
-      <View style={[styles.reelInfo, { bottom: tabBarHeight + 8 }]}>
-        <View style={styles.authorRow}>
-          <UserAvatar imageUrl={avatarUrl} name={authorName} size={42} />
-          <View style={styles.authorMeta}>
-            <View style={styles.authorContainer}>
-              <Text numberOfLines={1} style={styles.authorName}>
-                {authorName}
-              </Text>
-              <Pressable style={styles.followBox}>
-                <Text style={styles.followText}>Follow</Text>
-              </Pressable>
-            </View>
-            <Text numberOfLines={1} style={styles.authorHandle}>
-              {authorHandle}
-            </Text>
+        ) : (
+          <View style={styles.videoFallback}>
+            <Ionicons
+              color="rgba(255,255,255,0.76)"
+              name="videocam-off-outline"
+              size={36}
+            />
           </View>
+        )}
+
+        <View style={[styles.sideRail, { bottom: tabBarHeight + 25 }]}>
+          <RailButton
+            active={reel.liked_by_me}
+            icon={reel.liked_by_me ? "heart" : "heart-outline"}
+            label={formatCount(reel.like_count)}
+            onPress={handleToggleLike}
+          />
+          <RailButton
+            icon="chatbubble-outline"
+            label={formatCount(reel.comment_count)}
+            onPress={handleOpenComments}
+          />
+          {/* More options */}
+          <RailButton
+            icon="ellipsis-horizontal"
+            label=""
+            onPress={() => setShowActions(true)}
+          />
+          {/* Bật/tắt âm thanh */}
+          <Pressable onPress={onToggleMute} hitSlop={10}>
+            <Ionicons
+              color={AppColors.surface}
+              name={isMuted ? "volume-mute" : "volume-high"}
+              size={22}
+            />
+          </Pressable>
         </View>
 
-        {reel.content ? (
-          <Text numberOfLines={3} style={styles.caption}>
-            {reel.content}
-          </Text>
-        ) : null}
-      </View>
-
-      <Modal animationType="fade" transparent visible={showActions}>
-        <Pressable
-          style={styles.actionModalBackdrop}
-          onPress={() => setShowActions(false)}
-        >
-          <View style={styles.actionMenu}>
-            <Pressable
-              style={styles.actionItem}
-              onPress={() => {
-                setShowActions(false); /* Logic lưu Reel */
-              }}
-            >
-              <Text style={styles.actionItemText}>Lưu Reel</Text>
-            </Pressable>
-            <Pressable
-              style={styles.actionItem}
-              onPress={() => {
-                setShowActions(false); /* Logic copy link */
-              }}
-            >
-              <Text style={styles.actionItemText}>Sao chép liên kết</Text>
-            </Pressable>
-            <Pressable
-              style={styles.actionItem}
-              onPress={() => {
-                setShowActions(false); /* Logic share */
-              }}
-            >
-              <Text style={styles.actionItemText}>Chia sẻ</Text>
-            </Pressable>
-            <Pressable
-              style={styles.actionItem}
-              onPress={() => {
-                setShowActions(false); /* Logic báo cáo */
-              }}
-            >
-              <Text style={[styles.actionItemText, styles.destructiveText]}>
-                Báo cáo
+        {/* Tên và content của ggười đăng */}
+        <View style={[styles.reelInfo, { bottom: tabBarHeight + 12 }]}>
+          <View style={styles.authorRow}>
+            <UserAvatar imageUrl={avatarUrl} name={authorName} size={42} />
+            <View style={styles.authorMeta}>
+              <View style={styles.authorContainer}>
+                <View style={styles.isVerified}>
+                  <Text numberOfLines={1} style={styles.authorName}>
+                    {authorName}
+                  </Text>
+                  {reel.author?.is_verified === 1 ? (
+                    <Ionicons name="checkmark" style={styles.isVerifiedIcon} />
+                  ) : null}
+                </View>
+                <Pressable style={styles.followBox}>
+                  <Text style={styles.followText}>Follow</Text>
+                </Pressable>
+              </View>
+              <Text numberOfLines={1} style={styles.authorHandle}>
+                {authorHandle}
               </Text>
-            </Pressable>
-            {ownerCanDelete ? (
+            </View>
+          </View>
+
+          {reel.content ? (
+            <Text numberOfLines={3} style={styles.caption}>
+              {reel.content}
+            </Text>
+          ) : null}
+        </View>
+
+        <Modal animationType="fade" transparent visible={showActions}>
+          <Pressable
+            style={styles.actionModalBackdrop}
+            onPress={() => setShowActions(false)}
+          >
+            <View style={styles.actionMenu}>
               <Pressable
                 style={styles.actionItem}
-                onPress={() => onDelete(reel)}
+                onPress={() => {
+                  setShowActions(false); /* Logic lưu Reel */
+                }}
+              >
+                <Text style={styles.actionItemText}>Lưu Reel</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionItem}
+                onPress={() => {
+                  setShowActions(false); /* Logic copy link */
+                }}
+              >
+                <Text style={styles.actionItemText}>Sao chép liên kết</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionItem}
+                onPress={() => {
+                  setShowActions(false); /* Logic share */
+                }}
+              >
+                <Text style={styles.actionItemText}>Chia sẻ</Text>
+              </Pressable>
+              <Pressable
+                style={styles.actionItem}
+                onPress={() => {
+                  setShowActions(false); /* Logic báo cáo */
+                }}
               >
                 <Text style={[styles.actionItemText, styles.destructiveText]}>
-                  Xóa
+                  Báo cáo
                 </Text>
               </Pressable>
-            ) : null}
-            <Pressable
-              style={[styles.actionItem, { borderBottomWidth: 0 }]}
-              onPress={() => setShowActions(false)}
-            >
-              <Text style={[styles.actionItemText]}>Hủy</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-    </Animated.View>
-  );
-});
+              {ownerCanDelete ? (
+                <Pressable style={styles.actionItem} onPress={handleDelete}>
+                  <Text style={[styles.actionItemText, styles.destructiveText]}>
+                    Xóa
+                  </Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                style={[styles.actionItem, { borderBottomWidth: 0 }]}
+                onPress={() => setShowActions(false)}
+              >
+                <Text style={[styles.actionItemText]}>Hủy</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Modal>
+      </Animated.View>
+    );
+  },
+  (prev, next) => {
+    // true = KHÔNG re-render, false = re-render
+    return (
+      prev.isActive === next.isActive &&
+      prev.shouldLoad === next.shouldLoad &&
+      prev.isMuted === next.isMuted &&
+      prev.height === next.height &&
+      prev.tabBarHeight === next.tabBarHeight &&
+      prev.index === next.index &&
+      prev.thumbnailUri === next.thumbnailUri &&
+      prev.currentUserId === next.currentUserId &&
+      // So sánh reel theo từng field quan trọng, KHÔNG so sánh cả object
+      prev.reel.post_id === next.reel.post_id &&
+      prev.reel.liked_by_me === next.reel.liked_by_me &&
+      prev.reel.like_count === next.reel.like_count &&
+      prev.reel.comment_count === next.reel.comment_count &&
+      prev.reel.content === next.reel.content
+      // scrollY là SharedValue (ref-stable) nên không cần so sánh
+      // onDelete, onToggleLike, onOpenComments, onToggleMute là functions
+      // → không so sánh, chấp nhận dùng version mới nhất
+    );
+  },
+);
 
 ReelCard.displayName = "ReelCard";
 
@@ -766,10 +899,7 @@ function ReelVideo({
   };
 
   return (
-    <Pressable 
-      onPress={handleTogglePlayback} 
-      style={styles.videoSurface}
-    >
+    <Pressable onPress={handleTogglePlayback} style={styles.videoSurface}>
       <VideoView
         fullscreenOptions={{
           enable: true,
@@ -1058,6 +1188,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  isVerified: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
   followBox: {
     borderWidth: 1,
     borderColor: "#fff",
@@ -1072,6 +1207,12 @@ const styles = StyleSheet.create({
     color: AppColors.surface,
     fontFamily: AppFonts.heading,
     fontSize: 15,
+  },
+  isVerifiedIcon: {
+    color: "#fff",
+    backgroundColor: AppColors.checkmark,
+    padding: 1,
+    borderRadius: 100,
   },
   authorRow: {
     alignItems: "center",
