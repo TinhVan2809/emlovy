@@ -626,19 +626,22 @@ const ReelCard = memo(
       };
     });
 
+    const reelRef = useRef(reel);
+    reelRef.current = reel; // sync trong body, luôn fresh
+
     const handleToggleLike = useCallback(
-      () => onToggleLike(reel),
-      [onToggleLike, reel.post_id], // dùng reel.post_id thay vì cả object reel
+      () => onToggleLike(reelRef.current),
+      [onToggleLike], 
     );
 
     const handleOpenComments = useCallback(
-      () => onOpenComments(reel),
-      [onOpenComments, reel.post_id],
+      () => onOpenComments(reelRef.current),
+      [onOpenComments],
     );
 
     const handleDelete = useCallback(
-      () => onDelete(reel),
-      [onDelete, reel.post_id],
+      () => onDelete(reelRef.current),
+      [onDelete],
     );
 
     return (

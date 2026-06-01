@@ -339,20 +339,21 @@ export default function HomeScreen() {
     [patchPost],
   );
 
-  const handleOpenAuthor = useCallback(
-    (post: Post) => {
-      if (Number(post.user_id) === Number(user?.user_id)) {
-        router.push(Routes.profile);
-        return;
-      }
+  // Đồng bộ userId vào ref để các callback không bị tạo lại khi user login/logout hoặc cập nhật profile
+  const userIdRef = useRef(user?.user_id);
+  userIdRef.current = user?.user_id;
 
-      router.push({
-        pathname: "/(users)/[userId]",
-        params: { userId: String(post.user_id) },
-      });
-    },
-    [user?.user_id],
-  );
+  const handleOpenAuthor = useCallback((post: Post) => {
+    if (Number(post.user_id) === Number(userIdRef.current)) {
+      router.push(Routes.profile);
+      return;
+    }
+
+    router.push({
+      pathname: "/(users)/[userId]",
+      params: { userId: String(post.user_id) },
+    });
+  }, []);
 
   const handleSubmitStory = useCallback(
     async (input: CreateStoryInput) => {
@@ -401,7 +402,7 @@ export default function HomeScreen() {
   const renderPostItem = useCallback(
     ({ item }: { item: Post }) => (
       <FeedPostItem
-        currentUserId={user?.user_id}
+        currentUserId={userIdRef.current}
         onDelete={handleDeletePost}
         onEdit={setEditingPost}
         onOpenAuthor={handleOpenAuthor}
@@ -415,8 +416,13 @@ export default function HomeScreen() {
       handleOpenAuthor,
       handleOpenComments,
       handleTogglePostLike,
-      user?.user_id,
     ],
+  );
+
+  // extraData giúp FlatList biết khi nào cần yêu cầu renderPostItem tính toán lại prop cho các item
+  const listExtraData = useMemo(
+    () => ({ userId: user?.user_id }),
+    [user?.user_id],
   );
 
   const listHeader = useMemo(
@@ -497,6 +503,7 @@ export default function HomeScreen() {
         ListHeaderComponent={listHeader}
         contentContainerStyle={styles.content}
         data={posts}
+        extraData={listExtraData}
         initialNumToRender={4}
         keyExtractor={keyExtractor}
         maxToRenderPerBatch={4}
