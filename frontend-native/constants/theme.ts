@@ -18,6 +18,7 @@ export const AppColors = {
   accentSoft: '#FFE0D4',
   success: '#1F9D6E',
   shadow: '#2A1C16',
+  checkmark: '#2040e4',
 };
 
 export const AppFonts = {

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,

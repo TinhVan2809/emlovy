@@ -124,7 +124,7 @@ const PostCard = memo(function PostCard({
                   name="checkmark"
                   color={"#ffffff"}
                   style={{
-                    backgroundColor: "#2040e4",
+                    backgroundColor: AppColors.checkmark,
                     borderRadius: 100,
                     padding: 1,
                   }}
@@ -192,17 +192,13 @@ const PostCard = memo(function PostCard({
                   name="trash-outline"
                   size={17}
                 />
-                <Text style={[styles.actionText, styles.deleteText]}>
-                  Xóa
-                </Text>
+                <Text style={[styles.actionText, styles.deleteText]}>Xóa</Text>
               </Pressable>
               <Pressable
                 onPress={() => setShowOwnerActions((value) => !value)}
                 style={styles.ownerActionButton}
               >
-                <Text style={[styles.actionText]}>
-                  Hủy
-                </Text>
+                <Text style={[styles.actionText]}>Hủy</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -231,41 +227,23 @@ const PostCard = memo(function PostCard({
                   Báo cáo
                 </Text>
               </Pressable>
-              <Pressable
-               style={styles.ownerActionButton}
-              >
-                <Text style={[styles.actionText]}>
-                  Chia sẽ lên
-                </Text>
+              <Pressable style={styles.ownerActionButton}>
+                <Text style={[styles.actionText]}>Chia sẽ lên</Text>
               </Pressable>
-              <Pressable
-               style={styles.ownerActionButton}
-              >
-                <Text style={[styles.actionText]}>
-                  Sao chép liên kết
-                </Text>
+              <Pressable style={styles.ownerActionButton}>
+                <Text style={[styles.actionText]}>Sao chép liên kết</Text>
               </Pressable>
-              <Pressable
-               style={styles.ownerActionButton}
-              >
-                <Text style={[styles.actionText]}>
-                  Đi đến bài viết
-                </Text>
+              <Pressable style={styles.ownerActionButton}>
+                <Text style={[styles.actionText]}>Đi đến bài viết</Text>
               </Pressable>
-              <Pressable
-               style={styles.ownerActionButton}
-              >
-                <Text style={[styles.actionText]}>
-                  Xem profile
-                </Text>
+              <Pressable style={styles.ownerActionButton}>
+                <Text style={[styles.actionText]}>Xem profile</Text>
               </Pressable>
               <Pressable
                 onPress={() => setShowUsersActions((value) => !value)}
                 style={styles.ownerActionButton}
               >
-                <Text style={[styles.actionText]}>
-                  Hủy
-                </Text>
+                <Text style={[styles.actionText]}>Hủy</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -286,7 +264,8 @@ const PostCard = memo(function PostCard({
               source={{ uri }}
               style={[
                 styles.mediaImage,
-                { height: mediaWidth * 1.5, width: mediaWidth },
+                // { height: mediaWidth * 1.5, width: mediaWidth },
+                { height: mediaWidth * 1.7, width: mediaWidth },
               ]}
             />
           ))}
@@ -490,6 +469,6 @@ const styles = StyleSheet.create({
   usernameVerified: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 5,
   },
 });
