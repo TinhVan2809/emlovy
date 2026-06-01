@@ -16,7 +16,11 @@ import Animated, {
   type SharedValue,
 } from "react-native-reanimated";
 import type { ComponentProps } from "react";
-import type { ViewToken } from "react-native";
+import type {
+  GestureResponderEvent,
+  LayoutChangeEvent,
+  ViewToken,
+} from "react-native";
 import {
   ActivityIndicator,
   Alert,
@@ -50,6 +54,8 @@ import type {
 } from "@/types/auth";
 
 const REELS_LIMIT = 6;
+const REFRESH_CONTROL_COLORS = [AppColors.accent];
+const VIDEO_FULLSCREEN_OPTIONS = { enable: true };
 
 const mergeReels = (current: Reel[], incoming: Reel[]) => {
   const seen = new Set<number>();
@@ -75,14 +81,6 @@ const formatCount = (value: number) => {
 
   return String(value);
 };
-
-const getReelVideoUrl = (reel: Reel) =>
-  resolveMediaUrl(
-    reel.video_url ||
-      reel.video?.media_url ||
-      reel.media.find((item) => item.type === "video")?.media_url,
-  );
-
 const getReelThumbnailUrl = (reel: Reel) =>
   resolveMediaUrl(
     (reel as any).thumbnail_url ||
@@ -113,23 +111,47 @@ export default function ReelsScreen() {
   const [isComposerVisible, setIsComposerVisible] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isGlobalMuted, setIsGlobalMuted] = useState(false);
-  const [likingIds, setLikingIds] = useState<Set<number>>(() => new Set());
+  const likingIdsRef = useRef<Set<number>>(new Set());
 
   // Sử dụng chiều cao đo được thực tế để tránh sai lệch Snap-to-interval
   const reelHeight = containerHeight;
-  const selectedCommentReel = commentReelId
-    ? reels.find((reel) => reel.post_id === commentReelId) || null
-    : null;
+  const selectedCommentReel = useMemo(
+    () =>
+      commentReelId
+        ? reels.find((reel) => reel.post_id === commentReelId) || null
+        : null,
+    [commentReelId, reels],
+  );
 
   // Tìm index của reel đang hoạt động để tính toán load lân cận
-  const activeIndex = reels.findIndex((r) => r.post_id === activeReelId);
+  const activeIndex = useMemo(
+    () => reels.findIndex((r) => r.post_id === activeReelId),
+    [activeReelId, reels],
+  );
 
   const patchReel = useCallback((reelId: number, patch: Partial<Reel>) => {
-    setReels((current) =>
-      current.map((reel) =>
-        reel.post_id === reelId ? { ...reel, ...patch } : reel,
-      ),
-    );
+    setReels((current) => {
+      let didPatch = false;
+      const next = current.map((reel) => {
+        if (reel.post_id !== reelId) {
+          return reel;
+        }
+
+        const hasChanges = Object.entries(patch).some(([key, value]) => {
+          const currentValue = (reel as Record<string, unknown>)[key];
+          return currentValue !== value;
+        });
+
+        if (!hasChanges) {
+          return reel;
+        }
+
+        didPatch = true;
+        return { ...reel, ...patch };
+      });
+
+      return didPatch ? next : current;
+    });
   }, []);
 
   const loadReels = useCallback(
@@ -188,23 +210,25 @@ export default function ReelsScreen() {
         ?.item as Reel | undefined;
 
       if (nextVisible) {
-        setActiveReelId(nextVisible.post_id);
+        setActiveReelId((current) =>
+          current === nextVisible.post_id ? current : nextVisible.post_id,
+        );
       }
     },
   ).current;
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
     loadReels(1, true);
-  };
+  }, [loadReels]);
 
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!pagination?.hasMore || isLoadingMore || isInitialLoading) {
       return;
     }
 
     loadReels(pagination.page + 1, false);
-  };
+  }, [isInitialLoading, isLoadingMore, loadReels, pagination]);
 
   const handleToggleLike = useCallback(
     async (reel: Reel) => {
@@ -213,18 +237,14 @@ export default function ReelsScreen() {
         return;
       }
 
-      if (likingIds.has(reel.post_id)) {
+      if (likingIdsRef.current.has(reel.post_id)) {
         return;
       }
 
       const likedByMe = !reel.liked_by_me;
       const likeCount = Math.max(0, reel.like_count + (likedByMe ? 1 : -1));
 
-      setLikingIds((current) => {
-        const next = new Set(current);
-        next.add(reel.post_id);
-        return next;
-      });
+      likingIdsRef.current.add(reel.post_id);
       patchReel(reel.post_id, {
         liked_by_me: likedByMe,
         like_count: likeCount,
@@ -248,14 +268,10 @@ export default function ReelsScreen() {
             : "Khong the cap nhat luot thich.",
         );
       } finally {
-        setLikingIds((current) => {
-          const next = new Set(current);
-          next.delete(reel.post_id);
-          return next;
-        });
+        likingIdsRef.current.delete(reel.post_id);
       }
     },
-    [token, likingIds, patchReel],
+    [token, patchReel],
   );
 
   const handleDelete = useCallback(
@@ -297,7 +313,7 @@ export default function ReelsScreen() {
     [token, loadReels],
   );
 
-  const handleCreateReel = async (input: CreateReelInput) => {
+  const handleCreateReel = useCallback(async (input: CreateReelInput) => {
     if (!token) {
       setError("Ban can dang nhap de dang reel.");
       return;
@@ -321,18 +337,18 @@ export default function ReelsScreen() {
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [loadReels, token]);
 
-  const handleCommentCountChange = (postId: number, commentCount: number) => {
-    patchReel(postId, { comment_count: commentCount });
-  };
+  const handleCommentCountChange = useCallback(
+    (postId: number, commentCount: number) => {
+      patchReel(postId, { comment_count: commentCount });
+    },
+    [patchReel],
+  );
 
   // Mang activeIndex ra ngoài deps của useCallback tránh re-render toàn bộ list
   const activeIndexRef = useRef(activeIndex);
-
-  useEffect(() => {
-    activeIndexRef.current = activeIndex;
-  }, [activeIndex]);
+  activeIndexRef.current = activeIndex;
 
   const activeReelIdRef = useRef(activeReelId);
   // Đồng bộ ref ngay trong body để renderReel luôn thấy giá trị mới nhất khi FlatList gọi renderItem
@@ -441,7 +457,7 @@ export default function ReelsScreen() {
   );
 
   const handleLayout = useCallback(
-    (e: any) => {
+    (e: LayoutChangeEvent) => {
       const { height: layoutHeight } = e.nativeEvent.layout;
       if (layoutHeight > 0 && Math.abs(containerHeight - layoutHeight) > 1) {
         setContainerHeight(layoutHeight);
@@ -451,6 +467,28 @@ export default function ReelsScreen() {
   );
 
   const keyExtractor = useCallback((item: Reel) => String(item.post_id), []);
+  const handleOpenComposer = useCallback(() => setIsComposerVisible(true), []);
+  const handleCloseComposer = useCallback(() => setIsComposerVisible(false), []);
+  const handleCloseComments = useCallback(() => setCommentReelId(null), []);
+  const headerStyle = useMemo(
+    () => [styles.header, { paddingTop: insets.top + 8 }],
+    [insets.top],
+  );
+  const errorBannerStyle = useMemo(
+    () => [styles.errorBanner, { top: insets.top + 58 }],
+    [insets.top],
+  );
+  const refreshControl = useMemo(
+    () => (
+      <RefreshControl
+        colors={REFRESH_CONTROL_COLORS}
+        onRefresh={handleRefresh}
+        refreshing={isRefreshing}
+        tintColor={AppColors.surface}
+      />
+    ),
+    [handleRefresh, isRefreshing],
+  );
 
   return (
     <View onLayout={handleLayout} style={styles.screen}>
@@ -466,12 +504,12 @@ export default function ReelsScreen() {
 
       <View
         pointerEvents="box-none"
-        style={[styles.header, { paddingTop: insets.top + 8 }]}
+        style={headerStyle}
       >
         <Text style={styles.headerTitle}>Reels</Text>
         <Pressable
           hitSlop={10}
-          onPress={() => setIsComposerVisible(true)}
+          onPress={handleOpenComposer}
           style={styles.headerButton}
         >
           <Ionicons color={AppColors.surface} name="camera" size={22} />
@@ -479,7 +517,7 @@ export default function ReelsScreen() {
       </View>
 
       {error ? (
-        <View style={[styles.errorBanner, { top: insets.top + 58 }]}>
+        <View style={errorBannerStyle}>
           <Text numberOfLines={2} style={styles.errorText}>
             {error}
           </Text>
@@ -506,14 +544,7 @@ export default function ReelsScreen() {
         onEndReachedThreshold={0.7}
         onViewableItemsChanged={onViewableItemsChanged}
         pagingEnabled
-        refreshControl={
-          <RefreshControl
-            colors={[AppColors.accent]}
-            onRefresh={handleRefresh}
-            refreshing={isRefreshing}
-            tintColor={AppColors.surface}
-          />
-        }
+        refreshControl={refreshControl}
         renderItem={renderReel}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="never" // Ngăn chặn iOS tự động thêm padding cho an toàn
@@ -524,14 +555,14 @@ export default function ReelsScreen() {
 
       <ReelComposerModal
         isSubmitting={isUploading}
-        onClose={() => setIsComposerVisible(false)}
+        onClose={handleCloseComposer}
         onSubmit={handleCreateReel}
         visible={isComposerVisible}
       />
 
       <CommentsSheet
         kind="reel"
-        onClose={() => setCommentReelId(null)}
+        onClose={handleCloseComments}
         onPostCommentCountChange={handleCommentCountChange}
         post={selectedCommentReel}
         token={token}
@@ -573,16 +604,16 @@ const ReelCard = memo(
     height: number;
     thumbnailUri?: string;
   }) => {
-    const videoUrl = getReelVideoUrl(reel);
+    const videoUrl = useMemo(
+      () => 
+       resolveMediaUrl(
+          reel.video_url ||
+            reel.video?.media_url ||
+            reel.media.find((item) => item.type === "video")?.media_url,
+        ),
+      [reel.media, reel.video?.media_url, reel.video_url],
+    );
     const [showActions, setShowActions] = useState(false);
-    // const authorName = reel.author?.name || "Emlovy User";
-    // const authorHandle = reel.author?.username
-    //   ? `@${reel.author.username}`
-    //   : "@emlovy";
-    // const avatarUrl = resolveMediaUrl(
-    //   reel.author?.avatar_url || reel.author?.avata,
-    // );
-    // const ownerCanDelete = Number(currentUserId) === Number(reel.user_id);
     const { authorName, authorHandle, avatarUrl, ownerCanDelete } = useMemo(
       () => ({
         authorName: reel.author?.name || "Emlovy User",
@@ -594,7 +625,7 @@ const ReelCard = memo(
         ),
         ownerCanDelete: Number(currentUserId) === Number(reel.user_id),
       }),
-      [reel.author, reel.user_id, currentUserId],
+      [reel, currentUserId],
     );
 
     // Hiệu ứng khi vuốt lên
@@ -644,16 +675,34 @@ const ReelCard = memo(
       [onDelete],
     );
 
+    const handleShowActions = useCallback(() => setShowActions(true), []);
+    const handleCloseActions = useCallback(() => setShowActions(false), []);
+    const handleDeleteAction = useCallback(() => {
+      setShowActions(false);
+      handleDelete();
+    }, [handleDelete]);
+    const reelPageHeightStyle = useMemo(
+      () => ({ height: cardHeight }),
+      [cardHeight],
+    );
+    const sideRailStyle = useMemo(
+      () => [styles.sideRail, { bottom: tabBarHeight + 25 }],
+      [tabBarHeight],
+    );
+    const reelInfoStyle = useMemo(
+      () => [styles.reelInfo, { bottom: tabBarHeight + 12 }],
+      [tabBarHeight],
+    );
+
     return (
       <Animated.View
-        style={[styles.reelPage, { height: cardHeight }, animatedStyle]}
+        style={[styles.reelPage, reelPageHeightStyle, animatedStyle]}
       >
         {videoUrl && shouldLoad ? (
           <ReelVideo
             isActive={isActive}
             isMuted={isMuted}
             tabBarHeight={tabBarHeight}
-            height={cardHeight}
             uri={videoUrl!}
             thumbnailUri={thumbnailUri}
           />
@@ -667,7 +716,7 @@ const ReelCard = memo(
           </View>
         )}
 
-        <View style={[styles.sideRail, { bottom: tabBarHeight + 25 }]}>
+        <View style={sideRailStyle}>
           <RailButton
             active={reel.liked_by_me}
             icon={reel.liked_by_me ? "heart" : "heart-outline"}
@@ -683,7 +732,7 @@ const ReelCard = memo(
           <RailButton
             icon="ellipsis-horizontal"
             label=""
-            onPress={() => setShowActions(true)}
+            onPress={handleShowActions}
           />
           {/* Bật/tắt âm thanh */}
           <Pressable onPress={onToggleMute} hitSlop={10}>
@@ -696,7 +745,7 @@ const ReelCard = memo(
         </View>
 
         {/* Tên và content của ggười đăng */}
-        <View style={[styles.reelInfo, { bottom: tabBarHeight + 12 }]}>
+        <View style={reelInfoStyle}>
           <View style={styles.authorRow}>
             <UserAvatar imageUrl={avatarUrl} name={authorName} size={42} />
             <View style={styles.authorMeta}>
@@ -729,7 +778,7 @@ const ReelCard = memo(
         <Modal animationType="fade" transparent visible={showActions}>
           <Pressable
             style={styles.actionModalBackdrop}
-            onPress={() => setShowActions(false)}
+            onPress={handleCloseActions}
           >
             <View style={styles.actionMenu}>
               <Pressable
@@ -742,17 +791,13 @@ const ReelCard = memo(
               </Pressable>
               <Pressable
                 style={styles.actionItem}
-                onPress={() => {
-                  setShowActions(false); /* Logic copy link */
-                }}
+                onPress={handleCloseActions}
               >
                 <Text style={styles.actionItemText}>Sao chép liên kết</Text>
               </Pressable>
               <Pressable
                 style={styles.actionItem}
-                onPress={() => {
-                  setShowActions(false); /* Logic share */
-                }}
+                onPress={handleCloseActions}
               >
                 <Text style={styles.actionItemText}>Chia sẻ</Text>
               </Pressable>
@@ -767,15 +812,15 @@ const ReelCard = memo(
                 </Text>
               </Pressable>
               {ownerCanDelete ? (
-                <Pressable style={styles.actionItem} onPress={handleDelete}>
+                <Pressable style={styles.actionItem} onPress={handleDeleteAction}>
                   <Text style={[styles.actionItemText, styles.destructiveText]}>
                     Xóa
                   </Text>
                 </Pressable>
               ) : null}
               <Pressable
-                style={[styles.actionItem, { borderBottomWidth: 0 }]}
-                onPress={() => setShowActions(false)}
+                style={styles.actionItemLast}
+                onPress={handleCloseActions}
               >
                 <Text style={[styles.actionItemText]}>Hủy</Text>
               </Pressable>
@@ -796,14 +841,22 @@ const ReelCard = memo(
       prev.index === next.index &&
       prev.thumbnailUri === next.thumbnailUri &&
       prev.currentUserId === next.currentUserId &&
+      prev.onDelete === next.onDelete &&
+      prev.onOpenComments === next.onOpenComments &&
+      prev.onToggleLike === next.onToggleLike &&
+      prev.onToggleMute === next.onToggleMute &&
       // So sánh reel theo từng field quan trọng, KHÔNG so sánh cả object
       prev.reel.post_id === next.reel.post_id &&
       prev.reel.liked_by_me === next.reel.liked_by_me &&
       prev.reel.like_count === next.reel.like_count &&
       prev.reel.comment_count === next.reel.comment_count &&
-      prev.reel.content === next.reel.content
+      prev.reel.content === next.reel.content &&
+      prev.reel.user_id === next.reel.user_id &&
+      prev.reel.author === next.reel.author &&
+      prev.reel.media === next.reel.media &&
+      prev.reel.video_url === next.reel.video_url &&
+      prev.reel.video?.media_url === next.reel.video?.media_url
       // scrollY là SharedValue (ref-stable) nên không cần so sánh
-      // onDelete, onToggleLike, onOpenComments, onToggleMute là functions
       // → không so sánh, chấp nhận dùng version mới nhất
     );
   },
@@ -811,25 +864,23 @@ const ReelCard = memo(
 
 ReelCard.displayName = "ReelCard";
 
-function ReelVideo({
+const ReelVideo = memo(function ReelVideo({
   isActive,
   uri,
   isMuted,
   tabBarHeight,
-  height,
   thumbnailUri,
 }: {
   isActive: boolean;
   uri: string;
   isMuted: boolean;
   tabBarHeight: number;
-  height: number;
   thumbnailUri?: string;
 }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [isReadyToPlay, setIsReadyToPlay] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const progress = useSharedValue(0);
   const containerWidth = useRef(0);
 
   const player = useVideoPlayer(uri, (nextPlayer) => {
@@ -837,7 +888,22 @@ function ReelVideo({
     nextPlayer.muted = isMuted;
   });
 
-  const handleSeek = (event: any) => {
+  const progressBarStyle = useAnimatedStyle(() => ({
+    width: `${progress.value * 100}%`,
+  }));
+  const progressBarContainerStyle = useMemo(
+    () => [styles.progressBarContainer, { bottom: tabBarHeight }],
+    [tabBarHeight],
+  );
+  const thumbnailSource = useMemo(
+    () => (thumbnailUri ? { uri: thumbnailUri } : undefined),
+    [thumbnailUri],
+  );
+  const handleProgressLayout = useCallback((event: LayoutChangeEvent) => {
+    containerWidth.current = event.nativeEvent.layout.width;
+  }, []);
+
+  const handleSeek = useCallback((event: GestureResponderEvent) => {
     const touchX = event.nativeEvent.locationX;
     if (containerWidth.current > 0 && player.duration > 0) {
       const seekPercentage = Math.max(
@@ -845,35 +911,45 @@ function ReelVideo({
         Math.min(1, touchX / containerWidth.current),
       );
       player.currentTime = seekPercentage * player.duration;
-      setProgress(seekPercentage);
+      progress.value = seekPercentage;
     }
-  };
+  }, [player, progress]);
 
   // Theo dõi tiến trình video
   useEffect(() => {
     if (!isActive) {
-      setProgress(0);
+      progress.value = 0;
       return;
     }
 
     const interval = setInterval(() => {
       if (player.duration > 0) {
-        setProgress(player.currentTime / player.duration);
+        progress.value = player.currentTime / player.duration;
       }
-    }, 100); // Cập nhật mỗi 100ms để thanh chạy mượt mà
+    }, 250);
 
     return () => clearInterval(interval);
-  }, [isActive, player]);
+  }, [isActive, player, progress]);
 
   useEffect(() => {
     player.muted = isMuted;
   }, [isMuted, player]);
 
   useEffect(() => {
+    setIsBuffering(false);
+    setIsReadyToPlay(false);
+    setIsManuallyPaused(false);
+    progress.value = 0;
+  }, [progress, uri]);
+
+  useEffect(() => {
     const sub = player.addListener("statusChange", ({ status }) => {
-      setIsBuffering(status === "loading");
+      const nextIsBuffering = status === "loading";
+      setIsBuffering((current) =>
+        current === nextIsBuffering ? current : nextIsBuffering,
+      );
       if (status === "readyToPlay") {
-        setIsReadyToPlay(true);
+        setIsReadyToPlay((current) => (current ? current : true));
       }
     });
     return () => sub.remove();
@@ -893,29 +969,27 @@ function ReelVideo({
     }
   }, [isActive, isManuallyPaused, player]);
 
-  const handleTogglePlayback = () => {
+  const handleTogglePlayback = useCallback(() => {
     if (!isActive) {
       return;
     }
 
     setIsManuallyPaused((value) => !value);
-  };
+  }, [isActive]);
 
   return (
     <Pressable onPress={handleTogglePlayback} style={styles.videoSurface}>
       <VideoView
-        fullscreenOptions={{
-          enable: true,
-        }}
+        fullscreenOptions={VIDEO_FULLSCREEN_OPTIONS}
         contentFit="contain"
         nativeControls={false}
         player={player}
         style={StyleSheet.absoluteFill}
       />
 
-      {thumbnailUri && !isReadyToPlay && (
+      {thumbnailSource && !isReadyToPlay && (
         <Image
-          source={{ uri: thumbnailUri }}
+          source={thumbnailSource}
           style={StyleSheet.absoluteFill}
           contentFit="contain"
           transition={200}
@@ -924,12 +998,12 @@ function ReelVideo({
 
       {/* Thanh tiến trình (Progress Bar) */}
       <Pressable
-        onLayout={(e) => (containerWidth.current = e.nativeEvent.layout.width)}
+        onLayout={handleProgressLayout}
         onPress={handleSeek}
-        style={[styles.progressBarContainer, { bottom: tabBarHeight }]}
+        style={progressBarContainerStyle}
       >
         <View style={styles.progressBarTrack}>
-          <View style={[styles.progressBar, { width: `${progress * 100}%` }]} />
+          <Animated.View style={[styles.progressBar, progressBarStyle]} />
         </View>
       </Pressable>
 
@@ -945,9 +1019,11 @@ function ReelVideo({
       ) : null}
     </Pressable>
   );
-}
+});
 
-function RailButton({
+ReelVideo.displayName = "ReelVideo";
+
+const RailButton = memo(function RailButton({
   active = false,
   destructive = false,
   icon,
@@ -976,7 +1052,9 @@ function RailButton({
       </Text>
     </Pressable>
   );
-}
+});
+
+RailButton.displayName = "RailButton";
 
 function ReelComposerModal({
   isSubmitting,
@@ -1496,6 +1574,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomColor: AppColors.border,
     borderBottomWidth: 1,
+    paddingVertical: 16,
+  },
+  actionItemLast: {
+    alignItems: "center",
     paddingVertical: 16,
   },
   actionItemText: {
