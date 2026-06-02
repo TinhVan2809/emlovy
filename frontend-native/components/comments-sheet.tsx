@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserAvatar } from '@/components/user-avatar';
 import { AppColors, AppFonts } from '@/constants/theme';
 import { postApi, reelApi, resolveMediaUrl } from '@/services/api';
+import { subscribeToReelEvents } from '@/services/reel-socket';
 import type { Post, PostComment } from '@/types/auth';
 
 const COMMENT_LIMIT = 20;
@@ -157,6 +158,37 @@ export function CommentsSheet({
       loadComments(1, true);
     }
   }, [loadComments, postId, visible]);
+
+  useEffect(() => {
+    if (kind !== 'reel' || !visible || !postId) {
+      return undefined;
+    }
+
+    const unsubscribe = subscribeToReelEvents({
+      onCommented: (payload) => {
+        if (!payload || payload.post_id !== postId) return;
+
+        const nextComment = payload.comment;
+
+        if (!nextComment) return;
+
+        setComments((current) => {
+          // avoid duplicates
+          if (current.some((c) => c.id === nextComment.id)) return current;
+
+          if (nextComment.parent_id) {
+            return appendReply(current, nextComment);
+          }
+
+          return [nextComment, ...current];
+        });
+
+        onPostCommentCountChange?.(postId, payload.comment_count);
+      },
+    });
+
+    return unsubscribe;
+  }, [kind, visible, postId, onPostCommentCountChange]);
 
   const handleLoadMore = () => {
     if (!hasMore || isLoading || isLoadingMore) {

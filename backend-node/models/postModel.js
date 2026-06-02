@@ -146,6 +146,15 @@ const createWithMedia = async ({
   media = [],
 }) => {
   const postId = await withTransaction(async (connection) => {
+
+    // Nếu không có nội dung (content) => tự động đặt là ngày tháng hiện tại.
+    if (!content) {
+      content = new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    }
     const [result] = await connection.execute(
       `
         INSERT INTO posts (user_id, post_type, content, visibility, location, latitude, longitude)
