@@ -290,6 +290,19 @@ export const authApi = {
   },
 };
 
+// [Admin]
+export const adminApi = {
+  async check(token: string) {
+    return request<{
+      message: string;
+      user: { user_id: number; username: string; role: string };
+    }>('/admin/check', {
+      method: 'GET',
+      token,
+    });
+  },
+};
+
 // [Profile]
 export const profileApi = {
   async getMe(token: string) {
@@ -326,19 +339,6 @@ export const profileApi = {
       method: 'POST',
       token,
       body: formData,
-    });
-  },
-};
-
-// [Admin]
-export const adminApi = {
-  async check(token: string) {
-    return request<{
-      message: string;
-      user: { user_id: number; username: string; role: string };
-    }>('/admin/check', {
-      method: 'GET',
-      token,
     });
   },
 };

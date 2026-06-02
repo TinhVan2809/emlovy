@@ -10,4 +10,5 @@ const router = express.Router();
 // Check admin access
 router.get("/check", authenticate, authorize("admin"), asyncHandler(adminController.check));
 
+
 module.exports = router;

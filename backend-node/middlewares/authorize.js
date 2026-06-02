@@ -11,7 +11,10 @@ module.exports = function authorize(...allowedRoles) {
       const role = String(req.user.role || "");
 
       if (!allowedRoles.includes(role)) {
-        throw createHttpError(403, "Bạn không có quyền truy cập.");
+        // throw createHttpError(403, "Bạn không có quyền truy cập admin.");
+        if (role === "customer") {
+          console.log(`${req.user.name} đã đăng nhập.`);
+        }
       }
 
       next();

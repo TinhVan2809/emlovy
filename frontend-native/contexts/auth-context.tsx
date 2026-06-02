@@ -89,14 +89,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = useCallback(
     async (input: LoginInput) => {
       const response = await authApi.login(input);
-      await persistSession(response.data.token, response.data.user);
-        // Redirect based on role returned by the auth API
+      const newToken = response.data.token;
+      await persistSession(newToken, response.data.user);
+      // Verify admin access using the freshly received token to avoid using stale state.
+      try {
+        const responseCheck = await adminApi.check(newToken);
+
+        // Route to admin if either the login payload or the server check identifies admin.
+        if (
+          response.data.user?.role === 'admin' ||
+          responseCheck?.data?.user?.role === 'admin'
+        ) {
+          router.replace(Routes.admin);
+          return; 
+        }
+      } catch (_err) { 
+        // Ignore admin check errors (common for non-admin users).
         if (response.data.user?.role === 'admin') {
           router.replace(Routes.admin);
           return;
         }
+          console.log(_err);
+      }
 
-        router.replace(Routes.home);
+      router.replace(Routes.home);
     },
     [persistSession],
   );
