@@ -46,6 +46,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { AppColors, AppFonts } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { reelApi, resolveMediaUrl } from "@/services/api";
+import { subscribeToReelEvents } from "@/services/reel-socket";
 import type {
   CreateReelInput,
   PostMediaInput,
@@ -198,6 +199,30 @@ export default function ReelsScreen() {
   useEffect(() => {
     loadReels();
   }, [loadReels]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToReelEvents({
+      onCreated: (reel) => {
+        setReels((current) => mergeReels([reel], current));
+      },
+      onDeleted: ({ post_id }) => {
+        setReels((current) => current.filter((r) => r.post_id !== post_id));
+      },
+      onLiked: (payload) => {
+        if (!payload || typeof payload.post_id === 'undefined') return;
+        patchReel(payload.post_id, {
+          liked_by_me: payload.liked_by_me,
+          like_count: payload.like_count,
+        });
+      },
+      onCommented: (payload) => {
+        if (!payload || typeof payload.post_id === 'undefined') return;
+        patchReel(payload.post_id, { comment_count: payload.comment_count });
+      },
+    });
+
+    return unsubscribe;
+  }, [patchReel]);
 
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 80,

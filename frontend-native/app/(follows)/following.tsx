@@ -14,6 +14,7 @@ import {
 import { followApi, resolveMediaUrl } from "@/services/api";
 import { useAuth } from "@/contexts/auth-context";
 import type { Profile } from "@/types/auth";
+import { AppColors } from "@/constants/theme";
 
 export default function Following() {
   const { token, user } = useAuth();
@@ -112,7 +113,7 @@ export default function Following() {
                     }}
                     disabled={unfollowingUserId === item.user_id}
                   >
-                    <Text style={{ color: "#fff", fontSize: 13 }}>
+                    <Text style={styles.unFollowText}>
                       Unfollow
                     </Text>
                   </Pressable>
@@ -178,7 +179,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   unFollowText: {
-    cursor: "#fff",
-    backgroundColor: "#000",
+    color: "#fff",
+    backgroundColor: AppColors.text,
+    fontSize: 12
   },
 });

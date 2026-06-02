@@ -14,6 +14,7 @@ import {
 
 import { UserAvatar } from "@/components/user-avatar";
 import { VisualTile } from "@/components/visual-tile";
+import ImageViewer from "@/components/image-viewer";
 import { AppColors, AppFonts } from "@/constants/theme";
 import { resolveMediaUrl } from "@/services/api";
 import type { Post } from "@/types/auth";
@@ -93,6 +94,9 @@ const PostCard = memo(function PostCard({
         .filter(Boolean) as string[],
     [post.media],
   );
+
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
 
   const handleDelete = useCallback(() => {
     Alert.alert("Xóa bài viết", "Bạn chắc chắn muốn xóa bài viết này?", [
@@ -257,17 +261,23 @@ const PostCard = memo(function PostCard({
           showsHorizontalScrollIndicator={false}
           style={styles.mediaFrame}
         >
-          {imageUrls.map((uri) => (
-            <Image
-              key={uri}
-              contentFit="cover"
-              source={{ uri }}
-              style={[
-                styles.mediaImage,
-                // { height: mediaWidth * 1.5, width: mediaWidth },
-                { height: mediaWidth * 1.7, width: mediaWidth },
-              ]}
-            />
+          {imageUrls.map((uri, idx) => (
+            <Pressable
+              key={uri + String(idx)}
+              onPress={() => {
+                setViewerIndex(idx);
+                setViewerVisible(true);
+              }}
+            >
+              <Image
+                contentFit="cover"
+                source={{ uri }}
+                style={[
+                  styles.mediaImage,
+                  { height: mediaWidth * 1.7, width: mediaWidth },
+                ]}
+              />
+            </Pressable>
           ))}
         </ScrollView>
       ) : (
@@ -278,6 +288,13 @@ const PostCard = memo(function PostCard({
           tone={fallbackTone.tone}
         />
       )}
+
+      <ImageViewer
+        visible={viewerVisible}
+        images={imageUrls}
+        initialIndex={viewerIndex}
+        onClose={() => setViewerVisible(false)}
+      />
 
       <View style={styles.actions}>
         <View style={styles.actionGroup}>
