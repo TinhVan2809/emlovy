@@ -1,10 +1,18 @@
-import { router } from 'expo-router';
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { router } from "expo-router";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-import { Routes } from '@/constants/routes';
-import { authApi } from '@/services/api';
-import { tokenStorage } from '@/services/token-storage';
-import type { LoginInput, RegisterInput, User } from '@/types/auth';
+import { Routes } from "@/constants/routes";
+import { authApi, adminApi } from "@/services/api";
+import { tokenStorage } from "@/services/token-storage";
+import type { LoginInput, RegisterInput, User } from "@/types/auth";
 
 type AuthContextValue = {
   isAuthenticated: boolean;
@@ -29,11 +37,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  const persistSession = useCallback(async (nextToken: string, nextUser: User) => {
-    await tokenStorage.set(nextToken);
-    setToken(nextToken);
-    setUser(nextUser);
-  }, []);
+  const persistSession = useCallback(
+    async (nextToken: string, nextUser: User) => {
+      await tokenStorage.set(nextToken);
+      setToken(nextToken);
+      setUser(nextUser);
+    },
+    [],
+  );
 
   const clearSession = useCallback(async () => {
     await tokenStorage.remove();
@@ -79,7 +90,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async (input: LoginInput) => {
       const response = await authApi.login(input);
       await persistSession(response.data.token, response.data.user);
-      router.replace(Routes.home);
+        // Redirect based on role returned by the auth API
+        if (response.data.user?.role === 'admin') {
+          router.replace(Routes.admin);
+          return;
+        }
+
+        router.replace(Routes.home);
     },
     [persistSession],
   );
@@ -88,7 +105,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async (input: RegisterInput) => {
       const response = await authApi.register(input);
       await persistSession(response.data.token, response.data.user);
-      router.replace(Routes.home);
+        if (response.data.user?.role === 'admin') {
+          router.replace(Routes.admin);
+          return;
+        }
+
+        router.replace(Routes.home);
     },
     [persistSession],
   );
@@ -133,7 +155,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider');
+    throw new Error("useAuth must be used inside AuthProvider");
   }
 
   return context;

@@ -330,6 +330,19 @@ export const profileApi = {
   },
 };
 
+// [Admin]
+export const adminApi = {
+  async check(token: string) {
+    return request<{
+      message: string;
+      user: { user_id: number; username: string; role: string };
+    }>('/admin/check', {
+      method: 'GET',
+      token,
+    });
+  },
+};
+
 // [Posts]
 export const postApi = {
   async getFeed({ page = 1, limit = 10, token }: { page?: number; limit?: number; token?: string | null } = {}) {

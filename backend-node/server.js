@@ -80,6 +80,8 @@ const createApp = () => {
   app.use("/api/reels", reelRoutes);
   app.use("/api/stories", storyRoutes);
   app.use("/api/search", searchRoutes);
+  const adminRoutes = require("./routes/adminRoutes");
+  app.use("/api/admin", adminRoutes);
   app.use(notFound);
   app.use(errorHandler);
 
