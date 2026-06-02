@@ -21,7 +21,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'f31fb58d-48f9-11f1-88b4-b445068c3c7e:1-422';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'f31fb58d-48f9-11f1-88b4-b445068c3c7e:1-495';
 
 --
 -- Table structure for table `comments`
@@ -51,7 +51,7 @@ CREATE TABLE `comments` (
   CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE,
   CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   CONSTRAINT `comments_ibfk_3` FOREIGN KEY (`parent_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -60,7 +60,7 @@ CREATE TABLE `comments` (
 
 LOCK TABLES `comments` WRITE;
 /*!40000 ALTER TABLE `comments` DISABLE KEYS */;
-INSERT INTO `comments` VALUES (1,5,1,NULL,'Ok',1,0,0,NULL,'2026-05-15 11:17:40','2026-05-25 15:09:40'),(2,5,1,1,'Hihi',0,0,0,NULL,'2026-05-15 11:17:54','2026-05-15 11:17:54'),(3,5,5,NULL,'Xin chào',0,0,0,NULL,'2026-05-25 15:09:32','2026-05-25 15:09:32'),(4,5,5,1,'Kk',0,0,0,NULL,'2026-05-25 15:09:47','2026-05-25 15:09:47');
+INSERT INTO `comments` VALUES (1,5,1,NULL,'Ok',1,0,0,NULL,'2026-05-15 11:17:40','2026-05-25 15:09:40'),(2,5,1,1,'Hihi',0,0,0,NULL,'2026-05-15 11:17:54','2026-05-15 11:17:54'),(3,5,5,NULL,'Xin chào',0,0,0,NULL,'2026-05-25 15:09:32','2026-05-25 15:09:32'),(4,5,5,1,'Kk',0,0,0,NULL,'2026-05-25 15:09:47','2026-05-25 15:09:47'),(5,13,3,NULL,'Alo',0,0,0,NULL,'2026-05-30 18:22:55','2026-05-30 18:22:55'),(6,13,3,NULL,'Huydzsieucapvippro',0,0,0,NULL,'2026-05-30 18:23:38','2026-05-30 18:23:38'),(7,13,2,NULL,'M simp chúa',0,0,0,NULL,'2026-05-30 18:24:46','2026-05-30 18:24:46'),(8,14,3,NULL,'Test cmt 123',0,0,0,NULL,'2026-05-30 18:25:16','2026-05-30 18:25:16'),(9,13,3,7,'Cc',0,0,0,NULL,'2026-05-30 18:26:25','2026-05-30 18:26:25'),(10,22,2,NULL,'Tìm thêm cái nào ngon',0,0,0,NULL,'2026-05-31 18:25:22','2026-05-31 18:25:22'),(11,23,1,NULL,'Thêm captions vô mậy',0,0,0,NULL,'2026-05-31 18:26:52','2026-05-31 18:26:52'),(12,24,1,NULL,'???',0,0,0,NULL,'2026-05-31 18:47:22','2026-05-31 18:47:22'),(13,24,3,12,'?',0,0,0,NULL,'2026-05-31 18:54:49','2026-05-31 18:54:49'),(14,24,2,NULL,'...',0,0,0,NULL,'2026-05-31 18:57:49','2026-05-31 18:57:49');
 /*!40000 ALTER TABLE `comments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -127,7 +127,7 @@ CREATE TABLE `conversations` (
 
 LOCK TABLES `conversations` WRITE;
 /*!40000 ALTER TABLE `conversations` DISABLE KEYS */;
-INSERT INTO `conversations` VALUES (1,'private',NULL,NULL,1,'2026-05-22 08:08:13',1,'2026-05-22 08:07:17','2026-05-22 08:08:13'),(2,'private',NULL,NULL,5,'2026-05-22 08:20:02',1,'2026-05-22 08:09:40','2026-05-22 08:20:02'),(3,'private',NULL,NULL,7,'2026-05-26 14:43:26',1,'2026-05-26 14:43:08','2026-05-26 14:43:26'),(4,'private',NULL,NULL,14,'2026-05-28 21:18:12',1,'2026-05-28 21:13:57','2026-05-28 21:18:12');
+INSERT INTO `conversations` VALUES (1,'private',NULL,NULL,1,'2026-05-22 08:08:13',1,'2026-05-22 08:07:17','2026-05-22 08:08:13'),(2,'private',NULL,NULL,5,'2026-05-22 08:20:02',1,'2026-05-22 08:09:40','2026-05-22 08:20:02'),(3,'private',NULL,NULL,7,'2026-05-26 14:43:26',1,'2026-05-26 14:43:08','2026-05-26 14:43:26'),(4,'private',NULL,NULL,17,'2026-06-01 09:18:46',1,'2026-05-28 21:13:57','2026-06-01 09:18:46');
 /*!40000 ALTER TABLE `conversations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -156,7 +156,7 @@ CREATE TABLE `follows` (
 
 LOCK TABLES `follows` WRITE;
 /*!40000 ALTER TABLE `follows` DISABLE KEYS */;
-INSERT INTO `follows` VALUES (1,2,'2026-05-27 09:28:44'),(1,3,'2026-05-27 09:33:26'),(2,1,'2026-05-27 16:37:42'),(5,1,'2026-05-25 15:10:02'),(5,2,'2026-05-27 09:30:37');
+INSERT INTO `follows` VALUES (1,2,'2026-05-27 09:28:44'),(1,3,'2026-05-27 09:33:26'),(2,1,'2026-05-27 16:37:42'),(2,3,'2026-05-29 15:17:17'),(3,1,'2026-05-31 18:54:14'),(3,2,'2026-05-31 18:54:10'),(5,1,'2026-05-25 15:10:02'),(5,2,'2026-05-27 09:30:37');
 /*!40000 ALTER TABLE `follows` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -180,7 +180,7 @@ CREATE TABLE `likes` (
   CONSTRAINT `likes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
   CONSTRAINT `likes_ibfk_2` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`),
   CONSTRAINT `likes_ibfk_3` FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -189,7 +189,7 @@ CREATE TABLE `likes` (
 
 LOCK TABLES `likes` WRITE;
 /*!40000 ALTER TABLE `likes` DISABLE KEYS */;
-INSERT INTO `likes` VALUES (1,1,5,NULL,'2026-05-15 11:17:30'),(3,2,2,NULL,'2026-05-15 11:29:24'),(4,2,3,NULL,'2026-05-15 11:29:26'),(5,2,5,NULL,'2026-05-15 13:54:39'),(6,1,2,NULL,'2026-05-15 17:12:23'),(7,1,3,NULL,'2026-05-16 08:02:17'),(8,2,4,NULL,'2026-05-19 15:42:38'),(9,1,4,NULL,'2026-05-24 13:00:49'),(10,5,5,NULL,'2026-05-25 15:09:23'),(11,5,NULL,1,'2026-05-25 15:09:40'),(12,2,9,NULL,'2026-05-27 17:17:40');
+INSERT INTO `likes` VALUES (1,1,5,NULL,'2026-05-15 11:17:30'),(3,2,2,NULL,'2026-05-15 11:29:24'),(4,2,3,NULL,'2026-05-15 11:29:26'),(5,2,5,NULL,'2026-05-15 13:54:39'),(6,1,2,NULL,'2026-05-15 17:12:23'),(7,1,3,NULL,'2026-05-16 08:02:17'),(8,2,4,NULL,'2026-05-19 15:42:38'),(9,1,4,NULL,'2026-05-24 13:00:49'),(10,5,5,NULL,'2026-05-25 15:09:23'),(11,5,NULL,1,'2026-05-25 15:09:40'),(12,2,9,NULL,'2026-05-27 17:17:40'),(13,2,10,NULL,'2026-05-29 15:48:07'),(14,1,10,NULL,'2026-05-29 18:22:14'),(15,1,11,NULL,'2026-05-30 16:03:13'),(16,2,11,NULL,'2026-05-30 17:54:08'),(17,2,13,NULL,'2026-05-30 18:14:01'),(18,3,12,NULL,'2026-05-30 18:15:38'),(19,3,13,NULL,'2026-05-30 18:15:41'),(20,3,14,NULL,'2026-05-30 18:25:25'),(21,2,15,NULL,'2026-05-30 20:52:53'),(22,1,21,NULL,'2026-05-30 22:47:28'),(23,2,16,NULL,'2026-05-31 09:24:34'),(24,1,23,NULL,'2026-05-31 18:27:05'),(25,1,24,NULL,'2026-05-31 18:47:48'),(26,2,24,NULL,'2026-05-31 18:57:37'),(27,3,2,NULL,'2026-05-31 18:59:30'),(28,3,3,NULL,'2026-05-31 18:59:31'),(29,3,4,NULL,'2026-05-31 18:59:32'),(30,3,5,NULL,'2026-05-31 18:59:34'),(31,3,9,NULL,'2026-05-31 18:59:36'),(32,3,10,NULL,'2026-05-31 18:59:37'),(33,3,11,NULL,'2026-05-31 19:00:40'),(34,2,12,NULL,'2026-06-01 10:39:03'),(35,2,18,NULL,'2026-06-01 11:49:34'),(36,2,17,NULL,'2026-06-01 11:54:30'),(37,2,19,NULL,'2026-06-01 12:16:20');
 /*!40000 ALTER TABLE `likes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -253,7 +253,7 @@ CREATE TABLE `messages` (
   CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`conversation_id`) REFERENCES `conversations` (`conversation_id`) ON DELETE CASCADE,
   CONSTRAINT `messages_ibfk_2` FOREIGN KEY (`sender_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   CONSTRAINT `messages_ibfk_3` FOREIGN KEY (`reply_to_message_id`) REFERENCES `messages` (`message_id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -262,7 +262,7 @@ CREATE TABLE `messages` (
 
 LOCK TABLES `messages` WRITE;
 /*!40000 ALTER TABLE `messages` DISABLE KEYS */;
-INSERT INTO `messages` VALUES (1,1,1,'alo','text',0,0,NULL,NULL,'2026-05-22 08:08:13','2026-05-22 08:08:13'),(2,2,2,'Xin chào','text',0,0,NULL,NULL,'2026-05-22 08:09:53','2026-05-22 08:09:53'),(3,2,1,'Có j ko','text',0,0,NULL,NULL,'2026-05-22 08:18:07','2026-05-22 08:18:07'),(4,2,2,'Mai đi chơi ku','text',0,0,NULL,NULL,'2026-05-22 08:19:44','2026-05-22 08:19:44'),(5,2,1,'...','text',0,0,NULL,NULL,'2026-05-22 08:20:02','2026-05-22 08:20:02'),(6,3,5,'Hello','text',0,0,NULL,NULL,'2026-05-26 14:43:15','2026-05-26 14:43:15'),(7,3,1,'hi','text',0,0,NULL,NULL,'2026-05-26 14:43:26','2026-05-26 14:43:26'),(8,4,2,'vô chưa mậy','text',0,0,NULL,NULL,'2026-05-28 21:14:04','2026-05-28 21:14:04'),(9,4,3,'Cc','text',0,0,NULL,NULL,'2026-05-28 21:15:23','2026-05-28 21:15:23'),(10,4,3,'Đi ăn','text',0,0,NULL,NULL,'2026-05-28 21:15:28','2026-05-28 21:15:28'),(11,4,2,'đi ku','text',0,0,NULL,NULL,'2026-05-28 21:15:42','2026-05-28 21:15:42'),(12,4,3,'Đ làm cái ô nhập liệu trên bàn phím với nút gửi ku','text',0,0,NULL,NULL,'2026-05-28 21:15:56','2026-05-28 21:15:56'),(13,4,2,'nhấn enter trên bàn phìm để xuống dòng mậy, gửi mới ấn nút','text',0,0,NULL,NULL,'2026-05-28 21:17:10','2026-05-28 21:17:10'),(14,4,2,'ảnh gái m đâu, đăng đi','text',0,0,NULL,NULL,'2026-05-28 21:18:12','2026-05-28 21:18:12');
+INSERT INTO `messages` VALUES (1,1,1,'alo','text',0,0,NULL,NULL,'2026-05-22 08:08:13','2026-05-22 08:08:13'),(2,2,2,'Xin chào','text',0,0,NULL,NULL,'2026-05-22 08:09:53','2026-05-22 08:09:53'),(3,2,1,'Có j ko','text',0,0,NULL,NULL,'2026-05-22 08:18:07','2026-05-22 08:18:07'),(4,2,2,'Mai đi chơi ku','text',0,0,NULL,NULL,'2026-05-22 08:19:44','2026-05-22 08:19:44'),(5,2,1,'...','text',0,0,NULL,NULL,'2026-05-22 08:20:02','2026-05-22 08:20:02'),(6,3,5,'Hello','text',0,0,NULL,NULL,'2026-05-26 14:43:15','2026-05-26 14:43:15'),(7,3,1,'hi','text',0,0,NULL,NULL,'2026-05-26 14:43:26','2026-05-26 14:43:26'),(8,4,2,'vô chưa mậy','text',0,0,NULL,NULL,'2026-05-28 21:14:04','2026-05-28 21:14:04'),(9,4,3,'Cc','text',0,0,NULL,NULL,'2026-05-28 21:15:23','2026-05-28 21:15:23'),(10,4,3,'Đi ăn','text',0,0,NULL,NULL,'2026-05-28 21:15:28','2026-05-28 21:15:28'),(11,4,2,'đi ku','text',0,0,NULL,NULL,'2026-05-28 21:15:42','2026-05-28 21:15:42'),(12,4,3,'Đ làm cái ô nhập liệu trên bàn phím với nút gửi ku','text',0,0,NULL,NULL,'2026-05-28 21:15:56','2026-05-28 21:15:56'),(13,4,2,'nhấn enter trên bàn phìm để xuống dòng mậy, gửi mới ấn nút','text',0,0,NULL,NULL,'2026-05-28 21:17:10','2026-05-28 21:17:10'),(14,4,2,'ảnh gái m đâu, đăng đi','text',0,0,NULL,NULL,'2026-05-28 21:18:12','2026-05-28 21:18:12'),(15,4,3,'R ku','text',0,0,NULL,NULL,'2026-05-30 18:13:49','2026-05-30 18:13:49'),(16,4,3,'Ngủ đi ku','text',0,0,NULL,NULL,'2026-05-30 18:25:50','2026-05-30 18:25:50'),(17,4,2,'cc','text',0,0,NULL,NULL,'2026-06-01 09:18:46','2026-06-01 09:18:46');
 /*!40000 ALTER TABLE `messages` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -316,7 +316,7 @@ CREATE TABLE `post_media` (
   PRIMARY KEY (`post_media_id`),
   KEY `idx_post_media` (`post_id`,`sort_order`),
   CONSTRAINT `post_media_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -325,7 +325,7 @@ CREATE TABLE `post_media` (
 
 LOCK TABLES `post_media` WRITE;
 /*!40000 ALTER TABLE `post_media` DISABLE KEYS */;
-INSERT INTO `post_media` VALUES (2,1,'/uploads/posts/user-1-1778209979555-j9ayt2lv.jpg','image',0,NULL,NULL,NULL),(3,1,'/uploads/posts/user-1-1778209979555-b9voh22m.jpg','image',1,NULL,NULL,NULL),(4,2,'/uploads/posts/user-1-1778210329729-b4ti0a7o.jpg','image',0,NULL,NULL,NULL),(6,4,'/uploads/posts/user-3-1778376913673-6zi1d7ay.jpg','image',0,NULL,NULL,NULL),(7,5,'/uploads/posts/user-1-1778782553344-rko6a2jn.jpg','image',0,NULL,NULL,NULL),(8,3,'/uploads/posts/user-2-1778782905230-wei27h29.png','image',0,NULL,NULL,NULL),(9,8,'/uploads/posts/user-5-1779806549290-w4asxk4p.jpg','image',0,NULL,NULL,NULL),(10,9,'/uploads/posts/user-2-1779902156968-8qr7gptl.jpg','image',0,NULL,NULL,NULL),(11,10,'/uploads/posts/user-3-1780002906209-ak9pf4cy.jpg','image',0,NULL,NULL,NULL);
+INSERT INTO `post_media` VALUES (2,1,'/uploads/posts/user-1-1778209979555-j9ayt2lv.jpg','image',0,NULL,NULL,NULL),(3,1,'/uploads/posts/user-1-1778209979555-b9voh22m.jpg','image',1,NULL,NULL,NULL),(4,2,'/uploads/posts/user-1-1778210329729-b4ti0a7o.jpg','image',0,NULL,NULL,NULL),(6,4,'/uploads/posts/user-3-1778376913673-6zi1d7ay.jpg','image',0,NULL,NULL,NULL),(7,5,'/uploads/posts/user-1-1778782553344-rko6a2jn.jpg','image',0,NULL,NULL,NULL),(8,3,'/uploads/posts/user-2-1778782905230-wei27h29.png','image',0,NULL,NULL,NULL),(9,8,'/uploads/posts/user-5-1779806549290-w4asxk4p.jpg','image',0,NULL,NULL,NULL),(10,9,'/uploads/posts/user-2-1779902156968-8qr7gptl.jpg','image',0,NULL,NULL,NULL),(11,10,'/uploads/posts/user-3-1780002906209-ak9pf4cy.jpg','image',0,NULL,NULL,NULL),(12,11,'/uploads/reels/user-1-1780156393015-j42t7uic.mp4','video',0,NULL,NULL,NULL),(13,12,'/uploads/reels/user-2-1780164654740-fxzi9tc6.mp4','video',0,NULL,NULL,NULL),(14,13,'/uploads/reels/user-3-1780164801886-5qffgakd.mp4','video',0,NULL,NULL,NULL),(15,14,'/uploads/posts/user-3-1780164910377-djl964d2.jpg','image',0,NULL,NULL,NULL),(16,15,'/uploads/reels/user-3-1780165186018-7ir22aio.mp4','video',0,NULL,NULL,NULL),(17,16,'/uploads/reels/user-3-1780165365457-cv1eg536.mp4','video',0,NULL,NULL,NULL),(18,17,'/uploads/reels/user-3-1780165953252-whzeiu3p.mp4','video',0,NULL,NULL,NULL),(19,18,'/uploads/reels/user-3-1780166255472-nnm5w8rd.mp4','video',0,NULL,NULL,NULL),(20,19,'/uploads/reels/user-3-1780166763646-8nvzzig0.mp4','video',0,NULL,NULL,NULL),(21,20,'/uploads/reels/user-3-1780167111067-dynmxun6.mp4','video',0,NULL,NULL,NULL),(22,21,'/uploads/reels/user-3-1780167969267-1a55ptyr.mp4','video',0,NULL,NULL,NULL),(23,22,'/uploads/reels/user-3-1780251514366-nc8vk4n1.mp4','video',0,NULL,NULL,NULL),(24,23,'/uploads/reels/user-3-1780251900096-4ankzztf.mp4','video',0,NULL,NULL,NULL),(25,24,'/uploads/reels/user-3-1780252974884-9xptj07w.mp4','video',0,NULL,NULL,NULL),(26,25,'/uploads/posts/user-2-1780338555252-0kn5g2u2.jpg','image',0,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `post_media` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -362,11 +362,11 @@ CREATE TABLE `posts` (
   KEY `idx_created_at` (`created_at` DESC),
   KEY `idx_is_deleted` (`is_deleted`),
   KEY `idx_pinned` (`is_pinned`,`created_at` DESC),
-  KEY `idx_post_type_feed` (`post_type`,`is_deleted`,`visibility`,`created_at` DESC),
   KEY `idx_feed_visible` (`is_deleted`,`visibility`,`is_pinned`,`created_at` DESC),
   KEY `idx_user_deleted_created` (`user_id`,`is_deleted`,`created_at` DESC),
+  KEY `idx_post_type_feed` (`post_type`,`is_deleted`,`visibility`,`created_at` DESC),
   CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -375,7 +375,7 @@ CREATE TABLE `posts` (
 
 LOCK TABLES `posts` WRITE;
 /*!40000 ALTER TABLE `posts` DISABLE KEYS */;
-INSERT INTO `posts` (`post_id`, `user_id`, `content`, `like_count`, `comment_count`, `share_count`, `view_count`, `save_count`, `visibility`, `location`, `latitude`, `longitude`, `is_deleted`, `deleted_at`, `is_edited`, `is_pinned`, `created_at`, `updated_at`) VALUES (1,1,'Xin chào các bạn.',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-08 03:15:24',1,0,'2026-05-08 03:11:23','2026-05-08 03:15:24'),(2,1,'Hello.',2,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-08 03:18:49','2026-05-15 17:12:23'),(3,2,'Git syntax basic',2,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,1,0,'2026-05-08 03:20:21','2026-05-16 08:02:17'),(4,3,'Xin chao',2,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-10 01:35:13','2026-05-24 13:00:49'),(5,1,'Http status',3,4,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-14 18:15:53','2026-05-25 15:09:47'),(6,1,'something is matter?',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-21 11:11:50',0,0,'2026-05-21 04:27:46','2026-05-21 11:11:50'),(7,2,'Hello anh em',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-25 14:41:37',0,0,'2026-05-25 14:39:55','2026-05-25 14:41:37'),(8,5,'Chill',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-26 14:42:41',0,0,'2026-05-26 14:42:29','2026-05-26 14:42:41'),(9,2,'Tôi chả nghỉ gì',1,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,1,0,'2026-05-27 17:03:12','2026-05-27 17:17:40'),(10,3,'Test',0,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-28 21:15:06','2026-05-28 21:15:06');
+INSERT INTO `posts` VALUES (1,1,'post','Xin chào các bạn.',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-08 03:15:24',1,0,'2026-05-08 03:11:23','2026-05-08 03:15:24'),(2,1,'post','Hello.',3,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-08 03:18:49','2026-05-31 18:59:30'),(3,2,'post','Git syntax basic',3,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,1,0,'2026-05-08 03:20:21','2026-05-31 18:59:31'),(4,3,'post','Xin chao',3,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-31 18:59:54',0,0,'2026-05-10 01:35:13','2026-05-31 18:59:54'),(5,1,'post','Http status',4,4,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-14 18:15:53','2026-05-31 18:59:34'),(6,1,'post','something is matter?',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-21 11:11:50',0,0,'2026-05-21 04:27:46','2026-05-21 11:11:50'),(7,2,'post','Hello anh em',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-25 14:41:37',0,0,'2026-05-25 14:39:55','2026-05-25 14:41:37'),(8,5,'post','Chill',0,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-26 14:42:41',0,0,'2026-05-26 14:42:29','2026-05-26 14:42:41'),(9,2,'post','Tôi chả nghỉ gì',2,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,1,0,'2026-05-27 17:03:12','2026-05-31 18:59:36'),(10,3,'post','Test',3,0,0,0,0,'public',NULL,NULL,NULL,1,'2026-05-31 18:59:53',0,0,'2026-05-28 21:15:06','2026-05-31 18:59:53'),(11,1,'reel','Hello',3,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 15:55:42','2026-05-31 19:00:40'),(12,2,'reel','31/05/2026',2,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:11:17','2026-06-01 10:39:03'),(13,3,'reel','Test test',2,4,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:13:23','2026-05-30 18:26:25'),(14,3,'post','Test 123',1,1,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:15:10','2026-05-30 18:25:25'),(15,3,'reel','31/12/2016',1,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:19:46','2026-05-30 22:26:47'),(16,3,'reel','31/12/2016',1,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:22:47','2026-05-31 09:24:34'),(17,3,'reel','31/12/2016',1,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:32:34','2026-06-01 11:54:30'),(18,3,'reel','31/12/2016',1,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:37:35','2026-06-01 11:49:34'),(19,3,'reel','31/12/2016',1,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:46:04','2026-06-01 12:16:20'),(20,3,'reel','31/12/2016',0,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 18:52:04','2026-05-30 22:25:46'),(21,3,'reel','31/12/2016',1,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-30 19:06:09','2026-05-30 22:47:28'),(22,3,'reel','01/06/2026',0,1,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-31 18:18:34','2026-05-31 18:28:44'),(23,3,'reel','01/06/2026',1,1,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-31 18:25:00','2026-05-31 18:28:44'),(24,3,'reel','Captions test',2,3,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-05-31 18:42:55','2026-05-31 18:57:49'),(25,2,'post','02/06/2026',0,0,0,0,0,'public',NULL,NULL,NULL,0,NULL,0,0,'2026-06-01 18:29:15','2026-06-01 18:29:15');
 /*!40000 ALTER TABLE `posts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -403,7 +403,7 @@ CREATE TABLE `stories` (
   KEY `idx_story_feed_active` (`is_deleted`,`is_active`,`expires_at`,`created_at` DESC),
   KEY `idx_story_user_active_created` (`user_id`,`is_deleted`,`is_active`,`expires_at`,`created_at` DESC),
   CONSTRAINT `stories_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -412,7 +412,7 @@ CREATE TABLE `stories` (
 
 LOCK TABLES `stories` WRITE;
 /*!40000 ALTER TABLE `stories` DISABLE KEYS */;
-INSERT INTO `stories` VALUES (1,2,'Xin chao','#FFE1D6',NULL,'2026-05-16 14:40:49',0,1,'2026-05-15 14:40:49','2026-05-15 14:41:26'),(2,1,'Hello.','#FFE1D6','https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3','2026-05-16 17:22:15',0,1,'2026-05-15 17:22:15','2026-05-19 10:46:41'),(3,3,'Alo','#FFE1D6',NULL,'2026-05-29 21:14:31',1,0,'2026-05-28 21:14:31','2026-05-28 21:14:31');
+INSERT INTO `stories` VALUES (1,2,'Xin chao','#FFE1D6',NULL,'2026-05-16 14:40:49',0,1,'2026-05-15 14:40:49','2026-05-15 14:41:26'),(2,1,'Hello.','#FFE1D6','https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3','2026-05-16 17:22:15',0,1,'2026-05-15 17:22:15','2026-05-19 10:46:41'),(3,3,'Alo','#FFE1D6',NULL,'2026-05-29 21:14:31',0,1,'2026-05-28 21:14:31','2026-05-30 15:28:57'),(4,3,'Alo','#FFE1D6',NULL,'2026-05-31 18:28:50',0,1,'2026-05-30 18:28:50','2026-05-31 18:34:20');
 /*!40000 ALTER TABLE `stories` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -436,7 +436,7 @@ CREATE TABLE `story_media` (
   KEY `story_id` (`story_id`),
   KEY `idx_story_media_lookup` (`story_id`,`story_media_id`),
   CONSTRAINT `story_media_ibfk_1` FOREIGN KEY (`story_id`) REFERENCES `stories` (`story_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -445,7 +445,7 @@ CREATE TABLE `story_media` (
 
 LOCK TABLES `story_media` WRITE;
 /*!40000 ALTER TABLE `story_media` DISABLE KEYS */;
-INSERT INTO `story_media` VALUES (1,3,'/uploads/stories/user-3-1780002871199-gcer2sl2.jpg','image',NULL,NULL,NULL,'2026-05-28 21:14:31');
+INSERT INTO `story_media` VALUES (1,3,'/uploads/stories/user-3-1780002871199-gcer2sl2.jpg','image',NULL,NULL,NULL,'2026-05-28 21:14:31'),(2,4,'/uploads/stories/user-3-1780165729770-3yj88h1v.png','image',NULL,NULL,NULL,'2026-05-30 18:28:50');
 /*!40000 ALTER TABLE `story_media` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -474,7 +474,7 @@ CREATE TABLE `users` (
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `users_username_unique` (`username`),
   UNIQUE KEY `users_email_unique` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -483,7 +483,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Lữ Văn Tính','tinhlu','$2b$12$zngBXM86GWMgxaZjJ5TdxOHhXNBag22jjyW5q.E1fkZdklzgia0Aq',NULL,NULL,'0818177533',NULL,'tinhlu703@gmail.com','customer',1,'2026-04-29 04:42:33','2026-05-28 16:28:25',1),(2,'Lữ Tính Văn','tinhvan','$2b$12$uvBeLQeuf.jbYU7p0yNILuBBrldGxh0g85jtK/qz7CzJMzuELOqP6',NULL,NULL,'0818177533','/uploads/avatars/user-2-1778786275246-hn2pky2q.jpg','tinhlu263@gmail.com','admin',1,'2026-05-08 03:19:44','2026-05-28 15:54:34',0),(3,'Gia Huy','huy123','$2b$12$evqrwvuIjKOopNNv7xFabOPWEtE3ZCFwwDoErV1u8BsOTvdLub6H6',NULL,NULL,'0818177533',NULL,NULL,'customer',1,'2026-05-10 01:34:57','2026-05-28 17:29:46',0),(4,'tinh','tinh','$2b$10$2eJnGd53OauaeqRAmy6.K.lZzz.BQgUdvoHwIgUr5wTYBXtd9b3d6',NULL,NULL,NULL,NULL,NULL,'customer',1,'2026-05-16 16:21:11','2026-05-16 16:21:11',0),(5,'Hasekimagru','luvantinh','$2b$12$KuLNBxDekSbwHy237Su/c.b7edfOIRdhoP7Ua0PQYssA0MMB2Et1i',NULL,'0','0818177533','/uploads/avatars/user-5-1779721746324-jetxthi6.jpg',NULL,'customer',1,'2026-05-25 15:08:20','2026-05-25 15:09:14',0);
+INSERT INTO `users` VALUES (1,'Lữ Văn Tính','tinhlu','$2b$12$zngBXM86GWMgxaZjJ5TdxOHhXNBag22jjyW5q.E1fkZdklzgia0Aq',NULL,NULL,'0818177533',NULL,'tinhlu703@gmail.com','customer',1,'2026-04-29 04:42:33','2026-05-28 16:28:25',1),(2,'Lữ Tính Văn','tinhvan','$2b$12$uvBeLQeuf.jbYU7p0yNILuBBrldGxh0g85jtK/qz7CzJMzuELOqP6',NULL,NULL,'0818177533','/uploads/avatars/user-2-1778786275246-hn2pky2q.jpg','tinhlu263@gmail.com','customer',1,'2026-05-08 03:19:44','2026-06-02 15:49:27',0),(3,'huyngo','huy123','$2b$12$evqrwvuIjKOopNNv7xFabOPWEtE3ZCFwwDoErV1u8BsOTvdLub6H6',NULL,NULL,'0818177533',NULL,NULL,'customer',1,'2026-05-10 01:34:57','2026-05-31 18:31:23',1),(4,'tinh','tinh','$2b$10$2eJnGd53OauaeqRAmy6.K.lZzz.BQgUdvoHwIgUr5wTYBXtd9b3d6',NULL,NULL,NULL,NULL,NULL,'customer',1,'2026-05-16 16:21:11','2026-05-16 16:21:11',0),(5,'Hasekimagru','luvantinh','$2b$12$KuLNBxDekSbwHy237Su/c.b7edfOIRdhoP7Ua0PQYssA0MMB2Et1i',NULL,'0','0818177533','/uploads/avatars/user-5-1779721746324-jetxthi6.jpg',NULL,'customer',1,'2026-05-25 15:08:20','2026-05-25 15:09:14',0),(6,'Admin','admin','$2b$12$mJ18mA/Y0yhLGXiZMSlDL.NVIR8daPYvVvSNVIU.Yo4Ur0tC.rJ8O',NULL,NULL,'0818177533',NULL,NULL,'admin',1,'2026-06-02 15:53:29','2026-06-02 15:55:01',0);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -497,4 +497,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-29 18:45:40
+-- Dump completed on 2026-06-02 23:38:48

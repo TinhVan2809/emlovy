@@ -3,9 +3,10 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/contexts/auth-context';
 import { AppColors } from '@/constants/theme';
+import { Routes } from '@/constants/routes';
 
 export default function AuthLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -16,6 +17,11 @@ export default function AuthLayout() {
   }
 
   if (isAuthenticated) {
+    // Prefer routing admins to the admin panel
+    if (user?.role === 'admin') {
+      return <Redirect href={Routes.admin} />;
+    }
+
     return <Redirect href="/(tabs)" />;
   }
 

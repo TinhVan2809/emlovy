@@ -16,12 +16,17 @@ const postRoutes = require("./routes/postRoutes");
 const reelRoutes = require("./routes/reelRoutes");
 const storyRoutes = require("./routes/storyRoutes");
 const searchRoutes = require("./routes/searchRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const notFound = require("./middlewares/notFound");
 const { Server } = require("socket.io");
 const http = require("http");
 const { setIo } = require("./utils/socket");
-const { conversationRoom, emitChatMessage, userRoom } = require("./utils/chatRealtime");
+const {
+  conversationRoom,
+  emitChatMessage,
+  userRoom,
+} = require("./utils/chatRealtime");
 const chatModel = require("./models/chatModel");
 const storyModel = require("./models/storyModel");
 const userModel = require("./models/userModel");
@@ -80,9 +85,10 @@ const createApp = () => {
   app.use("/api/reels", reelRoutes);
   app.use("/api/stories", storyRoutes);
   app.use("/api/search", searchRoutes);
+  app.use("/api/admin", adminRoutes);
   app.use(notFound);
   app.use(errorHandler);
-
+  
   return app;
 };
 
@@ -95,7 +101,9 @@ const getSocketToken = (socket) => {
 
   const authorizationHeader = socket.handshake.headers?.authorization || "";
 
-  return authorizationHeader.startsWith("Bearer ") ? authorizationHeader.slice("Bearer ".length) : "";
+  return authorizationHeader.startsWith("Bearer ")
+    ? authorizationHeader.slice("Bearer ".length)
+    : "";
 };
 
 const attachSocketUser = async (socket) => {
@@ -119,9 +127,14 @@ const attachSocketUser = async (socket) => {
 };
 
 const getSocketConversationId = (payload = {}) => {
-  const conversationId = Number.parseInt(payload.conversation_id || payload.conversationId, 10);
+  const conversationId = Number.parseInt(
+    payload.conversation_id || payload.conversationId,
+    10,
+  );
 
-  return Number.isInteger(conversationId) && conversationId > 0 ? conversationId : null;
+  return Number.isInteger(conversationId) && conversationId > 0
+    ? conversationId
+    : null;
 };
 
 const acknowledgeSocketError = (socket, ack, message, status = 400) => {
@@ -150,10 +163,18 @@ const registerChatSocketHandlers = (io, socket) => {
     }
 
     try {
-      const isParticipant = await chatModel.isParticipant(conversationId, user.user_id);
+      const isParticipant = await chatModel.isParticipant(
+        conversationId,
+        user.user_id,
+      );
 
       if (!isParticipant) {
-        acknowledgeSocketError(socket, ack, "Ban khong thuoc hoi thoai nay.", 403);
+        acknowledgeSocketError(
+          socket,
+          ack,
+          "Ban khong thuoc hoi thoai nay.",
+          403,
+        );
         return;
       }
 
@@ -163,7 +184,12 @@ const registerChatSocketHandlers = (io, socket) => {
         ack({ success: true, data: { conversation_id: conversationId } });
       }
     } catch (error) {
-      acknowledgeSocketError(socket, ack, error.message || "Khong the vao phong chat.", error.status || 500);
+      acknowledgeSocketError(
+        socket,
+        ack,
+        error.message || "Khong the vao phong chat.",
+        error.status || 500,
+      );
     }
   });
 
@@ -182,7 +208,8 @@ const registerChatSocketHandlers = (io, socket) => {
   socket.on("send_message", async (payload = {}, ack) => {
     const user = socket.data.user;
     const conversationId = getSocketConversationId(payload);
-    const content = typeof payload.content === "string" ? payload.content.trim() : "";
+    const content =
+      typeof payload.content === "string" ? payload.content.trim() : "";
 
     if (!user) {
       acknowledgeSocketError(socket, ack, "Ban chua dang nhap.", 401);
@@ -200,10 +227,18 @@ const registerChatSocketHandlers = (io, socket) => {
     }
 
     try {
-      const isParticipant = await chatModel.isParticipant(conversationId, user.user_id);
+      const isParticipant = await chatModel.isParticipant(
+        conversationId,
+        user.user_id,
+      );
 
       if (!isParticipant) {
-        acknowledgeSocketError(socket, ack, "Ban khong thuoc hoi thoai nay.", 403);
+        acknowledgeSocketError(
+          socket,
+          ack,
+          "Ban khong thuoc hoi thoai nay.",
+          403,
+        );
         return;
       }
 
@@ -213,8 +248,12 @@ const registerChatSocketHandlers = (io, socket) => {
         content,
         messageType: payload.message_type || payload.messageType || "text",
       });
-      const conversation = await chatModel.findConversationForUser(conversationId, user.user_id);
-      const participantIds = await chatModel.getConversationParticipantIds(conversationId);
+      const conversation = await chatModel.findConversationForUser(
+        conversationId,
+        user.user_id,
+      );
+      const participantIds =
+        await chatModel.getConversationParticipantIds(conversationId);
 
       emitChatMessage(io, {
         conversation,
@@ -232,7 +271,12 @@ const registerChatSocketHandlers = (io, socket) => {
         });
       }
     } catch (error) {
-      acknowledgeSocketError(socket, ack, error.message || "Gui tin nhan khong thanh cong.", error.status || 500);
+      acknowledgeSocketError(
+        socket,
+        ack,
+        error.message || "Gui tin nhan khong thanh cong.",
+        error.status || 500,
+      );
     }
   });
 };
@@ -294,7 +338,10 @@ const startServer = async () => {
           io.emit("story:expired", { count: expiredCount });
         }
       } catch (cleanupError) {
-        console.error("Story cleanup failed:", cleanupError.message || cleanupError);
+        console.error(
+          "Story cleanup failed:",
+          cleanupError.message || cleanupError,
+        );
       }
     };
 
@@ -317,14 +364,20 @@ const startServer = async () => {
     });
 
     cleanupExpiredStories();
-    const storyCleanupTimer = setInterval(cleanupExpiredStories, STORY_CLEANUP_INTERVAL_MS);
+    const storyCleanupTimer = setInterval(
+      cleanupExpiredStories,
+      STORY_CLEANUP_INTERVAL_MS,
+    );
     storyCleanupTimer.unref?.();
 
     registerShutdownHandlers(server, [storyCleanupTimer]);
 
     return server;
   } catch (error) {
-    console.error("Failed to start server:", error.code || error.message || error.name);
+    console.error(
+      "Failed to start server:",
+      error.code || error.message || error.name,
+    );
     process.exit(1);
   }
 };

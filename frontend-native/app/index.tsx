@@ -6,7 +6,7 @@ import { AppColors } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 
 export default function IndexScreen() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -16,7 +16,14 @@ export default function IndexScreen() {
     );
   }
 
-  return <Redirect href={isAuthenticated ? Routes.home : Routes.login} />;
+  if (isAuthenticated) {
+    if (user?.role === 'admin') {
+      return <Redirect href={Routes.admin} />;
+    }
+    return <Redirect href={Routes.home} />;
+  }
+
+  return <Redirect href={Routes.login} />;
 }
 
 const styles = StyleSheet.create({

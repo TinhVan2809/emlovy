@@ -1,10 +1,18 @@
-import { router } from 'expo-router';
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { router } from "expo-router";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-import { Routes } from '@/constants/routes';
-import { authApi } from '@/services/api';
-import { tokenStorage } from '@/services/token-storage';
-import type { LoginInput, RegisterInput, User } from '@/types/auth';
+import { Routes } from "@/constants/routes";
+import { authApi, adminApi } from "@/services/api";
+import { tokenStorage } from "@/services/token-storage";
+import type { LoginInput, RegisterInput, User } from "@/types/auth";
 
 type AuthContextValue = {
   isAuthenticated: boolean;
@@ -29,11 +37,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  const persistSession = useCallback(async (nextToken: string, nextUser: User) => {
-    await tokenStorage.set(nextToken);
-    setToken(nextToken);
-    setUser(nextUser);
-  }, []);
+  const persistSession = useCallback(
+    async (nextToken: string, nextUser: User) => {
+      await tokenStorage.set(nextToken);
+      setToken(nextToken);
+      setUser(nextUser);
+    },
+    [],
+  );
 
   const clearSession = useCallback(async () => {
     await tokenStorage.remove();
@@ -78,7 +89,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = useCallback(
     async (input: LoginInput) => {
       const response = await authApi.login(input);
-      await persistSession(response.data.token, response.data.user);
+      const newToken = response.data.token;
+      await persistSession(newToken, response.data.user);
+      // Verify admin access using the freshly received token to avoid using stale state.
+      try {
+        const responseCheck = await adminApi.check(newToken);
+
+        // Route to admin if either the login payload or the server check identifies admin.
+        if (
+          response.data.user?.role === 'admin' ||
+          responseCheck?.data?.user?.role === 'admin'
+        ) {
+          router.replace(Routes.admin);
+          return; 
+        }
+      } catch (_err) { 
+        // Ignore admin check errors (common for non-admin users).
+        if (response.data.user?.role === 'admin') {
+          router.replace(Routes.admin);
+          return;
+        }
+          console.log(_err);
+      }
+
       router.replace(Routes.home);
     },
     [persistSession],
@@ -88,7 +121,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async (input: RegisterInput) => {
       const response = await authApi.register(input);
       await persistSession(response.data.token, response.data.user);
-      router.replace(Routes.home);
+        if (response.data.user?.role === 'admin') {
+          router.replace(Routes.admin);
+          return;
+        }
+
+        router.replace(Routes.home);
     },
     [persistSession],
   );
@@ -133,7 +171,7 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider');
+    throw new Error("useAuth must be used inside AuthProvider");
   }
 
   return context;
