@@ -1,6 +1,7 @@
 const { createHttpError } = require("../utils/httpError");
+const adminService = require("../services/adminService");
 
-// A minimal admin controller. Expand with real admin actions as needed.
+// Check admin access
 const check = async (req, res) => {
   const user = req.user;
 
@@ -8,7 +9,6 @@ const check = async (req, res) => {
     throw createHttpError(401, "Bạn chưa đăng nhập.");
   }
 
-  // Return basic info to confirm admin access
   res.status(200).json({
     success: true,
     data: {
@@ -22,6 +22,45 @@ const check = async (req, res) => {
   });
 };
 
+// GET /api/admin/dashboard
+const dashboard = async (req, res) => {
+  const data = await adminService.getOverview();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      totalUsers: data.totalUsers,
+      newUsersToday: data.newUsersToday,
+      totalPosts: data.totalPosts,
+      totalReels: data.totalReels,
+      totalComments: data.totalComments,
+      totalLikes: data.totalLikes,
+      totalReports: data.totalReports,
+    },
+  });
+};
+
+// GET /api/admin/dashboard/user-growth?range=7days|30days|12months
+const userGrowth = async (req, res) => {
+  const range = (req.query.range || "7days").toString();
+
+  if (!["7days", "30days", "12months"].includes(range)) {
+    throw createHttpError(400, "Invalid range parameter. Use 7days, 30days or 12months.");
+  }
+
+  const result = await adminService.getUserGrowth(range);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      range: result.range,
+      data: result.data,
+    },
+  });
+};
+
 module.exports = {
   check,
+  dashboard,
+  userGrowth,
 };
