@@ -16,6 +16,8 @@ export default function AdminPage() {
   const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
+    setStatus(null);
     let mounted = true;
     const ensureAdmin = async () => {
       // If we already know the user is admin, skip verification
@@ -40,6 +42,8 @@ export default function AdminPage() {
             const merged = { ...(user || {}), ...res.data.user } as any;
             updateUser?.(merged);
           } catch (_e) {
+            console.log(_e);
+           setStatus(_e instanceof Error ? _e.message : String(_e));
             // ignore update errors
           }
 
@@ -50,8 +54,10 @@ export default function AdminPage() {
         router.replace(Routes.home);
       } catch (_err) {
         router.replace(Routes.home);
+        console.log(_err)
       } finally {
         if (mounted) setVerifying(false);
+        setLoading(false);
       }
     };
 

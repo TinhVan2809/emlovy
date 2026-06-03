@@ -301,6 +301,27 @@ export const adminApi = {
       token,
     });
   },
+  async getDashboardStatus(token: string) {
+    return request<{
+      totalUsers: number;
+      newUsersToday: number;
+      totalPosts: number;
+      totalReels: number;
+    }>('/admin/dashboard', {
+      method: 'GET',
+      token,
+    });
+  },
+  async getDashboardUserGrowth(token: string) {
+    return request<{
+      range: string;
+      data: { date: string; users: number }[];
+    }>('/admin/dashboard/user-growth', {
+      method: 'GET',
+      token,
+    });
+  }
+
 };
 
 // [Profile]
@@ -565,6 +586,8 @@ export const followApi = {
   },
 };
 
+
+// [Stories]
 export const storyApi = {
   async getFollowing(token: string) {
     return request<{ groups: StoryGroup[] }>('/stories', {
@@ -621,5 +644,6 @@ export const searchApi = {
     });
   },
 };
+
 
 export { ApiError };
