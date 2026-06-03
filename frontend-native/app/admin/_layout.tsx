@@ -8,6 +8,7 @@ import { AppColors } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 
 const TAB_ICONS = {
+  index: { active: 'apps', inactive: 'apps-outline' },
   home: { active: 'home', inactive: 'home-outline' },
   management: { active: 'settings', inactive: 'settings-outline' },
   teature: { active: 'star', inactive: 'star-outline' },
@@ -50,6 +51,7 @@ export default function AdminLayout() {
         tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,
       }}>
+      <Tabs.Screen name="index" options={{ tabBarIcon: ({ color, focused }) => renderIcon('index', focused, color) }} />
       <Tabs.Screen name="home" options={{ tabBarIcon: ({ color, focused }) => renderIcon('home', focused, color) }} />
       <Tabs.Screen name="management" options={{ tabBarIcon: ({ color, focused }) => renderIcon('management', focused, color) }} />
       <Tabs.Screen name="teature" options={{ tabBarIcon: ({ color, focused }) => renderIcon('teature', focused, color) }} />
