@@ -32,3 +32,8 @@ export const followRoutes = {
 export const authRoute = {
   forget: '/(auth)/forgetPassword' as Href,
 }
+
+// Route chats 
+export const chatRoute = {
+  ai: '/(chat)/chatAI' as Href,
+}

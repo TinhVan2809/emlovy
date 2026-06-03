@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
   View,
+  Image,
 } from 'react-native';
 
 import { ScreenShell } from '@/components/screen-shell';
@@ -20,6 +21,7 @@ import { UserAvatar } from '@/components/user-avatar';
 import { AppColors, AppFonts } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { chatApi, resolveMediaUrl } from '@/services/api';
+import { chatRoute } from '@/constants/routes';
 import {
   joinChatConversation,
   leaveChatConversation,
@@ -496,6 +498,9 @@ export default function ChatScreen() {
       titleNode={<Text style={styles.screenTitle}>Chats</Text>}
       right={
         <View style={styles.headerActions}>
+          <Pressable onPress={() => router.push(chatRoute.ai)} style={styles.chatAI}>
+            <Image source={require('../../assets/images/icon-ai.png')} style={styles.chatAIImg}/>
+          </Pressable>
           <Ionicons color={AppColors.text} name="create-outline" size={24} />
         </View>
       }>
@@ -756,6 +761,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 14,
+  },
+  chatAI: {
+    width: 20,
+    height: 20,
+  },
+  chatAIImg: {
+    width: '100%',
+    height: '100%'
   },
   headerIconButton: {
     alignItems: 'center',
