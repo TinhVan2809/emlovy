@@ -664,7 +664,6 @@ const ReelCard = memo(
       const scale = interpolate(
         scrollY.value,
         inputRange,
-        // [0.9, 1, 0.9],
         [0.95, 1, 0.95],
         Extrapolation.CLAMP,
       );
