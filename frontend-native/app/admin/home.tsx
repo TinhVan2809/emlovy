@@ -5,11 +5,15 @@ import {
   View,
   StyleSheet,
   FlatList,
+  Pressable,
+  TextInput,
 } from "react-native";
 import { ScreenShell } from "@/components/screen-shell";
 import { adminApi } from "@/services/api";
 import { useAuth } from "@/contexts/auth-context";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { dashboardRoute } from "@/constants/admin-routes";
 
 type DashboardStatus = {
   totalUsers: number;
@@ -62,9 +66,25 @@ export function DashboardCard({ item }: { item: [string, number] }) {
   const iconStyleKey = `${key}Icon`;
   // dynamic style lookup - falls back to `styles.icon`
   const dynamicIconStyle = (styles as any)[iconStyleKey] || styles.icon;
+  // map dashboard keys to admin routes (let TS infer proper Href type)
+  const routeMap = {
+    totalUsers: dashboardRoute.users,
+    newUsersToday: dashboardRoute.users,
+    totalPosts: dashboardRoute.posts,
+    totalReels: dashboardRoute.reels,
+  };
+
+  const targetRoute = (routeMap as any)[key];
 
   return (
-    <View style={[styles.card, styles[key as keyof typeof styles]]}>
+    <Pressable
+      style={[styles.card, styles[key as keyof typeof styles]]}
+      onPress={() => {
+        if (targetRoute) {
+          router.push(targetRoute);
+        }
+      }}
+    >
       <View style={styles.title}>
         <Text style={styles.cardLabel}>{label}</Text>
         <Ionicons
@@ -75,7 +95,7 @@ export function DashboardCard({ item }: { item: [string, number] }) {
         />
       </View>
       <Text style={styles.cardValue}>{value}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -111,7 +131,15 @@ export default function AdminHome() {
   }, [token]);
 
   return (
-    <ScreenShell title="Dashbroad">
+    <ScreenShell
+      title="Dashbroad"
+      right={
+        <Pressable style={styles.searchBox}>
+          <TextInput placeholder="Search for..." style={styles.input} />
+          <Ionicons name="search-outline" size={24} />
+        </Pressable>
+      }
+    >
       <View style={{ padding: 18 }}>
         {loading ? (
           <ActivityIndicator />
@@ -136,6 +164,16 @@ export default function AdminHome() {
 }
 
 const styles = StyleSheet.create({
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 0.3,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+  },
+  input: {
+    width: 200,
+  },
   listContainer: {
     paddingBottom: 20,
   },
@@ -165,7 +203,7 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 16,
     marginTop: 8,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cardValue: {
     fontSize: 24,
