@@ -37,13 +37,6 @@ const STORY_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 const createApp = () => {
   const app = express();
 
-  // app.use(
-  //   cors({
-  //     credentials: true,
-  //     origin: config.cors.origins.length > 0 ? config.cors.origins : true,
-  //   }),
-  // );
-
   // Fall back to common localhost origins for development
   const allowedOrigins = [
     config.cors.origins.length > 0 ? config.cors.origins : true,
@@ -53,6 +46,7 @@ const createApp = () => {
     "http://127.0.0.1:3000",
     "http://localhost:5174",
     "http://localhost:5175",
+    "http://localhost:8081",
     "http://localhost",
     "http://127.0.0.1",
   ].filter(Boolean);

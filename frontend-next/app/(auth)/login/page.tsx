@@ -1,10 +1,20 @@
 "use client";
+import port from "@/api/api";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+
 function Login() {
-  const [showPassoword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
+
+  const router = useRouter();
+
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
 
   const onShowPassword = () => {
     setShowPassword((v) => !v);
@@ -12,8 +22,48 @@ function Login() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Ngăn submit fomr mặc định khi tấn enter tránh reload lại trang
+      e.preventDefault();
       passwordRef.current?.focus();
+    }
+  };
+
+  // Handle Change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  // Submit form
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!formData.username || !formData.password) {
+      alert("Thieu username hoac password");
+      return;
+    }
+    try {
+      const response = await fetch(`${port}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+        credentials: "include",
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.data?.user?.role === "customer") {
+          await router.push("/");
+        }
+        console.log("Login success", data);
+      } else {
+        alert(data.message || "Login failed");
+      }
+    } catch (_err) {
+      console.error("Error submit form", _err);
     }
   };
 
@@ -44,24 +94,34 @@ function Login() {
               </div>
             </div>
 
-            <form className="form-container">
+            <form className="form-container" onSubmit={handleSubmit}>
               <div className="box">
                 <div className="title-box">
                   <span className="title">Welcome back</span>
                   <span className="signin">
-                    Dont not have any account? <Link href={"/register"}>Sign in</Link>
+                    Dont not have any account?{" "}
+                    <Link href={"/register"}>Sign in</Link>
                   </span>
                 </div>
                 <div className="input-container">
                   <div className="item">
                     <label htmlFor="">Username</label>
-                    <input type="text" onKeyDown={handleKeyDown} />
+                    <input
+                      type="text"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      onKeyDown={handleKeyDown}
+                    />
                   </div>
                   <div className="item">
                     <div className="password-box">
                       <label htmlFor="">Password</label>
                       <input
-                        type={showPassoword === true ? "text" : "password"}
+                        type={showPassword === true ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
                         ref={passwordRef}
                       />
                     </div>

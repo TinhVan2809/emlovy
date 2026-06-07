@@ -1,3 +1,4 @@
+'use client';
 import {
   RiHomeLine,
   RiCameraLensFill,
@@ -8,7 +9,10 @@ import {
 } from "@remixicon/react";
 import Link from "next/link";
 import Image from "next/image";
+import { useUser } from "@/context/useUserContext";
+
 function SidebarLeft() {
+  const {user, logout} = useUser();
   return (
     <div className="flex w-full bg-white py-2 fixed z-1000 bottom-0 md:w-auto md:bg-auto md:flex-col md:justify-between md:h-screen  md:top-0 md:py-6 md:px-5">
       <div className="hidden md:px-3 md:block">
@@ -49,13 +53,13 @@ function SidebarLeft() {
           <RiNotification2Line />{" "}
           <span className="hidden md:block">Notifications</span>
         </Link>
-        <Link
-          href={"/login"}
+        <div
+          onClick={logout}
           className="flex items-center md:gap-4 md:px-3 md:py-1.5 md:rounded-[20px] md:min-w-60 md:duration-200 md:hover:bg-stone-300/40"
         >
           <RiLoginBoxFill />
-          <span>Login</span>
-        </Link>
+          <span>đăng xuất</span>
+        </div>
       </div>
       <div className="px-3 hidden md:flex md:flex-col">
         <div className="">More</div>
