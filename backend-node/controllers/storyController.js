@@ -43,14 +43,6 @@ const parseStoryId = (value) => {
   return storyId;
 };
 
-const requireUser = (req) => {
-  if (!req.user) {
-    throw createHttpError(401, "Bạn chưa đăng nhập.");
-  }
-
-  return req.user;
-};
-
 const mapUploadedMedia = (files = []) =>
   (files || []).map((file) => {
     const mimetype = file.mimetype || "image/jpeg";
@@ -66,21 +58,21 @@ const mapUploadedMedia = (files = []) =>
   });
 
 const getFollowingStories = async (req, res) => {
-  const user = requireUser(req);
+  const user = req.user; // Đã có sẵn nhờ middleware authenticate
   const groups = await storyModel.getFollowingStories(user.user_id);
 
   res.status(200).json({ success: true, data: { groups } });
 };
 
 const getMyStories = async (req, res) => {
-  const user = requireUser(req);
+  const user = req.user;
   const stories = await storyModel.getUserStories(user.user_id);
 
   res.status(200).json({ success: true, data: { stories } });
 };
 
 const createStory = async (req, res) => {
-  const user = requireUser(req);
+  const user = req.user;
   const files = req.files || [];
   const content = normalizeText(req.body?.content);
   const background_color = normalizeBackgroundColor(req.body?.background_color);
@@ -108,7 +100,7 @@ const createStory = async (req, res) => {
 };
 
 const updateStory = async (req, res) => {
-  const user = requireUser(req);
+  const user = req.user;
   const storyId = parseStoryId(req.params.id);
   const story = await storyModel.findOwnedById(storyId);
   const files = req.files || [];
@@ -154,7 +146,7 @@ const updateStory = async (req, res) => {
 };
 
 const deleteStory = async (req, res) => {
-  const user = requireUser(req);
+  const user = req.user;
   const storyId = parseStoryId(req.params.id);
   const story = await storyModel.findOwnedById(storyId);
 

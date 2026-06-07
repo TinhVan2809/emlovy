@@ -27,6 +27,7 @@ type Post = {
 export default async function Home() {
   const response = await fetch(`${port}/api/posts`, {
     next: { revalidate: 120 },
+    credentials: 'include',
   });
   const data = await response.json();
 

@@ -1,11 +1,57 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   RiGoogleFill,
   RiFacebookCircleFill,
   RiAppleFill,
 } from "@remixicon/react";
+import port from "@/api/api";
 function Register() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    name: "",
+    username: "",
+    password: "",
+    email: "",
+    phone: "",
+  });
+
+  // Handle Change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  // Handel Submit
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch(`${port}/api/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) throw new Error(`ERROR HTTP ${response.status}`);
+
+      const data = await response.json();
+      if (data.success) {
+        console.log("Register successfully", data);
+        router.push("/login");
+      }
+    } catch (_err) {
+      console.error("Error submit form", _err);
+    }
+  };
+
   return (
     <div className="relative w-full h-screen">
       <Image
@@ -16,7 +62,7 @@ function Register() {
       />
       <div className="absolute w-full h-full top-0 right-0 z-100 flex justify-center items-center">
         <div className="bg-white w-[70%] h-[80%] flex">
-          <form className="flex flex-col p-10 flex-1">
+          <form className="flex flex-col p-10 flex-1" onSubmit={handleSubmit}>
             <div className="flex flex-col">
               <span className="text-3xl">Create An Account</span>
               <span>
@@ -35,7 +81,10 @@ function Register() {
                   Your name
                   <input
                     type="text"
+                    name="name"
                     className="outline-0 border-b border-black/80 text-black"
+                    value={formData.name}
+                    onChange={handleChange}
                   />
                 </label>
                 <label
@@ -45,7 +94,10 @@ function Register() {
                   Username
                   <input
                     type="text"
+                    name="username"
                     className="outline-0 border-b border-black/80 text-black"
+                    value={formData.username}
+                    onChange={handleChange}
                   />
                 </label>
               </div>
@@ -57,7 +109,10 @@ function Register() {
                   Email
                   <input
                     type="text"
+                    name="email"
                     className="outline-0 border-b border-black/80 text-black"
+                    value={formData.email}
+                    onChange={handleChange}
                   />
                 </label>
                 <label
@@ -67,7 +122,10 @@ function Register() {
                   Phone (option)
                   <input
                     type="text"
+                    name="phone"
                     className="outline-0 border-b border-black/80 text-black"
+                    value={formData.phone}
+                    onChange={handleChange}
                   />
                 </label>
               </div>
@@ -79,7 +137,10 @@ function Register() {
                   Passowrd
                   <input
                     type="password"
+                    name="password"
                     className="outline-0 border-b border-black/80 text-black"
+                    value={formData.password}
+                    onChange={handleChange}
                   />
                 </label>
                 <label
@@ -95,7 +156,10 @@ function Register() {
               </div>
             </div>
             <div className="w-full">
-              <button className="bg-blue-700 w-full text-white py-2 rounded-[20px] duration-200 hover:opacity-80">
+              <button
+                className="bg-blue-700 w-full text-white py-2 rounded-[20px] duration-200 hover:opacity-80"
+                type="submit"
+              >
                 Sign in
               </button>
             </div>
