@@ -43,10 +43,7 @@ function Register() {
       if (!response.ok) throw new Error(`ERROR HTTP ${response.status}`);
 
       const data = await response.json();
-      if (data.success) {
-        console.log("Register successfully", data);
-        router.push("/login");
-      }
+      if (data.success) router.push("/login");
     } catch (_err) {
       console.error("Error submit form", _err);
     }
