@@ -141,11 +141,19 @@ const login = async (req, res) => {
   }
 
   const user = userModel.toPublicUser(userWithPassword);
+  const token = createToken(user);
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000, 
+  });
 
   res.status(200).json({
     success: true,
     message: "Đăng nhập thành công.",
-    data: buildAuthResponse(user),
+    data: { user, token },
   });
 };
 
@@ -182,8 +190,23 @@ const me = async (req, res) => {
   });
 };
 
+const logout = async (req, res) => {
+
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Đăng xuất thành công.",
+  });
+}
+
 module.exports = {
   login,
   me,
   register,
+  logout,
 };
