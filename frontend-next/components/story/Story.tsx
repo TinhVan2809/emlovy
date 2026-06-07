@@ -1,7 +1,9 @@
-function Story() {
-  return <div className="">
-    story ở đây
-  </div>;
+// import port from "@/api/api";
+
+async function Story() {
+
+  
+  return <div className="">story ở đây</div>;
 }
 
 export default Story;

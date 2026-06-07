@@ -158,28 +158,8 @@ const login = async (req, res) => {
 };
 
 const me = async (req, res) => {
-  const authorizationHeader = req.headers.authorization || "";
-  const token = authorizationHeader.startsWith("Bearer ")
-    ? authorizationHeader.slice("Bearer ".length)
-    : "";
-
-  if (!token) {
-    throw createHttpError(401, "Bạn chưa đăng nhập.");
-  }
-
-  let decoded;
-
-  try {
-    decoded = jwt.verify(token, config.auth.jwtSecret);
-  } catch (_error) {
-    throw createHttpError(401, "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
-  }
-
-  const user = await userModel.findById(decoded.sub);
-
-  if (!user || Number(user.status) !== 1) {
-    throw createHttpError(401, "Tài khoản không còn khả dụng.");
-  }
+  // Vì đã đi qua middleware authenticate, req.user đã tồn tại và hợp lệ
+  const user = req.user;
 
   res.status(200).json({
     success: true,
