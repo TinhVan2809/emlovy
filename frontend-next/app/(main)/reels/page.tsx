@@ -1,0 +1,81 @@
+"use client";
+
+import { useEffect, useState, useRef } from "react";
+import port from "@/api/api";
+import ReelCard from "@/components/ReelCard";
+
+type ReelItem = {
+  post_id: number;
+  author?: { name: string };
+  media: Array<{ media_url: string }>;
+  content?: string;
+  liked_by_me?: boolean;
+};
+
+export default function Reels() {
+  const [videos, setVideos] = useState<ReelItem[]>([]);
+  const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+
+  useEffect(() => {
+    const fetchReels = async () => {
+      try {
+        const response = await fetch(`${port}/api/reels`, {
+         next: {revalidate: 120}
+        });
+        const data = await response.json();
+        // Handle both nested and flat array responses
+        const items = data.data?.items || data || [];
+        setVideos(items);
+      } catch (error) {
+        console.error("Error fetching reels:", error);
+      }
+    };
+    fetchReels();
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const videoElement = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) {
+            videoElement
+              .play()
+              .catch((err) => console.error("Playback failed:", err));
+          } else {
+            videoElement.pause();
+          }
+        });
+      },
+      { threshold: 0.6 }, // Video will play when 60% is visible
+    );
+
+    const currentRefs = videoRefs.current;
+    Object.values(currentRefs).forEach((video) => {
+      if (video) observer.observe(video);
+    });
+
+    return () => {
+      Object.values(currentRefs).forEach((video) => {
+        if (video) observer.unobserve(video);
+      });
+      observer.disconnect();
+    };
+  }, [videos]);
+
+  return (
+    <div className="flex flex-col gap-8 p-4 items-center">
+      {videos.length > 0 ? (
+        <div className="flex flex-col gap-8">
+          {videos.map((v: ReelItem) => (
+            <ReelCard
+              v={v}
+              key={v.post_id}
+              setVideoRef={(el) => (videoRefs.current[v.post_id] = el)}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}

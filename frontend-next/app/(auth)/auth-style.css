@@ -1,0 +1,170 @@
+@import 'tailwindcss';
+.section-container {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+}
+
+img {
+    object-fit: cover;
+}
+
+a {
+    text-decoration: none;
+}
+
+.login-model {
+    position: absolute;
+    z-index: 1000;
+    top: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+
+}
+
+.login-form {
+    background-color: #fff;
+    width: 70%;
+    height: 80%;
+    display: flex;
+    flex-direction: row;
+    border-radius: 5px;
+}
+
+.left {
+    position: relative;
+    width: 50%;
+}
+
+.description {
+    position: absolute;
+    z-index: 100;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.description .content {
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+}
+
+.description .content .title {
+    font-size: 24px;
+    color: #fff;
+}
+
+.description .content .info {
+    font-size: 14px;
+    color: #fff;
+}
+
+.form-container {
+    flex: 1;
+    padding: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.title-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.title-box .title {
+    font-size: 35px;
+}
+
+.title-box .signin {
+    color: #333;
+}
+
+.title-box .signin a {
+    color: #0c94b9;
+    font-weight: 550;
+}
+
+.input-container {
+    padding: 20px 0;
+}
+
+.password-box {
+    display: flex;
+    flex-direction: column;
+    gap: 9;
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    gap: 9;
+    padding: 15px 0;
+}
+
+.item input {
+    outline: none;
+    border: 0;
+    border-bottom: solid 1px #0000007f;
+}
+
+.item label {
+    color: #00000085;
+}
+
+.forget {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.show-password {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox {
+    cursor: pointer;
+}
+
+.forget a {
+    color: #000;
+}
+
+.btn {
+    margin-top: -20px;
+}
+
+
+.btn button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 20px;
+    border: none;
+    background-color: #3607b9;
+    color: #fff;
+    cursor: pointer;
+}
+
+
+.btn button:hover {
+    background-color: #0f2b80;
+}
