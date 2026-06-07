@@ -1,11 +1,10 @@
 # Emlovy
 
 ![Static Badge](https://img.shields.io/badge/react-%2361DAFB?style=for-the-badge&logo=react&labelColor=black)
+![Static Badge](https://img.shields.io/badge/Next.Js-%23000?style=for-the-badge&logo=next.js)
 ![Static Badge](https://img.shields.io/badge/node-%235FA04E?style=for-the-badge&logo=node.js&labelColor=black)
 
-
-
-Emlovy là một ứng dụng mạng xã hội di động, phát triển bằng React Native (Expo) cho frontend và Node.js cho backend. Ứng dụng hỗ trợ đăng bài, Reels/Story theo thời gian thực và nhắn tin.
+Emlovy là một ứng dụng mạng xã hội cho cả website và ứng dụng, phát triển bằng React Native (Expo), Next.Js (App Router) cho frontend và NodeJs Express cho backend. Ứng dụng hỗ trợ đăng bài, Reels/Story theo thời gian thực và nhắn tin.
 
 ## Tính năng chính
 - Đăng bài, Reels, Story thời gian thực (Socket.IO)
@@ -15,14 +14,14 @@ Emlovy là một ứng dụng mạng xã hội di động, phát triển bằng 
 - Quản trị (Admin) để quản lý người dùng
 
 ## Kiến trúc & công nghệ
-- Frontend: React Native (Expo)
+- Frontend: App React Native (Expo) - Web Next.Js (App Router) 
 - Backend: Node.js, Express, MySQL, Socket.IO
 - Cấu trúc DB: `database/emlovy.sql`
 - Lưu trữ file upload: `backend-node/uploads/`
 
 ## Khởi động nhanh
 
-Yêu cầu: Node.js, npm, MySQL
+Yêu cầu: Node.js, npm/pnpm/yarn, MySQL
 
 1) Import database
 ```bash
@@ -32,6 +31,7 @@ mysql -u <user> -p emlovy < database/emlovy.sql
 ```
 
 2) Chạy backend
+- [NodeJs Express](/backend-node/README.md)
 ```bash
 cd backend-node
 npm install
@@ -40,16 +40,26 @@ node server.js
 ```
 
 3) Chạy frontend
+- [React Native (Expo)](/frontend-native/README.md)
 ```bash
 cd frontend-native
 npm install
 npm start
-# hoặc: npx expo start
+```
+
+- [Next.Js (App Router)](/frontend-next/README.md)
+```bash
+cd frontend-next
+npm install
+npm run dev
 ```
 
 ## Cấu hình
 - Kiểm tra `backend-node/config/env.js` để cập nhật thông tin database và cấu hình khác.
 - Đảm bảo thư mục `backend-node/uploads/avatars` và `backend-node/uploads/posts` có quyền ghi.
+
+---
+Giấy phép [MIT](./LICENSE).
 
 
 
