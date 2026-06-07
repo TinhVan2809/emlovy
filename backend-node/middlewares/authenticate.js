@@ -7,9 +7,19 @@ const { createHttpError } = require("../utils/httpError");
 const authenticate = async (req, _res, next) => {
   try {
     const authorizationHeader = req.headers.authorization || "";
-    const token = authorizationHeader.startsWith("Bearer ")
+    const isCookieAuth = !authorizationHeader && req.cookies?.token;
+
+    // Chống CSRF: Nếu dùng cookie, bắt buộc phải kiểm tra Origin
+    if (isCookieAuth && req.method !== "GET") {
+      const origin = req.headers.origin || req.headers.referer;
+      if (!origin || !origin.includes(config.app.frontendUrl || "localhost")) {
+        throw createHttpError(403, "Cảnh báo bảo mật: Yêu cầu không hợp lệ (CSRF).");
+      }
+    }
+
+    let token = authorizationHeader.startsWith("Bearer ")
       ? authorizationHeader.slice("Bearer ".length)
-      : "";
+      : req.cookies?.token || "";
 
     if (!token) {
       throw createHttpError(401, "Ban chua dang nhap.");

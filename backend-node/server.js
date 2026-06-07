@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const path = require("path");
 
 const config = require("./config/env");
@@ -36,12 +37,44 @@ const STORY_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 const createApp = () => {
   const app = express();
 
-  app.use(
-    cors({
-      credentials: true,
-      origin: config.cors.origins.length > 0 ? config.cors.origins : true,
-    }),
-  );
+  // app.use(
+  //   cors({
+  //     credentials: true,
+  //     origin: config.cors.origins.length > 0 ? config.cors.origins : true,
+  //   }),
+  // );
+
+  // Fall back to common localhost origins for development
+  const allowedOrigins = [
+    config.cors.origins.length > 0 ? config.cors.origins : true,
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost",
+    "http://127.0.0.1",
+  ].filter(Boolean);
+
+  const corsOptions = {
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        return callback(null, true);
+      } else {
+        console.log("Blocked by CORS:", origin);
+        return callback(new Error(`Not allowed by CORS: ${origin}`));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  };
+
+  app.use(cors(corsOptions));
+
+  app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use("/uploads", express.static(path.resolve(__dirname, "uploads")));
@@ -88,7 +121,7 @@ const createApp = () => {
   app.use("/api/admin", adminRoutes);
   app.use(notFound);
   app.use(errorHandler);
-  
+
   return app;
 };
 

@@ -51,7 +51,7 @@ export default function AdminLayout() {
       screenOptions={{
         headerShown: false,
         sceneStyle: styles.scene,
-        tabBarActiveTintColor: AppColors.text,
+        tabBarActiveTintColor: AppColors.accent,
         tabBarInactiveTintColor: AppColors.tabInactive,
         tabBarItemStyle: styles.tabItem,
         tabBarShowLabel: false,

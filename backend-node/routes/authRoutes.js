@@ -9,4 +9,7 @@ router.post("/register", asyncHandler(authController.register));
 router.post("/login", asyncHandler(authController.login));
 router.get("/me", asyncHandler(authController.me));
 
+// Logout cho web app, xóa cookie token
+router.post("/logout", asyncHandler(authController.logout));
+
 module.exports = router;
