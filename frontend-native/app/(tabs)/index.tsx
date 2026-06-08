@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   feedItem: {
-    paddingHorizontal: 18,
+    // paddingHorizontal: 18,
     paddingTop: 18,
   },
   feedMeta: {

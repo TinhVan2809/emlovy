@@ -4,12 +4,19 @@ import { useUser } from "@/context/useUserContext";
 import { use, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { RiSettingsLine } from "@remixicon/react";
+import Link from "next/link";
+import {
+  RiLayoutGrid2Fill,
+  RiLayoutGrid2Line,
+  RiBookmarkLine,
+  RiBookmarkFill,
+  RiShieldUserLine,
+  RiShieldUserFill,
+} from "@remixicon/react";
+import MyPosts, { Post } from "@/components/me/MyPosts";
+import Saved from "@/components/me/Saved";
 interface Props {
   params: Promise<{ user_id: string }>;
-}
-interface Posts {
-  post_id: number;
-  avatar_url?: string;
 }
 
 interface Profile {
@@ -24,9 +31,11 @@ interface Profile {
 function Profile({ params }: Props) {
   const { user, logout } = useUser();
   const { user_id } = use(params);
-  const [myPosts, setMyPosts] = useState<Posts[]>([]);
+  const [myPosts, setMyPosts] = useState<Post[]>([]);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [isSetting, setIsSetting] = useState(false);
+
+  const [tab, setTab] = useState("list");
 
   // Get My Post
   const handleFetchMyPosts = useCallback(async (page = 1, limit = 10) => {
@@ -37,8 +46,6 @@ function Profile({ params }: Props) {
         credentials: "include",
       },
     );
-
-    if (!response.ok) throw new Error(`ERROR HTTP ${response.status}`);
 
     const data = await response.json();
 
@@ -62,7 +69,7 @@ function Profile({ params }: Props) {
   }, [user_id]);
 
   useEffect(() => {
-    handleFetchMyProfile();
+    handleFetchMyProfile(); //eslint-disable-line
     handleFetchMyPosts();
   }, [user?.user_id, handleFetchMyProfile, handleFetchMyPosts]);
 
@@ -78,7 +85,7 @@ function Profile({ params }: Props) {
 
   return (
     <>
-      <div className=" flex flex-col md:grid md:grid-cols-3 items-center gap-10">
+      <div className=" flex flex-col md:grid md:grid-cols-3 items-center gap-10 py-10">
         <div className="flex flex-col justify-center items-center md:col-span-1">
           <div className="">
             <div className="relative w-20 h-20 md:w-30 md:h-30">
@@ -130,15 +137,49 @@ function Profile({ params }: Props) {
         </div>
       </div>
 
+      <div className="mt-5 md:mt-15">
+        <div className="flex w-full justify-around items-center">
+          <Link href={"#"} onClick={() => setTab("list")}>
+            {tab === "list" ? (
+              <RiLayoutGrid2Fill size={26} className="sm:text-sm" />
+            ) : (
+              <RiLayoutGrid2Line size={26} className="sm:text-sm" />
+            )}
+          </Link>
+          <Link href={"#"} onClick={() => setTab("saved")}>
+            {tab === "saved" ? (
+              <RiBookmarkFill size={26} className="sm:text-sm" />
+            ) : (
+              <RiBookmarkLine size={26} className="sm:text-sm" />
+            )}
+          </Link>
+          <Link href={"#"} onClick={() => setTab("you")}>
+            {tab === "you" ? (
+              <RiShieldUserFill size={26} className="sm:text-sm" />
+            ) : (
+              <RiShieldUserLine size={26} className="sm:text-sm" />
+            )}
+          </Link>
+        </div>
+      </div>
+
+      <div className="py-10">
+        {tab === "list" && <MyPosts myPosts={myPosts} />}
+
+        {tab === "saved" && <Saved />}
+
+        {tab === "you" && <div className="">co mac ban</div>}
+      </div>
+
       {isSetting && (
         <div className="fixed z-1000 top-0 left-0 w-full h-screen bg-black/10 flex justify-center items-center">
-            <div className="bg-white flex flex-col gap-5 p-3 rounded-2xl">
-                <button>Cài đặt trang cá nhân</button>
-                <button>Cài đặt hệ thống</button>
-                <button>Cài đặt quyền riêng tư</button>
-                <button>Mã QR</button>
-                <button onClick={logout}>Đăng xuất</button>
-            </div>
+          <div className="bg-white flex flex-col gap-5 p-3 rounded-2xl">
+            <button>Cài đặt trang cá nhân</button>
+            <button>Cài đặt hệ thống</button>
+            <button>Cài đặt quyền riêng tư</button>
+            <button>Mã QR</button>
+            <button onClick={logout}>Đăng xuất</button>
+          </div>
         </div>
       )}
     </>

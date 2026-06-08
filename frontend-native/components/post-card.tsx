@@ -29,6 +29,46 @@ type PostCardProps = {
   post: Post;
 };
 
+const PostImage = memo(({ 
+  uri, 
+  width, 
+  maxHeight, 
+  onPress, 
+  backgroundColor 
+}: { uri: string; width: number; maxHeight: number; onPress: () => void; backgroundColor?: string }) => {
+  const [displayHeight, setDisplayHeight] = useState<number>(width);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        width: width,
+        height: displayHeight,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: backgroundColor || AppColors.surfaceMuted,
+      }}
+    >
+      <Image
+        contentFit="contain"
+        source={{ uri }}
+        onLoad={(e) => {
+          const { width: w, height: h } = e.source;
+          if (w && h) {
+            const ratio = w / h;
+            // Tính toán chiều cao mục tiêu dựa trên chiều rộng màn hình
+            const targetHeight = width / ratio;
+            setDisplayHeight(Math.min(targetHeight, maxHeight));
+          }
+        }}
+        style={{ width: "100%", height: "100%" }}
+      />
+    </Pressable>
+  );
+});
+
+PostImage.displayName = "PostImage";
+
 const palette = [
   { accent: "#FF7A59", tone: "#FFE1D6" },
   { accent: "#46B07D", tone: "#D9EFE1" },
@@ -76,7 +116,7 @@ const PostCard = memo(function PostCard({
   const [showOwnerActions, setShowOwnerActions] = useState(false);
   const [showUsersACtions, setShowUsersActions] = useState(false);
   const ownerCanManage = Number(currentUserId) === Number(post.user_id);
-  const mediaWidth = Math.max(260, Math.min(width - 68, 520));
+  const mediaWidth = width;
   const fallbackTone = palette[post.post_id % palette.length];
   const authorName = post.author?.name || "Emlovy User";
   const authorHandle = post.author?.username
@@ -262,22 +302,17 @@ const PostCard = memo(function PostCard({
           style={styles.mediaFrame}
         >
           {imageUrls.map((uri, idx) => (
-            <Pressable
+            <PostImage
               key={uri + String(idx)}
+              uri={uri}
+              width={mediaWidth}
+              maxHeight={mediaWidth * 1.7}
+              backgroundColor={fallbackTone.tone}
               onPress={() => {
                 setViewerIndex(idx);
                 setViewerVisible(true);
               }}
-            >
-              <Image
-                contentFit="cover"
-                source={{ uri }}
-                style={[
-                  styles.mediaImage,
-                  { height: mediaWidth * 1.7, width: mediaWidth },
-                ]}
-              />
-            </Pressable>
+            />
           ))}
         </ScrollView>
       ) : (
@@ -344,7 +379,10 @@ const PostCard = memo(function PostCard({
           {post.content}
         </Text>
       ) : null}
-      <Pressable onPress={() => onOpenComments?.(post)}>
+      <Pressable
+        onPress={() => onOpenComments?.(post)}
+        style={styles.created_at}
+      >
         <Text style={styles.meta}>{formatRelativeTime(post.created_at)}</Text>
       </Pressable>
     </View>
@@ -366,6 +404,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingTop: 16,
+    paddingHorizontal: 10,
   },
   caption: {
     color: AppColors.text,
@@ -373,6 +412,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     paddingTop: 10,
+    paddingHorizontal: 10,
   },
   captionUser: {
     fontFamily: AppFonts.heading,
@@ -380,14 +420,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: AppColors.surface,
-    borderRadius: 24,
+    // borderRadius: 24,
     overflow: "hidden",
-    padding: 16,
-    // elevation: 4,
-    // shadowColor: AppColors.shadow,
-    // shadowOffset: { width: 0, height: 12 },
-    // shadowOpacity: 0.08,
-    // shadowRadius: 20,
+    paddingVertical: 10,
   },
   deleteText: {
     color: AppColors.accent,
@@ -397,6 +432,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingBottom: 14,
+    paddingHorizontal: 10,
   },
   iconButton: {
     alignItems: "center",
@@ -427,11 +463,14 @@ const styles = StyleSheet.create({
     maxWidth: 210,
   },
   mediaFrame: {
-    borderRadius: 10,
+    // borderRadius: 10,
     overflow: "hidden",
   },
   mediaImage: {
     backgroundColor: AppColors.surfaceMuted,
+  },
+  created_at: {
+    paddingHorizontal: 10,
   },
   meta: {
     color: AppColors.muted,
