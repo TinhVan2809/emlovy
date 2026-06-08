@@ -10,6 +10,7 @@ type PostMedia = {
 };
 
 type PostAuthor = {
+  user_id: number;
   name: string;
   username: string;
 };
@@ -37,7 +38,7 @@ export default async function Home() {
   return (
     <>
       <Story />
-      <div className="flex flex-col gap-20">
+      <div className="flex flex-col gap-4 md:gap-8 w-full items-center">
         {posts.map((i: Post) => (
           <PostCard i={i} key={i.post_id} />
         ))}

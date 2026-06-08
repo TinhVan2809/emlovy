@@ -34,7 +34,7 @@ function SidebarLeft() {
           <RiHomeLine /> <span className="hidden md:block">Home</span>
         </Link>
         <Link
-          href={"reels"}
+          href={"/reels"}
           className="flex items-center md:gap-4 md:px-3 md:py-1.5 md:rounded-[20px] md:min-w-60 md:duration-200 md:hover:bg-stone-300/40"
         >
           <RiCameraLensFill /> <span className="hidden md:block">Reels</span>
