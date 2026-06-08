@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 // Cấu hình các nhóm Route
 const AUTH_ROUTES = ['/login', '/register'];
-const PROTECTED_ROUTE_PREFIXES = ['/create', '/notifications', '/reels', '/search', '/profile'];
+const PROTECTED_ROUTE_PREFIXES = ['/create', '/notifications', '/reels', '/search', '/profile', '/me'];
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get('token')?.value;

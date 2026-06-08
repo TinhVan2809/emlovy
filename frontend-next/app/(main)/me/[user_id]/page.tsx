@@ -1,7 +1,5 @@
-"use client";
 import port from "@/api/api";
 import { useUser } from "@/context/useUserContext";
-import { use, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { RiSettingsLine } from "@remixicon/react";
 interface Props {
@@ -21,64 +19,45 @@ interface Profile {
   posts: number;
 }
 
-function Profile({ params }: Props) {
-  const { user, logout } = useUser();
-  const { user_id } = use(params);
-  const [myPosts, setMyPosts] = useState<Posts[]>([]);
-  const [myProfile, setMyProfile] = useState<Profile | null>(null);
-  const [isSetting, setIsSetting] = useState(false);
+async function Profile({params}: Props) {
 
-  // Get My Post
-  const handleFetchMyPosts = useCallback(async (page = 1, limit = 10) => {
-    const response = await fetch(
-      `${port}/api/posts/me?page=${page}&limit=${limit}`,
-      {
-        method: "GET",
-        credentials: "include",
-      },
-    );
+  const user_id = await params;
+ 
 
-    if (!response.ok) throw new Error(`ERROR HTTP ${response.status}`);
+    try {
+      const responseMe = await fetch(
+        `${port}/api/profile/me?user_id=${user_id}`,
+        {
+          credentials: 'include',
+        }
+      );
+      const responseMyPosts = await fetch(`${port}/api/posts/me?page=1&limit=10`, {
+        credentials: 'include',
+      });
 
-    const data = await response.json();
+      const dataMe = await responseMe.json();
+      const postsData = await responseMyPosts.json();
 
-    if (data.success) {
-      setMyPosts(data?.data?.items || []);
+
+      console.log('my profile:', dataMe);
+      console.log('my posts:', postsData);
+    } catch (_err) {
+      console.error("Error fething my data", _err);
     }
-  }, []);
 
-  // Get Full My Profile
-  const handleFetchMyProfile = useCallback(async () => {
-    const response = await fetch(`${port}/api/profile/me?user_id=${user_id}`, {
-      method: "GET",
-      credentials: "include",
-    });
+    console.log(user_id);
+ 
 
-    const data = await response.json();
 
-    if (data.success) {
-      setMyProfile(data.data.profile);
-    }
-  }, [user_id]);
-
-  useEffect(() => {
-    handleFetchMyProfile();
-    handleFetchMyPosts();
-  }, [user?.user_id, handleFetchMyProfile, handleFetchMyPosts]);
 
   // Avatar handler
-  const avatarSrc = user?.avatar_url
-    ? `${port}${user.avatar_url}`
-    : "/Profile-Default.webp";
-
-  // Setting Event
-  const onSetting = () => {
-    setIsSetting((v) => !v);
-  };
+  // const avatarSrc = user?.avatar_url
+  //   ? `${port}${user.avatar_url}`
+  //   : "/Profile-Default.webp";
 
   return (
     <>
-      <div className=" flex flex-col md:grid md:grid-cols-3 items-center gap-10">
+      {/* <div className=" flex flex-col md:grid md:grid-cols-3 items-center gap-10">
         <div className="flex flex-col justify-center items-center md:col-span-1">
           <div className="">
             <div className="relative w-20 h-20 md:w-30 md:h-30">
@@ -128,9 +107,9 @@ function Profile({ params }: Props) {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
 
-      {isSetting && (
+      {/* {isSetting && (
         <div className="fixed z-1000 top-0 left-0 w-full h-screen bg-black/10 flex justify-center items-center">
             <div className="bg-white flex flex-col gap-5 p-3 rounded-2xl">
                 <button>Cài đặt trang cá nhân</button>
@@ -140,7 +119,8 @@ function Profile({ params }: Props) {
                 <button onClick={logout}>Đăng xuất</button>
             </div>
         </div>
-      )}
+      )} */}
+
     </>
   );
 }
