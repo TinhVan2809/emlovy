@@ -8,3 +8,11 @@
 body{
     font-family: 'Inter', sans-serif;
 }
+
+button {
+    cursor: pointer;
+}
+
+a {
+    text-decoration: none;
+}

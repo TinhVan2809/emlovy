@@ -17,18 +17,19 @@ import port from "@/api/api";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface User {
-  id: string;
+  user_id: string;
+  name: string;
   username: string;
   email: string;
   role: string;
   avatar?: string;
+  avatar_url?: string;
 }
 
 interface UserContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  fetchMe: () => Promise<void>;
   logout: () => void;
 }
 
@@ -44,30 +45,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   // Gọi API /auth/me để lấy thông tin user từ cookie httpOnly do server set
-  const fetchMe = useCallback(async () => {
-    try {
-      const response = await fetch(`${port}/api/auth/me`, {
-        method: "GET",
-        credentials: "include", // ← Quan trọng: gửi kèm cookie httpOnly
-      });
-
-      if (!response.ok) {
-        setUser(null);
-        return;
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setUser(data.data.user);
-      } else {
-        setUser(null);
-      }
-    } catch {
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   // Logout: gọi API để server xóa cookie, sau đó clear state
   const logout = useCallback(async () => {
@@ -78,7 +55,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       });
       const data = await response.json();
 
-      if(data.success) {
+      if (data.success) {
         console.log("dang xuat thanh cong");
         router.push("/login");
       }
@@ -91,8 +68,32 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Khi app khởi động → kiểm tra session từ server
   useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const response = await fetch(`${port}/api/auth/me`, {
+          method: "GET",
+          credentials: "include", // ← Quan trọng: gửi kèm cookie httpOnly
+        });
+
+        if (!response.ok) {
+          setUser(null);
+          return;
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setUser(data.data.user);
+        } else {
+          setUser(null);
+        }
+      } catch {
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     fetchMe();
-  }, [fetchMe]);
+  }, []);
 
   return (
     <UserContext.Provider
@@ -100,7 +101,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
-        fetchMe,
         logout,
       }}
     >

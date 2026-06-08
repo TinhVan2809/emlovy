@@ -5,19 +5,24 @@ import {
   RiAddLargeLine,
   RiSearchLine,
   RiNotification2Line,
-  RiLoginBoxFill,
 } from "@remixicon/react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUser } from "@/context/useUserContext";
+import port from "@/api/api";
 
 function SidebarLeft() {
-  const {user, logout} = useUser();
+  const {user} = useUser();
+
+  const avatarSrc = user?.avatar_url
+    ? `${port}${user.avatar_url}`
+    : "/Profile-Default.webp";
+
   return (
     <div className="flex w-full bg-white py-2 fixed z-1000 bottom-0 md:w-auto md:bg-auto md:flex-col md:justify-between md:h-screen  md:top-0 md:py-6 md:px-5">
       <div className="hidden md:px-3 md:block">
         <div className="flex items-center gap-1">
-          <Image src={"/logo.png"} width={42} height={42} alt="logo.png" />{" "}
+          <Image src={"/logo.png"} width={42} height={42} alt="logo.png" loading="eager"/>
           <span className="font-[Playwrite_DK_Uloopet]">Emlovy</span>
         </div>
       </div>
@@ -53,17 +58,25 @@ function SidebarLeft() {
           <RiNotification2Line />{" "}
           <span className="hidden md:block">Notifications</span>
         </Link>
-        <div
-          onClick={logout}
-          className="flex items-center md:gap-4 md:px-3 md:py-1.5 md:rounded-[20px] md:min-w-60 md:duration-200 md:hover:bg-stone-300/40"
+        <Link
+         href={`/${user?.user_id}`}
+          className="block md:hidden"
         >
-          <RiLoginBoxFill />
-          <span>đăng xuất</span>
-        </div>
+          <div className="w-8 h-8 relative">
+            <Image src={avatarSrc} fill alt="avatar" className="rounded-full"/>
+          </div>
+        </Link>
       </div>
       <div className="px-3 hidden md:flex md:flex-col">
         <div className="">More</div>
-        <div className="">Profile</div>
+        <Link href={`/${user?.user_id}`} className="flex items-center gap-3 mt-2 cursor-pointer duration-200 hover:bg-black/3 rounded-md py-1">
+          <div className="relative w-10 h-10 shrink-0">
+            <Image src={avatarSrc} alt="avatar" fill className="rounded-full" priority />
+          </div>
+          <div className="flex flex-col">
+            <p className="text-sm font-semibold truncate max-w-35">{user?.name || "Guest"}</p>
+          </div>
+        </Link>
       </div>
     </div>
   );

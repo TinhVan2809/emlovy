@@ -35,8 +35,6 @@ function SearchInput() {
           signal,
         });
 
-        //   if (!response.ok) throw new Error(`ERROR HTTP ${response.status}`);
-
         const data = await response.json();
 
         if (data.success) {
