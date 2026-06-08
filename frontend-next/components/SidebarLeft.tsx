@@ -59,7 +59,7 @@ function SidebarLeft() {
           <span className="hidden md:block">Notifications</span>
         </Link>
         <Link
-         href={`/${user?.user_id}`}
+         href={`/me/${user?.user_id}`}
           className="block md:hidden"
         >
           <div className="w-8 h-8 relative">
@@ -69,9 +69,9 @@ function SidebarLeft() {
       </div>
       <div className="px-3 hidden md:flex md:flex-col">
         <div className="">More</div>
-        <Link href={`/${user?.user_id}`} className="flex items-center gap-3 mt-2 cursor-pointer duration-200 hover:bg-black/3 rounded-md py-1">
+        <Link href={`/me/${user?.user_id}`} className="flex items-center gap-3 mt-2 cursor-pointer duration-200 hover:bg-black/3 rounded-md py-1">
           <div className="relative w-10 h-10 shrink-0">
-            <Image src={avatarSrc} alt="avatar" fill className="rounded-full" priority />
+            <Image src={avatarSrc} alt="avatar" fill className="rounded-full" priority loading="eager"/>
           </div>
           <div className="flex flex-col">
             <p className="text-sm font-semibold truncate max-w-35">{user?.name || "Guest"}</p>

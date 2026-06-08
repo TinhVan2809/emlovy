@@ -56,6 +56,7 @@ function Register() {
         alt="register background"
         fill
         className="object-cover"
+        loading="eager"
       />
       <div className="absolute w-full h-full top-0 right-0 z-100 flex justify-center items-center">
         <div className="bg-white w-[70%] h-[80%] flex">
@@ -185,6 +186,7 @@ function Register() {
               alt="register img"
               fill
               className="object-cover"
+              loading="eager"
             />
           </div>
         </div>

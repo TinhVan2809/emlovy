@@ -31,6 +31,7 @@ interface UserContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -43,8 +44,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
-  // Gọi API /auth/me để lấy thông tin user từ cookie httpOnly do server set
 
   // Logout: gọi API để server xóa cookie, sau đó clear state
   const logout = useCallback(async () => {
@@ -59,41 +58,54 @@ export function UserProvider({ children }: { children: ReactNode }) {
         console.log("dang xuat thanh cong");
         router.push("/login");
       }
-    } catch {
+    } catch (error) {
+      console.error("Failed to logout:", error);
       // Dù API lỗi vẫn clear state
     } finally {
       setUser(null);
     }
   }, [router]);
 
+  // Function to fetch user details
+  // Gọi API /auth/me để lấy thông tin user từ cookie httpOnly do server set
+
+  // Gọi API /auth/me để lấy thông tin user từ cookie httpOnly do server set
+  const fetchMe = useCallback(async () => {
+    setIsLoading(true); // Set loading to true before fetching
+    try {
+      const response = await fetch(`${port}/api/auth/me`, {
+        method: "GET",
+        credentials: "include", // ← Quan trọng: gửi kèm cookie httpOnly
+      });
+
+      if (!response.ok) {
+        setUser(null);
+        return;
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setUser(data.data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []); // No dependencies needed for fetchMe itself, as it doesn't rely on external state that changes
+
+  // Expose fetchMe as refreshUser
+  const refreshUser = useCallback(async () => {
+    await fetchMe();
+  }, [fetchMe]);
+
   // Khi app khởi động → kiểm tra session từ server
   useEffect(() => {
-    const fetchMe = async () => {
-      try {
-        const response = await fetch(`${port}/api/auth/me`, {
-          method: "GET",
-          credentials: "include", // ← Quan trọng: gửi kèm cookie httpOnly
-        });
-
-        if (!response.ok) {
-          setUser(null);
-          return;
-        }
-
-        const data = await response.json();
-        if (data.success) {
-          setUser(data.data.user);
-        } else {
-          setUser(null);
-        }
-      } catch {
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchMe();
-  }, []);
+  }, [fetchMe]); // Add fetchMe to dependency array so it runs on mount and if fetchMe itself changes (though it's useCallback'd)
 
   return (
     <UserContext.Provider
@@ -102,6 +114,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         logout,
+        refreshUser, // Provide refreshUser in the context
       }}
     >
       {children}
