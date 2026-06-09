@@ -79,7 +79,12 @@ export default function UsersManagement() {
           {results.map((result) => (
             <Pressable
               key={result.user_id}
-              onPress={() => router.push(dashboardRoute.profileUsers)}
+              onPress={() =>
+                router.push({
+                  pathname: "/admin/dashboard/users/profile/[user_id]/profileManagement",
+                  params: { user_id: String(result.user_id) },
+                })
+              }
             >
               <View style={styles.resultItem}>
                 <UserAvatar
@@ -171,7 +176,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   desBox: {
-    alignItems: 'center'
+    alignItems: "center",
   },
   descriptions: {
     width: "100%",
@@ -182,10 +187,10 @@ const styles = StyleSheet.create({
   img: {
     width: 150,
     height: 150,
-    opacity: 0.5
+    opacity: 0.5,
   },
   content: {
     fontSize: 15,
-    color: AppColors.text
-  }
+    color: AppColors.text,
+  },
 });
