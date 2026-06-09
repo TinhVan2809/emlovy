@@ -60,6 +60,9 @@ function Login() {
         if (data.data?.user?.role === "customer") {
           await refreshUser();
           await router.push("/");
+        } else {
+          await refreshUser();
+          await router.push("/admin")
         }
         console.log("Login success", data);
       } else {
