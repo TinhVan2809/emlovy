@@ -1,4 +1,5 @@
 # Emlovy Backend API
+
 **Emlovy Backend** là trung tâm xử lý dữ liệu và điều phối thời gian thực cho hệ sinh thái Emlovy (bao gồm Web và Mobile). Hệ thống được xây dựng trên nền tảng Node.js với kiến trúc tối ưu cho việc xử lý tương tác mạng xã hội.
 
 ## Công nghệ sử dụng
@@ -82,6 +83,4 @@ Server sẽ mặc định chạy tại: `http://localhost:8080`
 - **Authentication:** Hầu hết các route yêu cầu header `Authorization: Bearer <token>` hoặc Token từ Cookie.
 - **CORS:** Đã được cấu hình để cho phép kết nối từ Frontend Web và Mobile.
 - **Rate Limiting:** Bảo vệ các endpoint nhạy cảm như Login/Register.
-
-
 

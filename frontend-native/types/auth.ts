@@ -18,6 +18,7 @@ export type ProfileStats = {
   posts: number;
   followers: number;
   following: number;
+  likes: number;
 };
 
 export type Profile = User & {

@@ -22,6 +22,17 @@ const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } =
       ${publicPostsOnly ? "AND p.visibility = 'public'" : ""}
   ) AS post_count,
   (
+    SELECT COALESCE(SUM(p.like_count), 0)
+    FROM posts p
+    WHERE p.user_id = u.user_id
+      AND p.is_deleted = 0
+  ) + (
+    SELECT COALESCE(SUM(c.like_count), 0)
+    FROM comments c
+    WHERE c.user_id = u.user_id
+      AND c.is_deleted = 0
+  ) AS total_likes,
+  (
     SELECT COUNT(*)
     FROM follows f
     WHERE f.following_id = u.user_id
@@ -67,6 +78,7 @@ const toProfile = (row) => {
       posts: Number(row.post_count || 0),
       followers: Number(row.followers_count || 0),
       following: Number(row.following_count || 0),
+      likes: Number(row.total_likes || 0),
     },
   };
 };

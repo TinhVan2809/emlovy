@@ -66,3 +66,4 @@ frontend-native/
    - Nhấn `a` để mở trên Android Emulator.
    - Nhấn `i` để mở trên iOS Simulator.
 
+![](../frontend-native/assets/images/Screenshot_native.png)
