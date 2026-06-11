@@ -31,8 +31,7 @@ function ReelCard({
       setIsMuted(true);
     }
     return () => setVideoRef(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setVideoRef]);
 
   const handleRef = (el: HTMLVideoElement | null) => {
     localRef.current = el;
