@@ -33,6 +33,7 @@ import type {
   StoryGroup,
   UpdatePostInput,
 } from "@/types/auth";
+import Footer from "@/components/footer";
 
 const FEED_LIMIT = 10;
 const FEED_FILTERS = ["Dành cho bạn", "Following", "Fresh drops", "Saved"];
@@ -456,13 +457,17 @@ export default function HomeScreen() {
   );
 
   const listFooter = useMemo(
-    () =>
-      isLoadingMore ? (
-        <ActivityIndicator
-          color={AppColors.accent}
-          style={styles.footerLoader}
-        />
-      ) : null,
+    () => (
+      <View>
+        {isLoadingMore ? (
+          <ActivityIndicator
+            color={AppColors.accent}
+            style={styles.footerLoader}
+          />
+        ) : null}
+        <Footer />
+      </View>
+    ),
     [isLoadingMore],
   );
 
