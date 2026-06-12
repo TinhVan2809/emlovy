@@ -62,7 +62,7 @@ function Login() {
           await router.push("/");
         } else {
           await refreshUser();
-          await router.push("/admin")
+          await router.push("/admin/dashboard")
         }
         console.log("Login success", data);
       } else {

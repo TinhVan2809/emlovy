@@ -14,5 +14,12 @@ router.get("/dashboard", authenticate, authorize("admin"), asyncHandler(adminCon
 // User growth chart
 router.get("/dashboard/user-growth", authenticate, authorize("admin"), asyncHandler(adminController.userGrowth));
 
+// Stats by range
+router.get("/stats/users", authenticate, authorize("admin"), asyncHandler(adminController.usersStats));
+router.get("/stats/posts", authenticate, authorize("admin"), asyncHandler(adminController.postsStats));
+router.get("/stats/comments", authenticate, authorize("admin"), asyncHandler(adminController.commentsStats));
+router.get("/stats/likes", authenticate, authorize("admin"), asyncHandler(adminController.likesStats));
+router.get("/stats/reels", authenticate, authorize("admin"), asyncHandler(adminController.reelsStats));
+router.get("/stats/top-posts", authenticate, authorize("admin"), asyncHandler(adminController.topInteractedPosts));
 
 module.exports = router;

@@ -154,7 +154,137 @@ const getUserGrowth = async (range = "7days") => {
   throw new Error("Invalid range");
 };
 
+const getStats = async (type, range = "7days") => {
+  let tableName = "";
+  let extraWhere = "";
+
+  // Xác định bảng và điều kiện lọc dựa trên type
+  switch (type) {
+    case "users":
+      tableName = "users";
+      break;
+    case "posts":
+      tableName = "posts";
+      extraWhere = "AND post_type = 'post' AND is_deleted = 0";
+      break;
+    case "reels":
+      tableName = "posts";
+      extraWhere = "AND post_type = 'reel' AND is_deleted = 0";
+      break;
+    case "comments":
+      tableName = "comments";
+      extraWhere = "AND is_deleted = 0";
+      break;
+    case "likes":
+      tableName = "likes";
+      break;
+    default:
+      throw new Error("Invalid stat type");
+  }
+
+  let sql = "";
+  let interval = 0;
+  let isMonth = false;
+
+  if (range === "7days") {
+    interval = 6;
+    sql = `
+      SELECT DATE(created_at) AS date, COUNT(*) AS count
+      FROM ${tableName}
+      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) ${extraWhere}
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) ASC
+    `;
+  } else if (range === "30days") {
+    interval = 29;
+    sql = `
+      SELECT DATE(created_at) AS date, COUNT(*) AS count
+      FROM ${tableName}
+      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY) ${extraWhere}
+      GROUP BY DATE(created_at)
+      ORDER BY DATE(created_at) ASC
+    `;
+  } else if (range === "12months") {
+    isMonth = true;
+    interval = 11;
+    sql = `
+      SELECT DATE_FORMAT(created_at, '%Y-%m-01') AS date, COUNT(*) AS count
+      FROM ${tableName}
+      WHERE created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 11 MONTH) ${extraWhere}
+      GROUP BY DATE_FORMAT(created_at, '%Y-%m-01')
+      ORDER BY date ASC
+    `;
+  } else {
+    throw new Error("Invalid range");
+  }
+
+  const rows = await query(sql);
+  const map = new Map(
+    rows.map((r) => {
+      const key = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10);
+      return [key, Number(r.count)];
+    })
+  );
+
+  const data = [];
+  const now = new Date();
+
+  if (isMonth) {
+    for (let i = interval; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = _formatMonth(d);
+      data.push({
+        label: key.slice(0, 7), // Trả về dạng YYYY-MM cho frontend dễ hiển thị
+        value: map.get(key) || 0,
+      });
+    }
+  } else {
+    for (let i = interval; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = _formatDate(d);
+      data.push({
+        label: key,
+        value: map.get(key) || 0,
+      });
+    }
+  }
+
+  return {
+    type,
+    range,
+    data,
+  };
+};
+
+const getTopInteractedPosts = async () => {
+  // Lấy top 5 bài viết có (likes + comments + shares) cao nhất trong tháng hiện tại
+  const sql = `
+    SELECT 
+      p.post_id,
+      p.content,
+      p.post_type,
+      p.like_count,
+      p.comment_count,
+      p.share_count,
+      (p.like_count + p.comment_count + p.share_count) AS total_interactions,
+      p.created_at,
+      u.username,
+      u.name AS user_name,
+      u.avata AS user_avatar
+    FROM posts p
+    JOIN users u ON p.user_id = u.user_id
+    WHERE p.is_deleted = 0 
+      AND p.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+    ORDER BY total_interactions DESC
+    LIMIT 5
+  `;
+  return await query(sql);
+};
+
 module.exports = {
   getOverview,
   getUserGrowth,
+  getStats,
+  getTopInteractedPosts,
 };

@@ -14,7 +14,7 @@ import {
 } from "@remixicon/react";
 function Sidebar() {
   return (
-    <div className="bg-[rgba(5,4,51,1)] py-5 px-2 md:min-w-55 md:fixed md:top-0 md:left-0 md:z-1000">
+    <div className="bg-[rgba(5,4,51,1)] py-5 px-2 h-full overflow-y-auto hide-scrollbar md:min-w-55 md:fixed md:top-0 md:left-0 md:z-1000">
       <div className="">
         <div className="flex items-center gap-2">
           <div className="relative z-100 w-10 h-10 bg-white rounded-full">
