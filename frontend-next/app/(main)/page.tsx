@@ -37,11 +37,13 @@ export default async function Home() {
 
   return (
     <>
-      <Story />
+      <div className="flex flex-col gap-12">
+        <Story />
       <div className="flex flex-col gap-4 md:gap-8 w-full items-center">
         {posts.map((i: Post) => (
           <PostCard i={i} key={i.post_id} />
         ))}
+      </div>
       </div>
     </>
   );

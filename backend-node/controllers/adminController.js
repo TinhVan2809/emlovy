@@ -55,6 +55,7 @@ const userGrowth = async (req, res) => {
     data: {
       range: result.range,
       data: result.data,
+      previous_total: result.previous_total,
     },
   });
 };

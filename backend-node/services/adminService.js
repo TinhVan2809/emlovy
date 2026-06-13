@@ -70,6 +70,7 @@ const _formatMonth = (d) => {
 
 const getUserGrowth = async (range = "7days") => {
   if (range === "7days") {
+    const prevQuery = `SELECT COUNT(*) AS total FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 13 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 6 DAY)`;
     // last 7 days including today
     const rows = await query(`
       SELECT DATE(created_at) AS date, COUNT(*) AS users
@@ -78,6 +79,9 @@ const getUserGrowth = async (range = "7days") => {
       GROUP BY DATE(created_at)
       ORDER BY DATE(created_at) ASC
     `);
+
+    const prevTotalRows = await query(prevQuery);
+    const previous_total = Number(prevTotalRows[0]?.total || 0);
 
     const map = new Map(
       rows.map((r) => {
@@ -94,10 +98,11 @@ const getUserGrowth = async (range = "7days") => {
       data.push({ date: key, users: map.get(key) || 0 });
     }
 
-    return { range, data };
+    return { range, data, previous_total };
   }
 
   if (range === "30days") {
+    const prevQuery = `SELECT COUNT(*) AS total FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 59 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 29 DAY)`;
     const rows = await query(`
       SELECT DATE(created_at) AS date, COUNT(*) AS users
       FROM users
@@ -105,6 +110,9 @@ const getUserGrowth = async (range = "7days") => {
       GROUP BY DATE(created_at)
       ORDER BY DATE(created_at) ASC
     `);
+
+    const prevTotalRows = await query(prevQuery);
+    const previous_total = Number(prevTotalRows[0]?.total || 0);
 
     const map = new Map(
       rows.map((r) => {
@@ -121,10 +129,12 @@ const getUserGrowth = async (range = "7days") => {
       data.push({ date: key, users: map.get(key) || 0 });
     }
 
-    return { range, data };
+    return { range, data, previous_total };
   }
 
   if (range === "12months") {
+    const prevQuery = `SELECT COUNT(*) AS total FROM users WHERE created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 23 MONTH) AND created_at < DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 11 MONTH)`;
+
     const rows = await query(`
       SELECT DATE_FORMAT(created_at, '%Y-%m-01') AS date, COUNT(*) AS users
       FROM users
@@ -132,6 +142,9 @@ const getUserGrowth = async (range = "7days") => {
       GROUP BY YEAR(created_at), MONTH(created_at)
       ORDER BY YEAR(created_at), MONTH(created_at) ASC
     `);
+
+    const prevTotalRows = await query(prevQuery);
+    const previous_total = Number(prevTotalRows[0]?.total || 0);
 
     const map = new Map(
       rows.map((r) => {
@@ -148,7 +161,7 @@ const getUserGrowth = async (range = "7days") => {
       data.push({ date: key, users: map.get(key) || 0 });
     }
 
-    return { range, data };
+    return { range, data, previous_total };
   }
 
   throw new Error("Invalid range");
@@ -183,6 +196,7 @@ const getStats = async (type, range = "7days") => {
   }
 
   let sql = "";
+  let prevSql = "";
   let interval = 0;
   let isMonth = false;
 
@@ -195,6 +209,12 @@ const getStats = async (type, range = "7days") => {
       GROUP BY DATE(created_at)
       ORDER BY DATE(created_at) ASC
     `;
+    prevSql = `
+      SELECT COUNT(*) AS total
+      FROM ${tableName}
+      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 13 DAY) 
+        AND created_at < DATE_SUB(CURDATE(), INTERVAL 6 DAY) ${extraWhere}
+    `;
   } else if (range === "30days") {
     interval = 29;
     sql = `
@@ -203,6 +223,12 @@ const getStats = async (type, range = "7days") => {
       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY) ${extraWhere}
       GROUP BY DATE(created_at)
       ORDER BY DATE(created_at) ASC
+    `;
+    prevSql = `
+      SELECT COUNT(*) AS total
+      FROM ${tableName}
+      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 59 DAY) 
+        AND created_at < DATE_SUB(CURDATE(), INTERVAL 29 DAY) ${extraWhere}
     `;
   } else if (range === "12months") {
     isMonth = true;
@@ -214,11 +240,22 @@ const getStats = async (type, range = "7days") => {
       GROUP BY DATE_FORMAT(created_at, '%Y-%m-01')
       ORDER BY date ASC
     `;
+    prevSql = `
+      SELECT COUNT(*) AS total
+      FROM ${tableName}
+      WHERE created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 23 MONTH) 
+        AND created_at < DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 11 MONTH) ${extraWhere}
+    `;
   } else {
     throw new Error("Invalid range");
   }
 
-  const rows = await query(sql);
+  const [rows, prevRows] = await Promise.all([
+    query(sql),
+    query(prevSql)
+  ]);
+  const previousTotal = Number(prevRows[0]?.total || 0);
+
   const map = new Map(
     rows.map((r) => {
       const key = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10);
@@ -254,6 +291,7 @@ const getStats = async (type, range = "7days") => {
     type,
     range,
     data,
+    previous_total: previousTotal,
   };
 };
 

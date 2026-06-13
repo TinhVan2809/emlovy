@@ -7,8 +7,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-14 w-full h-screen">
-      <div className="col-span-2 h-full"><Sidebar /></div>
+    <div className="grid md:grid-cols-14 w-full h-screen">
+      <div className="hidden md:block col-span-2 h-full"><Sidebar /></div>
       <div className="col-span-12 flex flex-col w-full h-full">
         <Header />
         <main className="w-full h-full">{children}</main>

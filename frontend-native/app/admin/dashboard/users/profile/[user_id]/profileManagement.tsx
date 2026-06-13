@@ -7,9 +7,8 @@ import { profileApi, postApi, resolveMediaUrl } from "@/services/api";
 import type { Post, PostsPagination, Profile } from "@/types/auth";
 import { UserAvatar } from "@/components/user-avatar";
 import { Ionicons } from "@expo/vector-icons";
-import { Phone } from "lucide-react-native";
 import { AppColors } from "@/constants/theme";
-import { UsersRound, Users, Image, Heart } from "lucide-react-native";
+import { UsersRound, Users, Image, Heart, Phone } from "lucide-react-native";
 
 const USER_POST_LIMIT = 15;
 
@@ -160,10 +159,15 @@ function ProfileManagement() {
               <UserAvatar imageUrl={avatarUrl} name={displayName} size={90} />
               <View style={styles.infoBox}>
                 <Text style={styles.profileTextName}>{profile?.name}</Text>
-                <Text style={styles.profileText}>@{profile?.username}</Text>
+                <Text style={styles.profileText}>{displayHandle}</Text>
                 {profile?.email?.length && (
                   <Text style={styles.profileText}>
-                    <Ionicons name="mail-outline" size={12} color={AppColors.muted}/> {profile?.email}
+                    <Ionicons
+                      name="mail-outline"
+                      size={12}
+                      color={AppColors.muted}
+                    />{" "}
+                    {profile?.email}
                   </Text>
                 )}
                 {profile?.phone && (
@@ -191,25 +195,29 @@ function ProfileManagement() {
           </View>
         </View>
         <View style={styles.profileItems}>
-          <View style={[styles.items, styles.userRound]}>
-            <UsersRound size={25} color="#rgba(93, 27, 189, 0.96)" />
-            <Text>Người theo dõi</Text>
-            <Text style={styles.text}>{profile?.stats.followers}</Text>
+          <View style={styles.cardBox}>
+            <View style={[styles.items, styles.userRound]}>
+              <UsersRound size={25} color="#rgba(93, 27, 189, 0.96)" />
+              <Text>Người theo dõi</Text>
+              <Text style={styles.text}>{profile?.stats.followers}</Text>
+            </View>
+            <View style={[styles.items, styles.users]}>
+              <Users size={25} color="rgba(28, 21, 232, 0.93)" />
+              <Text>Đang theo dõi</Text>
+              <Text style={styles.text}>{profile?.stats.following}</Text>
+            </View>
           </View>
-          <View style={[styles.items, styles.users]}>
-            <Users size={25} color="rgba(28, 21, 232, 0.93)" />
-            <Text>Đang theo dõi</Text>
-            <Text style={styles.text}>{profile?.stats.following}</Text>
-          </View>
-          <View style={[styles.items, styles.image]}>
-            <Image size={25} color="rgba(232, 21, 198, 0.93)" />
-            <Text>Bài viết</Text>
-            <Text style={styles.text}>{profile?.stats.posts}</Text>
-          </View>
-          <View style={[styles.items, styles.heart]}>
-            <Heart size={25} color="rgba(227, 33, 33, 0.94)" />
-            <Text>Bài viết</Text>
-            <Text style={styles.text}>{profile?.stats.likes}</Text>
+          <View style={styles.cardBox}>
+            <View style={[styles.items, styles.image]}>
+              <Image size={25} color="rgba(232, 21, 198, 0.93)" />
+              <Text>Bài viết</Text>
+              <Text style={styles.text}>{profile?.stats.posts}</Text>
+            </View>
+            <View style={[styles.items, styles.heart]}>
+              <Heart size={25} color="rgba(227, 33, 33, 0.94)" />
+              <Text>Bài viết</Text>
+              <Text style={styles.text}>{profile?.stats.likes}</Text>
+            </View>
           </View>
         </View>
       </ScreenShell>
@@ -281,38 +289,43 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   profileItems: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: 'center',
     padding: 20,
+    gap: 20
+  },
+  cardBox: {
+    flexDirection: 'row',
+    gap: 20
   },
   items: {
-    maxWidth: 80,
-    minWidth: 80,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
+    minWidth: 150,
+    flexDirection: "column",
+    justifyContent: "space-between",
   },
   text: {
-    fontWeight: 'bold',
-    fontSize: 20
+    fontWeight: "bold",
+    fontSize: 20,
   },
   userRound: {
-    backgroundColor: 'rgba(156, 119, 208, 0.72)',
-    padding: 10, 
-    borderRadius: 10
+    backgroundColor: "rgba(156, 119, 208, 0.72)",
+    padding: 10,
+    borderRadius: 10,
   },
   users: {
-    backgroundColor: 'rgba(55, 16, 233, 0.62)',
-    padding: 10, 
-    borderRadius: 10
+    backgroundColor: "rgba(55, 16, 233, 0.62)",
+    padding: 10,
+    borderRadius: 10,
   },
   image: {
-    backgroundColor: 'rgba(233, 16, 221, 0.52)',
-    padding: 10, 
-    borderRadius: 10
+    backgroundColor: "rgba(233, 16, 221, 0.52)",
+    padding: 10,
+    borderRadius: 10,
   },
   heart: {
-    backgroundColor: 'rgba(233, 16, 16, 0.52)',
-    padding: 10, 
-    borderRadius: 10
-  }
+    backgroundColor: "rgba(233, 16, 16, 0.52)",
+    padding: 10,
+    borderRadius: 10,
+  },
 });
