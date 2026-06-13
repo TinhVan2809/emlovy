@@ -1,7 +1,7 @@
 "use client";
 
 import port from "@/api/api";
-import SeatchResult from "@/components/search/SearchResults";
+import SearchResult from "@/components/search/SearchResults";
 import React, { useEffect, useState } from "react";
 
 type Users = {
@@ -65,7 +65,7 @@ function SearchInput() {
       {results?.length > 0 ? (
         <div className="">
           {results.map((r) => (
-            <SeatchResult results={r} key={r.user_id} />
+            <SearchResult results={r} key={r.user_id} />
           ))}
         </div>
       ) : null}

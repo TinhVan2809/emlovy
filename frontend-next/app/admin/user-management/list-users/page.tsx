@@ -10,6 +10,7 @@ import {
 } from "./table";
 import { Badge } from "./badge";
 import { RoleFilter } from "./role-filter";
+import SearchUsers from "./search-users";
 
 type User = {
   user_id: number;
@@ -57,6 +58,7 @@ async function ListManagement({ searchParams }: { searchParams: Promise<{ page?:
           <h1 className="text-2xl font-bold text-slate-900">Quản lý người dùng</h1>
           <p className="text-slate-500 text-sm">Danh sách tất cả người dùng trên hệ thống Emlovy.</p>
         </div>
+        <SearchUsers />
         <RoleFilter />
       </div>
 

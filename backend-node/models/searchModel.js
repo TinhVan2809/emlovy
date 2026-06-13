@@ -6,7 +6,7 @@ const searchUsers = async (searchTerm, viewerId) => {
   const sql = `
     SELECT ${buildProfileSelectFields({ publicPostsOnly: true, viewerId })}
     FROM users u
-    WHERE (u.username LIKE :searchTerm OR u.name LIKE :searchTerm OR u.email LIKE :searchTerm)
+    WHERE (u.user_id LIKE :searchTerm OR u.username LIKE :searchTerm OR u.name LIKE :searchTerm OR u.email LIKE :searchTerm)
       AND u.status = 1
     ORDER BY u.created_at DESC
     LIMIT 20

@@ -7,7 +7,7 @@ type Users = {
 type Props = {
   results: Users;
 };
-function SeatchResult({results}: Props) {
+function SearchResult({results}: Props) {
     return ( 
         <div className="" key={results.user_id}>
             <p>{results.user_id}</p>
@@ -16,4 +16,4 @@ function SeatchResult({results}: Props) {
      );
 }
 
-export default SeatchResult;
+export default SearchResult;
