@@ -18,6 +18,7 @@ const reelRoutes = require("./routes/reelRoutes");
 const storyRoutes = require("./routes/storyRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 const notFound = require("./middlewares/notFound");
 const { Server } = require("socket.io");
@@ -113,6 +114,7 @@ const createApp = () => {
   app.use("/api/stories", storyRoutes);
   app.use("/api/search", searchRoutes);
   app.use("/api/admin", adminRoutes);
+  app.use("/api/reports", reportRoutes);
   app.use(notFound);
   app.use(errorHandler);
 

@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import {
   RiHome9Line,
@@ -12,7 +13,12 @@ import {
   RiSettings4Line,
   RiInformation2Line,
 } from "@remixicon/react";
+import { useState } from "react";
+import Link from "next/link";
+import NavLink from "../NavLink";
 function Sidebar() {
+  const [isUser, setIsUser] = useState(false);
+
   return (
     <div className="bg-[rgba(5,4,51,1)] py-5 px-2 h-full overflow-y-auto hide-scrollbar md:min-w-55 md:fixed md:top-0 md:left-0 md:z-1000">
       <div className="">
@@ -24,21 +30,56 @@ function Sidebar() {
         </div>
       </div>
       <div className="mt-7">
-        <button className="bg-indigo-600 w-full p-2 flex items-center text-left rounded-md text-white text-sm gap-2">
-          <RiHome9Line size={20} />
-          Tổng quan
-        </button>
+        <Link href={"/admin/dashboard"}>
+          <button className="bg-indigo-600 w-full p-2 flex items-center text-left rounded-md text-white text-sm gap-2">
+            <RiHome9Line size={20} />
+            Tổng quan
+          </button>
+        </Link>
       </div>
       <div className="flex flex-col mt-6 gap-4">
         <span className="text-[12px] text-gray-100/90 font-semibold">
           QUẢN LÝ
         </span>
-        <button className="flex items-center gap-2 text-sm text-white justify-between p-2">
-          <span className="flex items-center gap-2">
-            <RiGroupLine size={20} /> Người dùng{" "}
-          </span>
-          <RiArrowDownSLine />
-        </button>
+        <div className="w-full flex flex-col gap-3">
+          <div className="w-full" onClick={() => setIsUser((v) => !v)}>
+            <button className="flex items-center gap-2 text-sm text-white justify-between p-2 w-full">
+              <span className="flex items-center gap-2">
+                <RiGroupLine size={20} /> Người dùng{" "}
+              </span>
+              <RiArrowDownSLine />
+            </button>
+          </div>
+          {isUser && (
+            <div className="px-8 pb-3">
+              <ul className="text-white flex flex-col gap-5 text-sm list-disc">
+                <NavLink
+                  href={"/admin/user-management/list-users"}
+                  color="text-indigo-400"
+                >
+                  <li className="cursor-pointer duration-100 hover:text-indigo-400">
+                    Danh sách người dùng
+                  </li>
+                </NavLink>
+                <NavLink href={"#"} color="text-indigo-400">
+                  <li className="cursor-pointer duration-100 hover:text-indigo-400">
+                    Vai trò và phân quyền
+                  </li>
+                </NavLink>
+                <NavLink href={"#"} color="text-indigo-400">
+                  <li className="cursor-pointer duration-100 hover:text-indigo-400">
+                    Nhóm người dùng
+                  </li>
+                </NavLink>
+                <NavLink href={"#"} color="text-indigo-400">
+                  <li className="cursor-pointer duration-100 hover:text-indigo-400">
+                    Báo cáo người dùng
+                  </li>
+                </NavLink>
+              </ul>
+            </div>
+          )}
+        </div>
         <button className="flex items-center gap-2 text-sm text-white justify-between p-2">
           <span className="flex items-center gap-2">
             <RiImageEditLine size={20} /> Bài viết{" "}
@@ -71,15 +112,17 @@ function Sidebar() {
         </button>
       </div>
       <div className="flex flex-col mt-6 gap-4">
-        <span className="text-[12px] text-gray-100/90 font-semibold">CÀI ĐẶT</span>
+        <span className="text-[12px] text-gray-100/90 font-semibold">
+          CÀI ĐẶT
+        </span>
         <button className="flex items-center gap-2 text-sm p-2">
-          <RiSettings2Line size={20}/> Cài đặt hệ thống
+          <RiSettings2Line size={20} /> Cài đặt hệ thống
         </button>
         <button className="flex items-center gap-2 text-sm p-2">
-          <RiSettings4Line size={20}/> Vai trò phân quyền
+          <RiSettings4Line size={20} /> Vai trò phân quyền
         </button>
         <button className="flex items-center gap-2 text-sm p-2">
-          <RiInformation2Line size={20}/> Nhật ký hệ thống
+          <RiInformation2Line size={20} /> Nhật ký hệ thống
         </button>
       </div>
     </div>
