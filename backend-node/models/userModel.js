@@ -112,7 +112,10 @@ const create = async ({
   return findById(result.insertId);
 };
 
-const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } = {}) => {
+const buildProfileSelectFields = ({
+  publicPostsOnly = false,
+  viewerId = null,
+} = {}) => {
   let fields = publicUserFields;
 
   if (publicPostsOnly) {
@@ -123,6 +126,43 @@ const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } =
   return fields;
 };
 
+// Đếm tổng số người dùng
+const countUsers = async (role = null) => {
+  let sql = "SELECT COUNT(*) AS total FROM users";
+  const params = {};
+  if (role) {
+    sql += " WHERE role = :role";
+    params.role = role;
+  }
+  const rows = await query(sql, params);
+  return rows[0].total;
+};
+
+// Get user list with pagination
+const getUserList = async (page = 1, limit = 10, role = null) => {
+  const offset = (page - 1) * limit;
+  let whereClause = "";
+  const params = { limit, offset };
+
+  if (role) {
+    whereClause = "WHERE role = :role";
+    params.role = role;
+  }
+
+  const rows = await query(
+    `
+      SELECT ${publicUserFields}
+      FROM users
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT :limit OFFSET :offset
+    `,
+    params,
+  );
+
+  return rows.map(toPublicUser);
+};
+
 module.exports = {
   create,
   findById,
@@ -130,4 +170,6 @@ module.exports = {
   findExistingAccount,
   toPublicUser,
   buildProfileSelectFields,
+  getUserList,
+  countUsers,
 };
