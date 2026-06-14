@@ -11,12 +11,13 @@ import {
 import { Badge } from "./badge";
 import { RoleFilter } from "./role-filter";
 import SearchUsers from "./search-users";
+import { RiMoreLine } from "@remixicon/react";
 
 import {
   IUser,
   IPaginationData,
   IUserProfileApiResponse,
-  IPost
+  IPost,
 } from "./user-profile/[user_id]/user";
 
 async function ListManagement({
@@ -43,6 +44,7 @@ async function ListManagement({
     page: 1,
     limit: 10,
   };
+  console.log(data);
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm border border-slate-200">
@@ -66,12 +68,13 @@ async function ListManagement({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-50">Họ tên</TableHead>
-                <TableHead>Username</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Vai trò</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Ngày tham gia</TableHead>
+                <TableHead className="w-50">HỌ TÊN</TableHead>
+                <TableHead>USERNAME</TableHead>
+                <TableHead>EMAIL</TableHead>
+                <TableHead>ROLE</TableHead>
+                <TableHead>STATUS</TableHead>
+                <TableHead className="text-right">JOINED</TableHead>
+                <TableHead className="text-right"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -79,7 +82,7 @@ async function ListManagement({
                 <TableRow key={user.user_id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>@{user.username}</TableCell>
-                  <TableCell>{user.email || "N/A"}</TableCell>
+                  <TableCell>{user.email || ""}</TableCell>
                   <TableCell>
                     <Badge
                       variant={user.role === "admin" ? "default" : "secondary"}
@@ -96,6 +99,9 @@ async function ListManagement({
                   </TableCell>
                   <TableCell className="text-right text-slate-500">
                     {new Date(user.created_at).toLocaleDateString("vi-VN")}
+                  </TableCell>
+                  <TableCell>
+                    <RiMoreLine />
                   </TableCell>
                 </TableRow>
               ))}

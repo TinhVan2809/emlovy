@@ -44,7 +44,7 @@ function Dashboard() {
             </div>
           </div>
           <div className="w-full h-full ">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <DashboardCard
                 endpoint="api/admin/stats/users"
                 period={period}
@@ -84,6 +84,14 @@ function Dashboard() {
                 icon="ri-video-on-fill"
                 backgroundColor="rgba(96, 24, 184, 0.22)"
                 color="rgba(152, 35, 255, 1)"
+              />
+              <DashboardCard
+                endpoint="api/admin/stats/verified-users"
+                period={period}
+                title="Verified"
+                icon="ri-verified-badge-fill"
+                backgroundColor="rgba(0, 61, 255, 0.25)"
+                color="#155dfc"
               />
             </div>
           </div>

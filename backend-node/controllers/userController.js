@@ -10,7 +10,7 @@ const getUserList = async (req, res) => {
     // Chạy song song việc lấy danh sách và đếm tổng số để tối ưu hiệu năng
     const [users, total] = await Promise.all([
       userModel.getUserList(page, limit, role),
-      userModel.countUsers(role),
+      userModel.countUsers({ role }),
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -30,6 +30,18 @@ const getUserList = async (req, res) => {
   }
 };
 
+const getVerifiedUserCount = async (req, res) => {
+  try {
+    const count = await userModel.countUsers({ isVerified: 1 });
+    res.status(200).json({ verifiedUserCount: count });
+  } catch (error) {
+    console.error("Error fetching verified user count:", error);
+    res.status(500).json({ error: "Failed to fetch verified user count" });
+  }
+};
+
+
 module.exports = {
   getUserList,
+  getVerifiedUserCount,
 };

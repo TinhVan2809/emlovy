@@ -115,13 +115,13 @@ function Sidebar() {
         <span className="text-[12px] text-gray-100/90 font-semibold">
           CÀI ĐẶT
         </span>
-        <button className="flex items-center gap-2 text-sm p-2">
+        <button className="flex items-center gap-2 text-sm p-2 text-white">
           <RiSettings2Line size={20} /> Cài đặt hệ thống
         </button>
-        <button className="flex items-center gap-2 text-sm p-2">
+        <button className="flex items-center gap-2 text-sm p-2 text-white">
           <RiSettings4Line size={20} /> Vai trò phân quyền
         </button>
-        <button className="flex items-center gap-2 text-sm p-2">
+        <button className="flex items-center gap-2 text-sm p-2 text-white">
           <RiInformation2Line size={20} /> Nhật ký hệ thống
         </button>
       </div>

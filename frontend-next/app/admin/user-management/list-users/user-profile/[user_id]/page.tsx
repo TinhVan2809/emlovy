@@ -15,7 +15,7 @@ async function UserProfile({ params }: UserProfileProps) {
     `${port}/api/profile/${user_id}`,
     `${port}/api/posts/user/${user_id}`,
   ];
-    let user: IUserProfileApiResponse | null = null;
+  let user: IUserProfileApiResponse | null = null;
   let posts: IPostsResponse | null = null;
   try {
     const fetchUserData = urls.map(async (url) => {
@@ -31,7 +31,6 @@ async function UserProfile({ params }: UserProfileProps) {
   } catch (_err) {
     console.error("Error fetching user data", _err);
   }
-
 
   return (
     <div className="px-30 w-full h-full">

@@ -30,6 +30,8 @@ const dashboard = async (req, res) => {
     success: true,
     data: {
       totalUsers: data.totalUsers,
+      verifiedUsers: data.verifiedUsers,
+      activeUsers: data.activeUsers,
       newUsersToday: data.newUsersToday,
       totalPosts: data.totalPosts,
       totalReels: data.totalReels,
@@ -115,6 +117,17 @@ const reelsStats = async (req, res) => {
   res.status(200).json({ success: true, data: result });
 };
 
+// GET /api/admin/stats/reels?range=7days|30days|12months
+const verifiedStats = async (req, res) => {
+  const range = (req.query.range || "7days").toString();
+  if (!["7days", "30days", "12months"].includes(range)) {
+    throw createHttpError(400, "Tham số range không hợp lệ.");
+  }
+
+  const result = await adminService.getStats("reels", range);
+  res.status(200).json({ success: true, data: result });
+};
+
 // GET /api/admin/stats/top-posts
 const topInteractedPosts = async (req, res) => {
   const result = await adminService.getTopInteractedPosts();
@@ -130,5 +143,6 @@ module.exports = {
   commentsStats,
   likesStats,
   reelsStats,
+  verifiedStats,
   topInteractedPosts,
 };

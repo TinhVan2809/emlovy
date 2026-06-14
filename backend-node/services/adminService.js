@@ -1,18 +1,25 @@
 const { query } = require("../config/database");
 const config = require("../config/env");
+const userModel = require("../models/userModel");
 
 const getOverview = async () => {
   // Run counts in parallel for performance
   const [
-    totalUsersRows,
+    totalUsers,
+    verifiedUsers,
+    activeUsers,
     newUsersTodayRows,
     totalPostsRows,
     totalReelsRows,
     totalCommentsRows,
     totalLikesRows,
   ] = await Promise.all([
-    query(`SELECT COUNT(*) AS total FROM users`),
-    query(`SELECT COUNT(*) AS total FROM users WHERE DATE(created_at) = CURDATE()`),
+    userModel.countUsers(),
+    userModel.countUsers({ isVerified: 1 }),
+    userModel.countUsers({ status: 1 }),
+    query(
+      `SELECT COUNT(*) AS total FROM users WHERE DATE(created_at) = CURDATE()`,
+    ),
     query(`SELECT COUNT(*) AS total FROM posts WHERE is_deleted = 0`),
     // count distinct posts that are reels or have video media
     query(`
@@ -35,7 +42,11 @@ const getOverview = async () => {
       { schema: config.database.name },
     );
 
-    if (tableExistsRows && tableExistsRows[0] && Number(tableExistsRows[0].cnt) > 0) {
+    if (
+      tableExistsRows &&
+      tableExistsRows[0] &&
+      Number(tableExistsRows[0].cnt) > 0
+    ) {
       const reportsRows = await query(`SELECT COUNT(*) AS total FROM reports`);
       totalReports = Number(reportsRows[0]?.total || 0);
     }
@@ -45,7 +56,9 @@ const getOverview = async () => {
   }
 
   return {
-    totalUsers: Number(totalUsersRows[0]?.total || 0),
+    totalUsers: Number(totalUsers),
+    verifiedUsers: Number(verifiedUsers),
+    activeUsers: Number(activeUsers),
     newUsersToday: Number(newUsersTodayRows[0]?.total || 0),
     totalPosts: Number(totalPostsRows[0]?.total || 0),
     totalReels: Number(totalReelsRows[0]?.total || 0),
@@ -85,7 +98,10 @@ const getUserGrowth = async (range = "7days") => {
 
     const map = new Map(
       rows.map((r) => {
-        const key = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10);
+        const key =
+          r.date instanceof Date
+            ? r.date.toISOString().slice(0, 10)
+            : String(r.date).slice(0, 10);
         return [key, Number(r.users)];
       }),
     );
@@ -116,7 +132,10 @@ const getUserGrowth = async (range = "7days") => {
 
     const map = new Map(
       rows.map((r) => {
-        const key = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10);
+        const key =
+          r.date instanceof Date
+            ? r.date.toISOString().slice(0, 10)
+            : String(r.date).slice(0, 10);
         return [key, Number(r.users)];
       }),
     );
@@ -148,7 +167,10 @@ const getUserGrowth = async (range = "7days") => {
 
     const map = new Map(
       rows.map((r) => {
-        const key = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10);
+        const key =
+          r.date instanceof Date
+            ? r.date.toISOString().slice(0, 10)
+            : String(r.date).slice(0, 10);
         return [key, Number(r.users)];
       }),
     );
@@ -190,6 +212,10 @@ const getStats = async (type, range = "7days") => {
       break;
     case "likes":
       tableName = "likes";
+      break;
+    case "verified_users":
+      tableName = "users";
+      extraWhere = "AND is_verified = 1";
       break;
     default:
       throw new Error("Invalid stat type");
@@ -250,17 +276,17 @@ const getStats = async (type, range = "7days") => {
     throw new Error("Invalid range");
   }
 
-  const [rows, prevRows] = await Promise.all([
-    query(sql),
-    query(prevSql)
-  ]);
+  const [rows, prevRows] = await Promise.all([query(sql), query(prevSql)]);
   const previousTotal = Number(prevRows[0]?.total || 0);
 
   const map = new Map(
     rows.map((r) => {
-      const key = r.date instanceof Date ? r.date.toISOString().slice(0, 10) : String(r.date).slice(0, 10);
+      const key =
+        r.date instanceof Date
+          ? r.date.toISOString().slice(0, 10)
+          : String(r.date).slice(0, 10);
       return [key, Number(r.count)];
-    })
+    }),
   );
 
   const data = [];

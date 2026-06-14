@@ -258,7 +258,6 @@ function Profile({ user, posts }: ProfileProps) {
                   : post.media;
 
                 const mediaUrl = mediaPath ? `${port}${mediaPath}` : null;
-                console.log(mediaPath);
                 const isVideo =
                   mediaPath && /\.(mp4|webm|ogg|mov|m4v)$/i.test(mediaPath);
 

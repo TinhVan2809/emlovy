@@ -21,7 +21,7 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 -- GTID state at the beginning of the backup 
 --
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'f31fb58d-48f9-11f1-88b4-b445068c3c7e:1-515';
+SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'f31fb58d-48f9-11f1-88b4-b445068c3c7e:1-520';
 
 --
 -- Table structure for table `comments`
@@ -406,21 +406,17 @@ CREATE TABLE `reports` (
   CONSTRAINT `reports_ibfk_2` FOREIGN KEY (`reported_post_id`) REFERENCES `posts` (`post_id`) ON DELETE CASCADE,
   CONSTRAINT `reports_ibfk_3` FOREIGN KEY (`reported_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   CONSTRAINT `reports_ibfk_4` FOREIGN KEY (`reported_comment_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `chk_one_reported_entity` CHECK (
-    (report_type = 'post' AND reported_post_id IS NOT NULL AND reported_user_id IS NULL AND reported_comment_id IS NULL) OR
-    (report_type = 'user' AND reported_user_id IS NOT NULL AND reported_post_id IS NULL AND reported_comment_id IS NULL) OR
-    (report_type = 'comment' AND reported_comment_id IS NOT NULL AND reported_post_id IS NULL AND reported_user_id IS NULL)
-  )
+  CONSTRAINT `chk_one_reported_entity` CHECK ((((`report_type` = _utf8mb4'post') and (`reported_post_id` is not null) and (`reported_user_id` is null) and (`reported_comment_id` is null)) or ((`report_type` = _utf8mb4'user') and (`reported_user_id` is not null) and (`reported_post_id` is null) and (`reported_comment_id` is null)) or ((`report_type` = _utf8mb4'comment') and (`reported_comment_id` is not null) and (`reported_post_id` is null) and (`reported_user_id` is null))))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `report`
+-- Dumping data for table `reports`
 --
 
-LOCK TABLES `report` WRITE;
-/*!40000 ALTER TABLE `report` DISABLE KEYS */;
-/*!40000 ALTER TABLE `report` ENABLE KEYS */;
+LOCK TABLES `reports` WRITE;
+/*!40000 ALTER TABLE `reports` DISABLE KEYS */;
+/*!40000 ALTER TABLE `reports` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -510,6 +506,7 @@ CREATE TABLE `users` (
   `phone` varchar(20) DEFAULT NULL,
   `avata` varchar(500) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
+  `signature` varchar(255) DEFAULT NULL,
   `role` enum('admin','customer') NOT NULL DEFAULT 'customer' COMMENT 'admin, người dùng',
   `status` tinyint DEFAULT '1' COMMENT '1 là đang hoạt động, 0 là block',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -527,7 +524,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Lữ Văn Tính','tinhlu','$2b$12$zngBXM86GWMgxaZjJ5TdxOHhXNBag22jjyW5q.E1fkZdklzgia0Aq',NULL,NULL,'0818177533',NULL,'tinhlu703@gmail.com','customer',1,'2026-04-29 04:42:33','2026-05-28 16:28:25',1),(2,'Lữ Tính Văn','tinhvan','$2b$12$uvBeLQeuf.jbYU7p0yNILuBBrldGxh0g85jtK/qz7CzJMzuELOqP6',NULL,NULL,'0818177533','/uploads/avatars/user-2-1778786275246-hn2pky2q.jpg','tinhlu263@gmail.com','customer',1,'2026-05-08 03:19:44','2026-06-09 14:08:42',1),(3,'huyngo','huy123','$2b$12$evqrwvuIjKOopNNv7xFabOPWEtE3ZCFwwDoErV1u8BsOTvdLub6H6',NULL,NULL,'0818177533',NULL,NULL,'customer',1,'2026-05-10 01:34:57','2026-05-31 18:31:23',1),(4,'tinh','tinh','$2b$10$2eJnGd53OauaeqRAmy6.K.lZzz.BQgUdvoHwIgUr5wTYBXtd9b3d6',NULL,NULL,NULL,NULL,NULL,'customer',1,'2026-05-16 16:21:11','2026-05-16 16:21:11',0),(5,'Hasekimagru','luvantinh','$2b$12$KuLNBxDekSbwHy237Su/c.b7edfOIRdhoP7Ua0PQYssA0MMB2Et1i',NULL,'0','0818177533','/uploads/avatars/user-5-1779721746324-jetxthi6.jpg',NULL,'customer',1,'2026-05-25 15:08:20','2026-05-25 15:09:14',0),(6,'Admin','admin','$2b$12$mJ18mA/Y0yhLGXiZMSlDL.NVIR8daPYvVvSNVIU.Yo4Ur0tC.rJ8O',NULL,NULL,'0818177533',NULL,NULL,'admin',1,'2026-06-02 15:53:29','2026-06-02 15:55:01',0),(7,'luvantinh','tinh123','$2b$12$gowoBg4ksbizRsvIJqt3perMWo29btZC/Ky88JydrpyMaNQaRXGvi',NULL,NULL,'0818177533',NULL,'tinhlu662@gmail.com','customer',1,'2026-06-07 22:37:29','2026-06-07 22:37:29',0);
+INSERT INTO `users` VALUES (1,'Lữ Văn Tính','tinhlu','$2b$12$zngBXM86GWMgxaZjJ5TdxOHhXNBag22jjyW5q.E1fkZdklzgia0Aq',NULL,NULL,'0818177533',NULL,'tinhlu703@gmail.com',NULL,'customer',1,'2026-04-29 04:42:33','2026-05-28 16:28:25',1),(2,'Lữ Tính Văn','tinhvan','$2b$12$uvBeLQeuf.jbYU7p0yNILuBBrldGxh0g85jtK/qz7CzJMzuELOqP6',NULL,NULL,'0818177533','/uploads/avatars/user-2-1778786275246-hn2pky2q.jpg','tinhlu263@gmail.com',NULL,'customer',1,'2026-05-08 03:19:44','2026-06-09 14:08:42',1),(3,'huyngo','huy123','$2b$12$evqrwvuIjKOopNNv7xFabOPWEtE3ZCFwwDoErV1u8BsOTvdLub6H6',NULL,NULL,'0818177533',NULL,NULL,NULL,'customer',1,'2026-05-10 01:34:57','2026-05-31 18:31:23',1),(4,'tinh','tinh','$2b$10$2eJnGd53OauaeqRAmy6.K.lZzz.BQgUdvoHwIgUr5wTYBXtd9b3d6',NULL,NULL,NULL,NULL,NULL,NULL,'customer',1,'2026-05-16 16:21:11','2026-05-16 16:21:11',0),(5,'Hasekimagru','luvantinh','$2b$12$KuLNBxDekSbwHy237Su/c.b7edfOIRdhoP7Ua0PQYssA0MMB2Et1i',NULL,'0','0818177533','/uploads/avatars/user-5-1779721746324-jetxthi6.jpg',NULL,NULL,'customer',1,'2026-05-25 15:08:20','2026-05-25 15:09:14',0),(6,'Admin','admin','$2b$12$mJ18mA/Y0yhLGXiZMSlDL.NVIR8daPYvVvSNVIU.Yo4Ur0tC.rJ8O',NULL,NULL,'0818177533',NULL,NULL,NULL,'admin',1,'2026-06-02 15:53:29','2026-06-02 15:55:01',0),(7,'luvantinh','tinh123','$2b$12$gowoBg4ksbizRsvIJqt3perMWo29btZC/Ky88JydrpyMaNQaRXGvi',NULL,NULL,'0818177533',NULL,'tinhlu662@gmail.com',NULL,'customer',1,'2026-06-07 22:37:29','2026-06-07 22:37:29',0);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -541,4 +538,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-06-13 20:11:43
+-- Dump completed on 2026-06-15  5:39:59

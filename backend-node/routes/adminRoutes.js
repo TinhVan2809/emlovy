@@ -20,6 +20,9 @@ router.get("/stats/posts", authenticate, authorize("admin"), asyncHandler(adminC
 router.get("/stats/comments", authenticate, authorize("admin"), asyncHandler(adminController.commentsStats));
 router.get("/stats/likes", authenticate, authorize("admin"), asyncHandler(adminController.likesStats));
 router.get("/stats/reels", authenticate, authorize("admin"), asyncHandler(adminController.reelsStats));
+router.get("/stats/verified-users", authenticate, authorize("admin"), asyncHandler(adminController.verifiedStats));
+
+// Top interacted posts
 router.get("/stats/top-posts", authenticate, authorize("admin"), asyncHandler(adminController.topInteractedPosts));
 
 module.exports = router;

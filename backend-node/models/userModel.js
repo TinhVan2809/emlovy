@@ -127,15 +127,25 @@ const buildProfileSelectFields = ({
 };
 
 // Đếm tổng số người dùng
-const countUsers = async (role = null) => {
-  let sql = "SELECT COUNT(*) AS total FROM users";
+const countUsers = async ({ role = null, isVerified = null, status = null } = {}) => {
+  let sql = "SELECT COUNT(*) AS total FROM users WHERE 1=1";
   const params = {};
+
   if (role) {
-    sql += " WHERE role = :role";
+    sql += " AND role = :role";
     params.role = role;
   }
+  if (isVerified !== null) {
+    sql += " AND is_verified = :isVerified";
+    params.isVerified = isVerified;
+  }
+  if (status !== null) {
+    sql += " AND status = :status";
+    params.status = status;
+  }
+
   const rows = await query(sql, params);
-  return rows[0].total;
+  return rows[0]?.total || 0;
 };
 
 // Get user list with pagination
