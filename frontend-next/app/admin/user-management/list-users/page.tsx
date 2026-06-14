@@ -12,28 +12,12 @@ import { Badge } from "./badge";
 import { RoleFilter } from "./role-filter";
 import SearchUsers from "./search-users";
 
-type User = {
-  user_id: number;
-  name: string;
-  username: string;
-  email?: string | null;
-  role: string;
-  status: number;
-  avata?: string | null;
-  created_at: string;
-};
-
-type PaginationData = {
-  total: number;
-  totalPages: number;
-  page: number;
-  limit: number;
-};
-
-type ApiResponse = {
-  items: User[];
-  pagination: PaginationData;
-};
+import {
+  IUser,
+  IPaginationData,
+  IUserProfileApiResponse,
+  IPost
+} from "./user-profile/[user_id]/user";
 
 async function ListManagement({
   searchParams,
@@ -52,8 +36,8 @@ async function ListManagement({
   });
 
   const result = await response.json();
-  const data: User[] = result.items || [];
-  const pagination: PaginationData = result.pagination || {
+  const data: IUser[] = result.items || [];
+  const pagination: IPaginationData = result.pagination || {
     total: 0,
     totalPages: 1,
     page: 1,
@@ -73,7 +57,7 @@ async function ListManagement({
         </div>
         <div className="flex items-center gap-3.5 ">
           <SearchUsers />
-          <RoleFilter />  
+          <RoleFilter />
         </div>
       </div>
 
@@ -91,7 +75,7 @@ async function ListManagement({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((user: User) => (
+              {data.map((user: IUser) => (
                 <TableRow key={user.user_id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>@{user.username}</TableCell>
