@@ -17,6 +17,7 @@ import {
 import { IPostsResponse, IUserProfileApiResponse } from "./user";
 import { useState } from "react";
 import ProfileCardStats from "@/components/admin/ProfileCardStats";
+import PersonalInfo from "../tab-profile/personal-info";
 
 const formatRelativeTime = (dateString: string) => {
   const date = new Date(dateString);
@@ -148,8 +149,7 @@ function Profile({ user, posts }: ProfileProps) {
             className="px-3 pb-3 text-black"
             onClick={() => setTab("personal-info")}
             style={{
-              borderBottom:
-                tab === "personal-info" ? "2px solid blue" : "none",
+              borderBottom: tab === "personal-info" ? "2px solid blue" : "none",
             }}
           >
             Personal Info
@@ -204,8 +204,7 @@ function Profile({ user, posts }: ProfileProps) {
             className="px-3 pb-3 text-black"
             onClick={() => setTab("admin-actions")}
             style={{
-              borderBottom:
-                tab === "admin-actions" ? "2px solid blue" : "none",
+              borderBottom: tab === "admin-actions" ? "2px solid blue" : "none",
             }}
           >
             Admin Actions
@@ -213,6 +212,7 @@ function Profile({ user, posts }: ProfileProps) {
         </div>
       </div>
       <div className="">
+        {/* Overview */}
         {tab == "overview" && (
           <div className=" py-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
@@ -318,7 +318,10 @@ function Profile({ user, posts }: ProfileProps) {
             </div>
           </div>
         )}
-        {tab == "personal-info" && <div className="">Personal Info</div>}
+        {/* Personal Info */}
+        {tab == "personal-info" && (
+          <PersonalInfo user={user}/>
+        )}
         {tab == "account-status" && <div className="">Account Status</div>}
         {tab == "security" && <div className="">Security</div>}
         {tab == "statistics" && <div className="">Statistics</div>}

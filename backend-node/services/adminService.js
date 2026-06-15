@@ -333,11 +333,19 @@ const getTopInteractedPosts = async () => {
       p.share_count,
       (p.like_count + p.comment_count + p.share_count) AS total_interactions,
       p.created_at,
+      first_media.media_url,
       u.username,
       u.name AS user_name,
       u.avata AS user_avatar
     FROM posts p
     JOIN users u ON p.user_id = u.user_id
+    INNER JOIN (
+        SELECT
+            post_id,
+            media_url,
+            ROW_NUMBER() OVER (PARTITION BY post_id ORDER BY sort_order ASC) as rn
+        FROM post_media
+    ) AS first_media ON first_media.post_id = p.post_id AND first_media.rn = 1
     WHERE p.is_deleted = 0 
       AND p.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
     ORDER BY total_interactions DESC

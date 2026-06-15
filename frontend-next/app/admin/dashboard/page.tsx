@@ -3,6 +3,7 @@ import { useState } from "react";
 import DashboardCard from "@/components/admin/DashboardCard";
 import { useUser } from "@/context/useUserContext";
 import { RiCalendarLine } from "@remixicon/react";
+import TopPosts from "@/components/admin/TopPosts";
 type Period = "7days" | "30days" | "12months";
 function Dashboard() {
   const [period, setPeriod] = useState<Period>("7days");
@@ -96,9 +97,9 @@ function Dashboard() {
             </div>
           </div>
         </div>
-        {/* Tổng quan hoạt động (Người dùng, bài viết, bình luận, lượt thích, thước phim)*/}
+        {/* Tổng quan hoạt động (Người dùng, bài viết, bình luận, lượt thích, thước phim) và các thống kê khác*/}
         <div className="">
-          tong quan hoat dong
+         <TopPosts />
         </div>
       </div>
     </>

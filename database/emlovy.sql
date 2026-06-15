@@ -507,6 +507,7 @@ CREATE TABLE `users` (
   `avata` varchar(500) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
+  `address` varchar(255) DEFAULT NULL,
   `role` enum('admin','customer') NOT NULL DEFAULT 'customer' COMMENT 'admin, người dùng',
   `status` tinyint DEFAULT '1' COMMENT '1 là đang hoạt động, 0 là block',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,

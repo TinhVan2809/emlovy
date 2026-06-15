@@ -89,6 +89,10 @@ const validateProfilePayload = (body) => {
     updates.gender = gender;
   }
 
+  if (Object.prototype.hasOwnProperty.call(body, "address")) {
+    updates.address = normalizeNullableText(body.address);
+  }
+
   return updates;
 };
 
@@ -174,6 +178,50 @@ const updateMyProfile = async (req, res) => {
   });
 };
 
+const updateUserProfile = async (req, res) => {
+  const userId = parseUserId(req.params.userId);
+  const updates = validateProfilePayload(req.body);
+
+  // Kiểm tra trùng lặp username/email, loại trừ người dùng hiện tại đang được cập nhật
+  if (updates.username || updates.email !== undefined) {
+    const duplicateUser = await profileModel.findDuplicateIdentity({
+      userId: userId, // Kiểm tra trùng lặp với người dùng mục tiêu
+      username: updates.username,
+      email: updates.email,
+    });
+
+    if (duplicateUser) {
+      const message =
+        updates.username && duplicateUser.username === updates.username
+          ? "Username đã được sử dụng."
+          : "Email đã được sử dụng.";
+
+      throw createHttpError(409, message);
+    }
+  }
+
+  let profile;
+
+  try {
+    profile = await profileModel.updateByUserId(userId, updates); // Cập nhật người dùng mục tiêu
+  } catch (error) {
+    if (error.code === "ER_DUP_ENTRY") {
+      throw createHttpError(409, "Username hoặc email đã được sử dụng.");
+    }
+
+    throw error;
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Cập nhật profile thành công.",
+    data: {
+      profile,
+      user: createUserPayload(profile),
+    },
+  });
+};
+
 const removeUploadedFile = async (filePath) => {
   if (!filePath) {
     return;
@@ -227,4 +275,5 @@ module.exports = {
   getUserProfile,
   updateMyProfile,
   uploadAvatar,
+  updateUserProfile,
 };

@@ -6,6 +6,9 @@ export interface IUser {
   role?: string; // Role có thể chỉ có trong danh sách hoặc ngữ cảnh admin
   status: number;
   avata?: string | null;
+  phone: number;
+  gender: string;
+  birthday: string;
   stats?: {
     followers: number;
     following: number;
@@ -14,6 +17,7 @@ export interface IUser {
   };
   created_at: string;
   signature?: string | null; // Cụ thể cho trang hồ sơ
+  address?: string | null;
   is_verified?: number; // Cụ thể cho trang hồ sơ
 }
 

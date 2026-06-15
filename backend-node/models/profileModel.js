@@ -10,6 +10,7 @@ const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } =
   u.avata,
   u.email,
   u.signature,
+  u.address,
   u.role,
   u.status,
   u.created_at,
@@ -71,6 +72,7 @@ const toProfile = (row) => {
     avatar_url: row.avata,
     email: row.email,
     signature: row.signature,
+    address: row.address,
     role: row.role,
     status: row.status,
     created_at: row.created_at,
@@ -122,7 +124,7 @@ const findDuplicateIdentity = async ({ userId, username, email }) => {
 };
 
 const updateByUserId = async (userId, fields) => {
-  const allowedFields = ["name", "username", "birthday", "gender", "phone", "email"];
+  const allowedFields = ["name", "username", "birthday", "gender", "phone", "email", "address"];
   const updates = [];
   const params = { userId };
 
