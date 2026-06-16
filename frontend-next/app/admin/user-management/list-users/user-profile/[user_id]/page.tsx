@@ -26,8 +26,6 @@ async function UserProfile({ params }: UserProfileProps) {
     const [userData, postsData] = await Promise.all(fetchUserData);
     user = userData;
     posts = postsData;
-    console.log(user);
-    console.log(posts);
   } catch (_err) {
     console.error("Error fetching user data", _err);
   }

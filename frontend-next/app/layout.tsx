@@ -11,6 +11,7 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css"
           rel="stylesheet"
         />
+        <meta charSet="UTF-8"/>
       </head>
       <UserProvider>
         <body>{children}</body>
