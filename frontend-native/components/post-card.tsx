@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { SealCheckIcon } from "phosphor-react-native";
 
 import { UserAvatar } from "@/components/user-avatar";
 import { VisualTile } from "@/components/visual-tile";
@@ -164,15 +165,7 @@ const PostCard = memo(function PostCard({
               <View style={styles.usernameVerified}>
                 <Text style={styles.userName}>{authorName}</Text>
 
-                <Ionicons
-                  name="checkmark"
-                  color={"#ffffff"}
-                  style={{
-                    backgroundColor: AppColors.checkmark,
-                    borderRadius: 100,
-                    padding: 1,
-                  }}
-                />
+                <SealCheckIcon size={18} weight="fill" color={AppColors.checkmark}/>
               </View>
             ) : (
               <Text style={styles.userName}>{authorName}</Text>

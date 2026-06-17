@@ -25,7 +25,7 @@ const formatRelativeTime = (dateString: string) => {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  if (isNaN(date.getTime())) return "N/A";
+  if (isNaN(date.getTime())) return "";
 
   const intervals: { [key: string]: number } = {
     năm: 31536000,

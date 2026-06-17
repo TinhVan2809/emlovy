@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { postApi, profileApi, resolveMediaUrl, storyApi } from "@/services/api";
 import { subscribeToPostEvents } from "@/services/post-socket";
 import { subscribeToStoryEvents } from "@/services/story-socket";
+import { SealCheckIcon } from 'phosphor-react-native'
 
 import type {
   CreatePostInput,
@@ -535,7 +536,7 @@ export default function ProfileScreen() {
                 {displayUser?.is_verified === 1 ? (
                   <View style={styles.nameVerified}>
                     <Text style={styles.profileName}>{displayName}</Text>
-                    <Ionicons name="checkmark" style={styles.checkMark} />
+                    <SealCheckIcon size={18} weight="fill" color={AppColors.checkmark}/>
                   </View>
                 ) : (
                   <View style={styles.nameVerified}>
@@ -1101,12 +1102,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 18,
-  },
-  checkMark: {
-    color: "#ffffff",
-    backgroundColor: "#2040e4",
-    borderRadius: 30,
-    padding: 1,
   },
   profileStoryIconBadge: {
     alignItems: "center",

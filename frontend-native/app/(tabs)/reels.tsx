@@ -35,6 +35,7 @@ import {
   TextInput,
   useWindowDimensions,
   View,
+  Image as Img
 } from "react-native";
 import {
   SafeAreaView,
@@ -779,7 +780,7 @@ const ReelCard = memo(
                     {authorName}
                   </Text>
                   {reel.author?.is_verified === 1 ? (
-                    <Ionicons name="checkmark" style={styles.isVerifiedIcon} />
+                  <Img source={require("../../assets/images/verifed.png")} style={styles.verifiedIcon} />
                   ) : null}
                 </View>
                 <Pressable style={styles.followBox}>
@@ -1312,6 +1313,10 @@ const styles = StyleSheet.create({
     color: AppColors.surface,
     fontFamily: AppFonts.heading,
     fontSize: 15,
+  },
+  verifiedIcon: {
+    width: 16,
+    height: 16,
   },
   isVerifiedIcon: {
     color: "#fff",
