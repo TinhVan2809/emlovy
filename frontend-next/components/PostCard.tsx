@@ -8,8 +8,9 @@ import {
   RiSendPlaneLine,
   RiBookmarkLine,
 } from "@remixicon/react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
+import Skeleton from "./Skeleton";
 
 interface PostMedia {
   post_media_id: number;
@@ -58,125 +59,127 @@ function PostCard({ i }: PostCardProps) {
 
   return (
     <>
-      <div
-        className="w-full max-w-150 md:rounded-xl bg-white mb-4"
-        key={i.post_id}
-      >
-        <div className="flex flex-col gap-3 p-4">
-          <div className="flex justify-between items-center">
-            <div
-              className="flex items-center gap-3 cursor-pointer"
-              onClick={() => router.push(`/profile/${i.author?.user_id}`)}
-            >
-              <div className="relative w-10 h-10">
-                <Image
-                  src={avatarSrc}
-                  alt="avatar"
-                  fill
-                  className="rounded-full object-cover"
-                />
-              </div>
-              <div className="flex flex-col">
-                <p className="font-semibold text-sm hover:underline">
-                  {i.author?.name || "Anonymous"}
-                </p>
-                <p className="text-xs opacity-50">
-                  {new Date(i.created_at).toLocaleString()}
-                </p>
-              </div>
-            </div>
-            <div
-              className="cursor-pointer duration-150 hover:bg-gray-100 p-2 rounded-full"
-              onClick={() => onPostOptionsMenu(i.post_id)}
-            >
-              <RiMoreLine size={20} />
-            </div>
-          </div>
-          <p className="text-[15px] leading-relaxed text-gray-800">
-            {i.content}
-          </p>
-        </div>
-        <div className="relative w-full bg-black overflow-hidden flex justify-center">
-          {i.media && i.media.length > 0 && (
-            <div className="w-full flex flex-col gap-1">
-              {i.media.map((m: PostMedia) => {
-                const mediaSrc = m.media_url
-                  ? `${port}${m.media_url}`
-                  : "/placeholder.jpg";
-                return (
-                  <div
-                    key={m.post_media_id}
-                    className="relative w-full min-h-75 md:min-h-100"
-                  >
-                    <Image
-                      src={mediaSrc}
-                      alt="post_url"
-                      fill
-                      priority={false}
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, 600px"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        <div className="flex justify-between items-center px-4 py-3">
-          <div className="flex gap-4">
-            <button className="flex items-center gap-1.5 hover:opacity-60 transition">
-              <RiHeart3Line size={24} />
-              <span className="text-sm font-medium">
-                {i.like_count > 0 ? i.like_count : null}
-              </span>
-            </button>
-            <button className="flex items-center gap-1.5 hover:opacity-60 transition">
-              <RiChat3Line size={24} />
-              <span className="text-sm font-medium">
-                {i.comment_count > 0 ? i.comment_count : null}
-              </span>
-            </button>
-            <button className="flex items-center gap-1.5 hover:opacity-60 transition">
-              <RiSendPlaneLine size={24} />
-              <span className="text-sm font-medium">
-                {i.share_count > 0 ? i.share_count : null}
-              </span>
-            </button>
-          </div>
-          <div className="hover:opacity-60 cursor-pointer transition">
-            <RiBookmarkLine size={24} />
-          </div>
-        </div>
-      </div>
-
-      {/* Mở postOptionsMenu */}
-      {postOptionsMenu && (
+      <Suspense fallback={<Skeleton />}>
         <div
-          className="w-full h-screen bg-black/40 fixed inset-0 z-1000 flex justify-center items-center p-4"
-          onClick={() => onPostOptionsMenu(null)}
+          className="w-full max-w-150 md:rounded-xl bg-white mb-4"
+          key={i.post_id}
         >
-          <div
-            className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition">
-              Báo vi phạm
-            </button>
-            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-              Lưu bài viết
-            </button>
-            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-              Chia sẻ
-            </button>
-            <button
-              className="p-4 hover:bg-gray-50 transition"
-              onClick={() => onPostOptionsMenu(null)}
-            >
-              Hủy
-            </button>
+          <div className="flex flex-col gap-3 p-4">
+            <div className="flex justify-between items-center">
+              <div
+                className="flex items-center gap-3 cursor-pointer"
+                onClick={() => router.push(`/profile/${i.author?.user_id}`)}
+              >
+                <div className="relative w-10 h-10">
+                  <Image
+                    src={avatarSrc}
+                    alt="avatar"
+                    fill
+                    className="rounded-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <p className="font-semibold text-sm hover:underline">
+                    {i.author?.name || "Anonymous"}
+                  </p>
+                  <p className="text-xs opacity-50">
+                    {new Date(i.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <div
+                className="cursor-pointer duration-150 hover:bg-gray-100 p-2 rounded-full"
+                onClick={() => onPostOptionsMenu(i.post_id)}
+              >
+                <RiMoreLine size={20} />
+              </div>
+            </div>
+            <p className="text-[15px] leading-relaxed text-gray-800">
+              {i.content}
+            </p>
+          </div>
+          <div className="relative w-full bg-black overflow-hidden flex justify-center">
+            {i.media && i.media.length > 0 && (
+              <div className="w-full flex flex-col gap-1">
+                {i.media.map((m: PostMedia) => {
+                  const mediaSrc = m.media_url
+                    ? `${port}${m.media_url}`
+                    : "/placeholder.jpg";
+                  return (
+                    <div
+                      key={m.post_media_id}
+                      className="relative w-full min-h-75 md:min-h-100"
+                    >
+                      <Image
+                        src={mediaSrc}
+                        alt="post_url"
+                        fill
+                        priority={false}
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, 600px"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-between items-center px-4 py-3">
+            <div className="flex gap-4">
+              <button className="flex items-center gap-1.5 hover:opacity-60 transition">
+                <RiHeart3Line size={24} />
+                <span className="text-sm font-medium">
+                  {i.like_count > 0 ? i.like_count : null}
+                </span>
+              </button>
+              <button className="flex items-center gap-1.5 hover:opacity-60 transition">
+                <RiChat3Line size={24} />
+                <span className="text-sm font-medium">
+                  {i.comment_count > 0 ? i.comment_count : null}
+                </span>
+              </button>
+              <button className="flex items-center gap-1.5 hover:opacity-60 transition">
+                <RiSendPlaneLine size={24} />
+                <span className="text-sm font-medium">
+                  {i.share_count > 0 ? i.share_count : null}
+                </span>
+              </button>
+            </div>
+            <div className="hover:opacity-60 cursor-pointer transition">
+              <RiBookmarkLine size={24} />
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Mở postOptionsMenu */}
+        {postOptionsMenu && (
+          <div
+            className="w-full h-screen bg-black/40 fixed inset-0 z-1000 flex justify-center items-center p-4"
+            onClick={() => onPostOptionsMenu(null)}
+          >
+            <div
+              className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition">
+                Báo vi phạm
+              </button>
+              <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+                Lưu bài viết
+              </button>
+              <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+                Chia sẻ
+              </button>
+              <button
+                className="p-4 hover:bg-gray-50 transition"
+                onClick={() => onPostOptionsMenu(null)}
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        )}
+      </Suspense>
     </>
   );
 }

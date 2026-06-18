@@ -85,9 +85,9 @@ function Profile({ params }: Props) {
 
   return (
     <>
-      <div className=" flex flex-col md:grid md:grid-cols-3 items-center gap-10 py-10">
+      <div className=" flex flex-col md:grid md:grid-cols-3 items-center gap-5 md:gap-10 py-5 md:py-10">
         <div className="flex flex-col justify-center items-center md:col-span-1">
-          <div className="">
+          <div className="mb-1.5">
             <div className="relative w-20 h-20 md:w-30 md:h-30">
               <Image
                 src={avatarSrc}
@@ -98,7 +98,7 @@ function Profile({ params }: Props) {
               />
             </div>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col text-center">
             <span>{user?.name}</span>
             <span className="text-sm opacity-50">@{user?.username}</span>
           </div>
