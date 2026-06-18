@@ -300,4 +300,6 @@ module.exports = {
   getFeed,
   updateWithMedia,
   softDelete,
+  hydratePosts,
+  buildPostSelectFields,
 };

@@ -15,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { UserAvatar } from "@/components/user-avatar";
 import { AppColors } from "@/constants/theme";
 import { router } from "expo-router";
-import { dashboardRoute } from "@/constants/admin-routes";
 
 export default function UsersManagement() {
   const { token } = useAuth();

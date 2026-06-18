@@ -365,7 +365,8 @@ CREATE TABLE `posts` (
   KEY `idx_feed_visible` (`is_deleted`,`visibility`,`is_pinned`,`created_at` DESC),
   KEY `idx_user_deleted_created` (`user_id`,`is_deleted`,`created_at` DESC),
   KEY `idx_post_type_feed` (`post_type`,`is_deleted`,`visibility`,`created_at` DESC),
-  CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+  CONSTRAINT `posts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  FULLTEXT KEY `idx_content_fulltext` (`content`)
 ) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

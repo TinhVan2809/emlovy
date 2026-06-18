@@ -1,5 +1,6 @@
 const { execute, query } = require("../config/database");
-const { buildProfileSelectFields } = require("./userModel");
+const { hydratePosts } = require("../models/postModel");
+const postModel = require("../models/postModel");
 
 // Tìm kiếm users
 const searchUsers = async (searchTerm, viewerId) => {
@@ -19,15 +20,15 @@ const searchUsers = async (searchTerm, viewerId) => {
 // Tìm kiếm posts
 const searchPosts = async (searchTerm, viewerId) => {
   const sql = `
-    SELECT ${buildPostSelectFields(viewerId)}
+    SELECT ${postModel.buildPostSelectFields(viewerId)}
     FROM posts p
     JOIN users u ON u.user_id = p.user_id
-    WHERE (p.content LIKE :searchTerm)
+    WHERE MATCH(p.content) AGAINST(:searchTerm IN BOOLEAN MODE)
       AND p.is_deleted = 0
     ORDER BY p.created_at DESC
     LIMIT 20
   `;
-  const params = { searchTerm: `%${searchTerm}%`, viewerId };
+  const params = { searchTerm: `${searchTerm}*`, viewerId };
   const rows = await execute(sql, params);
   return hydratePosts(rows);
 };
