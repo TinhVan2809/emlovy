@@ -536,7 +536,7 @@ export default function ProfileScreen() {
                 {displayUser?.is_verified === 1 ? (
                   <View style={styles.nameVerified}>
                     <Text style={styles.profileName}>{displayName}</Text>
-                    <SealCheckIcon size={18} weight="fill" color={AppColors.checkmark}/>
+                    <SealCheckIcon size={16} weight="fill" color={AppColors.checkmark}/>
                   </View>
                 ) : (
                   <View style={styles.nameVerified}>

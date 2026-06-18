@@ -165,7 +165,7 @@ const PostCard = memo(function PostCard({
               <View style={styles.usernameVerified}>
                 <Text style={styles.userName}>{authorName}</Text>
 
-                <SealCheckIcon size={18} weight="fill" color={AppColors.checkmark}/>
+                <SealCheckIcon size={16} weight="fill" color={AppColors.checkmark}/>
               </View>
             ) : (
               <Text style={styles.userName}>{authorName}</Text>

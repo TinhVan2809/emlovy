@@ -55,11 +55,11 @@ function Register() {
         src="/registergb.jpg"
         alt="register background"
         fill
-        className="object-cover"
+        className="object-cover hidden xl:block"
         loading="eager"
       />
-      <div className="absolute w-full h-full top-0 right-0 z-100 flex justify-center items-center">
-        <div className="bg-white w-[70%] h-[80%] flex">
+      <div className="absolute w-full lg:w-full md:h-full top-0 right-0 z-100 flex justify-center items-center">
+        <div className="bg-white w-full h-fit md:w-[70%] md:h-[80%] flex">
           <form className="flex flex-col p-10 flex-1" onSubmit={handleSubmit}>
             <div className="flex flex-col">
               <span className="text-3xl">Create An Account</span>
@@ -71,7 +71,7 @@ function Register() {
               </span>
             </div>
             <div className="py-10 flex flex-col gap-5">
-              <div className="flex w-full gap-10 items-center">
+              <div className="flex flex-col md:flex-row w-full gap-5 md:gap-10 items-center">
                 <label
                   htmlFor=""
                   className="flex flex-col text-black/60 w-full"
@@ -87,7 +87,7 @@ function Register() {
                 </label>
                 <label
                   htmlFor=""
-                  className="flex flex-col text-black/60 w-full"
+                  className="flex flex-col text-black/60  w-full"
                 >
                   Username
                   <input
@@ -99,7 +99,7 @@ function Register() {
                   />
                 </label>
               </div>
-              <div className="flex w-full gap-10 items-center">
+              <div className="flex flex-col md:flex-row w-full gap-5 md:gap-10 items-center">
                 <label
                   htmlFor=""
                   className="flex flex-col text-black/60 w-full"
@@ -127,7 +127,7 @@ function Register() {
                   />
                 </label>
               </div>
-              <div className="flex w-full gap-10 items-center">
+              <div className="flex flex-col md:flex-row w-full gap-5 md:gap-10 items-center">
                 <label
                   htmlFor=""
                   className="flex flex-col text-black/60 w-full"
@@ -163,9 +163,9 @@ function Register() {
             </div>
             <div className="flex flex-col gap-5 mt-5">
               <div className="flex gap-1 justify-center items-center">
-                <hr className="w-50 h-0.5 border-black/50" />
+                <hr className="md:w-50 h-0.5 border-black/50" />
                 <span className="text-sm text-black/50">Or sign in with</span>
-                <hr className="w-50 h-0.5 border-black/50" />
+                <hr className="md:w-50 h-0.5 border-black/50" />
               </div>
               <div className="flex justify-center items-center gap-2">
                 <div className="flex gap-2 items-center cursor-pointer duration-200 hover:bg-blue-500/10 px-3 py-1 rounded-2xl">
@@ -180,7 +180,7 @@ function Register() {
               </div>
             </div>
           </form>
-          <div className="relative w-100 h-full right-0 z-100 top-0">
+          <div className="hidden xl:block relative w-100 h-full right-0 z-100 top-0">
             <Image
               src="/registerimg.jpg"
               alt="register img"

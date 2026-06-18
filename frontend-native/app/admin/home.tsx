@@ -30,6 +30,8 @@ export function DashboardCard({ item }: { item: [string, number] }) {
   const [key, value] = item;
   const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
     totalUsers: "people",
+    verifiedUsers: "checkmark-circle",
+    activeUsers: "person",
     newUsersToday: "person-add",
     totalPosts: "document-text",
     totalReels: "videocam",
@@ -41,6 +43,8 @@ export function DashboardCard({ item }: { item: [string, number] }) {
   // Map lại tên hiển thị cho thân thiện hơn
   const labelMap: Record<string, string> = {
     totalUsers: "Người dùng",
+    verifiedUsers: "Đã xác minh",
+    activeUsers: "Hoạt động",
     newUsersToday: "Mới hôm nay",
     totalPosts: "Bài viết",
     totalReels: "Reels",
@@ -54,6 +58,8 @@ export function DashboardCard({ item }: { item: [string, number] }) {
   // per-key icon color map (used for the icon `color` prop)
   const iconColorMap: Record<string, string> = {
     totalUsers: "#4A90E2",
+    verifiedUsers: "#50E3C2",
+    activeUsers: "#F5A623",
     newUsersToday: "#50E3C2",
     totalPosts: "#F5A623",
     totalReels: "#FF4757",
@@ -69,6 +75,8 @@ export function DashboardCard({ item }: { item: [string, number] }) {
   // map dashboard keys to admin routes (let TS infer proper Href type)
   const routeMap = {
     totalUsers: dashboardRoute.users,
+    verifiedUsers: dashboardRoute.users,
+    activeUsers: dashboardRoute.users,
     newUsersToday: dashboardRoute.users,
     totalPosts: dashboardRoute.posts,
     totalReels: dashboardRoute.reels,
@@ -212,6 +220,8 @@ const styles = StyleSheet.create({
   },
   // Định nghĩa style riêng cho từng key ở đây
   totalUsers: { borderLeftColor: "#4A90E2", borderLeftWidth: 4 },
+  verifiedUsers: { borderLeftColor: "#50E3C2", borderLeftWidth: 4 },
+  activeUsers: { borderLeftColor: "#F5A623", borderLeftWidth: 4 },
   newUsersToday: { borderLeftColor: "#50E3C2", borderLeftWidth: 4 },
   totalPosts: { borderLeftColor: "#F5A623", borderLeftWidth: 4 },
   totalReels: { borderLeftColor: "#FF4757", borderLeftWidth: 4 },
@@ -225,6 +235,16 @@ const styles = StyleSheet.create({
   // optional per-key icon style placeholders (can customize further)
   totalUsersIcon: {
     backgroundColor: "#4a91e269",
+    padding: 10,
+    borderRadius: 15,
+  },
+  verifiedUsersIcon: {
+    backgroundColor: "#50e3c260",
+    padding: 10,
+    borderRadius: 15,
+  },
+  activeUsersIcon: {
+    backgroundColor: "#f5a6236e",
     padding: 10,
     borderRadius: 15,
   },
