@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -14,45 +14,63 @@ import {
   TextInput,
   View,
   Image,
-} from 'react-native';
+} from "react-native";
 
-import { ScreenShell } from '@/components/screen-shell';
-import { UserAvatar } from '@/components/user-avatar';
-import { AppColors, AppFonts } from '@/constants/theme';
-import { useAuth } from '@/contexts/auth-context';
-import { chatApi, resolveMediaUrl } from '@/services/api';
-import { chatRoute } from '@/constants/routes';
+import { ScreenShell } from "@/components/screen-shell";
+import { UserAvatar } from "@/components/user-avatar";
+import { AppColors, AppFonts } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import { chatApi, resolveMediaUrl } from "@/services/api";
+import { chatRoute } from "@/constants/routes";
 import {
   joinChatConversation,
   leaveChatConversation,
   sendRealtimeMessage,
   subscribeToChatEvents,
-} from '@/services/chat-socket';
-import type { ChatConversation, ChatMessage, PostsPagination } from '@/types/auth';
+} from "@/services/chat-socket";
+import type {
+  ChatConversation,
+  ChatMessage,
+  PostsPagination,
+} from "@/types/auth";
 
 const CONVERSATION_LIMIT = 20;
 const MESSAGE_LIMIT = 30;
 
 const sortConversations = (items: ChatConversation[]) =>
   [...items].sort((first, second) => {
-    const firstTime = Date.parse(first.last_message_at || first.updated_at || first.created_at);
-    const secondTime = Date.parse(second.last_message_at || second.updated_at || second.created_at);
+    const firstTime = Date.parse(
+      first.last_message_at || first.updated_at || first.created_at,
+    );
+    const secondTime = Date.parse(
+      second.last_message_at || second.updated_at || second.created_at,
+    );
 
     return secondTime - firstTime;
   });
 
-const upsertConversation = (current: ChatConversation[], incoming: ChatConversation) => {
-  const exists = current.some((conversation) => conversation.conversation_id === incoming.conversation_id);
+const upsertConversation = (
+  current: ChatConversation[],
+  incoming: ChatConversation,
+) => {
+  const exists = current.some(
+    (conversation) => conversation.conversation_id === incoming.conversation_id,
+  );
   const next = exists
     ? current.map((conversation) =>
-        conversation.conversation_id === incoming.conversation_id ? incoming : conversation,
+        conversation.conversation_id === incoming.conversation_id
+          ? incoming
+          : conversation,
       )
     : [incoming, ...current];
 
   return sortConversations(next);
 };
 
-const touchConversationWithMessage = (conversation: ChatConversation, message: ChatMessage): ChatConversation => ({
+const touchConversationWithMessage = (
+  conversation: ChatConversation,
+  message: ChatMessage,
+): ChatConversation => ({
   ...conversation,
   last_message: message,
   last_message_at: message.created_at,
@@ -60,11 +78,18 @@ const touchConversationWithMessage = (conversation: ChatConversation, message: C
   updated_at: message.updated_at || conversation.updated_at,
 });
 
-const mergeMessages = (current: ChatMessage[], incoming: ChatMessage[], position: 'append' | 'prepend') => {
+const mergeMessages = (
+  current: ChatMessage[],
+  incoming: ChatMessage[],
+  position: "append" | "prepend",
+) => {
   const safeIncoming = incoming.filter((message): message is ChatMessage =>
     Boolean(message?.message_id),
   );
-  const combined = position === 'prepend' ? [...safeIncoming, ...current] : [...current, ...safeIncoming];
+  const combined =
+    position === "prepend"
+      ? [...safeIncoming, ...current]
+      : [...current, ...safeIncoming];
   const seen = new Set<number>();
 
   return combined.filter((message) => {
@@ -79,55 +104,65 @@ const mergeMessages = (current: ChatMessage[], incoming: ChatMessage[], position
 
 const formatConversationTime = (value?: string | null) => {
   if (!value) {
-    return '';
+    return "";
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return '';
+    return "";
   }
 
   const today = new Date();
   const isToday = date.toDateString() === today.toDateString();
 
   if (isToday) {
-    return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 
-  return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
 };
 
 const getPreviewText = (conversation: ChatConversation) => {
   const lastMessage = conversation.last_message;
 
   if (!lastMessage) {
-    return 'Bắt đầu cuộc trò chuyện';
+    return "Bắt đầu cuộc trò chuyện";
   }
 
-  if (lastMessage.message_type !== 'text') {
-    return 'Đã gửi một tệp đính kèm';
+  if (lastMessage.message_type !== "text") {
+    return "Đã gửi một tệp đính kèm";
   }
 
-  return lastMessage.content || 'Tin nhắn mới';
+  return lastMessage.content || "Tin nhắn mới";
 };
 
 export default function ChatScreen() {
   const { token, user } = useAuth();
   const params = useLocalSearchParams();
-  const rawUserId = Array.isArray(params.userId) ? params.userId[0] : params.userId;
+  const rawUserId = Array.isArray(params.userId)
+    ? params.userId[0]
+    : params.userId;
   const directUserId = Number(rawUserId);
-  const validDirectUserId = Number.isInteger(directUserId) && directUserId > 0 ? directUserId : null;
+  const validDirectUserId =
+    Number.isInteger(directUserId) && directUserId > 0 ? directUserId : null;
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
-  const [conversationPagination, setConversationPagination] = useState<PostsPagination | null>(null);
-  const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
+  const [conversationPagination, setConversationPagination] =
+    useState<PostsPagination | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<ChatConversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [messagePagination, setMessagePagination] = useState<PostsPagination | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [composerText, setComposerText] = useState('');
-  const [error, setError] = useState('');
+  const [messagePagination, setMessagePagination] =
+    useState<PostsPagination | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [composerText, setComposerText] = useState("");
+  const [error, setError] = useState("");
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
-  const [isRefreshingConversations, setIsRefreshingConversations] = useState(false);
+  const [isRefreshingConversations, setIsRefreshingConversations] =
+    useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
   const [isOpeningDirect, setIsOpeningDirect] = useState(false);
@@ -157,11 +192,17 @@ export default function ChatScreen() {
         });
         setConversationPagination(response.data.pagination);
         setConversations((current) =>
-          replace ? response.data.items : sortConversations([...current, ...response.data.items]),
+          replace
+            ? response.data.items
+            : sortConversations([...current, ...response.data.items]),
         );
-        setError('');
+        setError("");
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'Không thể tải hội thoại.');
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Không thể tải hội thoại.",
+        );
       } finally {
         setIsLoadingConversations(false);
         setIsRefreshingConversations(false);
@@ -188,15 +229,21 @@ export default function ChatScreen() {
           page,
         });
         setMessagePagination(response.data.pagination);
-        const nextMessages = response.data.items.filter((message) => Boolean(message?.message_id));
+        const nextMessages = response.data.items.filter((message) =>
+          Boolean(message?.message_id),
+        );
         setMessages((current) =>
           replace
             ? nextMessages
-            : mergeMessages(current, nextMessages, 'prepend'),
+            : mergeMessages(current, nextMessages, "prepend"),
         );
-        setError('');
+        setError("");
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'Không thể tải tin nhắn.');
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Không thể tải tin nhắn.",
+        );
       } finally {
         setIsLoadingMessages(false);
         setIsLoadingOlderMessages(false);
@@ -220,7 +267,11 @@ export default function ChatScreen() {
   }, [loadConversations]);
 
   useEffect(() => {
-    if (!token || !validDirectUserId || handledDirectUserRef.current === validDirectUserId) {
+    if (
+      !token ||
+      !validDirectUserId ||
+      handledDirectUserRef.current === validDirectUserId
+    ) {
       return;
     }
 
@@ -233,19 +284,25 @@ export default function ChatScreen() {
       try {
         const response = await chatApi.createConversation(token, {
           participant_ids: [validDirectUserId],
-          type: 'private',
+          type: "private",
         });
 
         if (!isMounted) {
           return;
         }
 
-        setConversations((current) => upsertConversation(current, response.data.conversation));
+        setConversations((current) =>
+          upsertConversation(current, response.data.conversation),
+        );
         openConversation(response.data.conversation);
-        setError('');
+        setError("");
       } catch (openError) {
         if (isMounted) {
-          setError(openError instanceof Error ? openError.message : 'Không thể mở hội thoại.');
+          setError(
+            openError instanceof Error
+              ? openError.message
+              : "Không thể mở hội thoại.",
+          );
         }
       } finally {
         if (isMounted) {
@@ -267,10 +324,12 @@ export default function ChatScreen() {
     }
 
     return subscribeToChatEvents(token, {
-      onError: (payload) => setError(payload.message || 'Realtime chat bị gián đoạn.'),
+      onError: (payload) =>
+        setError(payload.message || "Realtime chat bị gián đoạn."),
       onReceiveMessage: ({ message }) => {
         const conversationExists = conversationsRef.current.some(
-          (conversation) => conversation.conversation_id === message.conversation_id,
+          (conversation) =>
+            conversation.conversation_id === message.conversation_id,
         );
 
         setConversations((current) => {
@@ -298,7 +357,7 @@ export default function ChatScreen() {
         );
 
         if (selectedConversation?.conversation_id === message.conversation_id) {
-          setMessages((current) => mergeMessages(current, [message], 'append'));
+          setMessages((current) => mergeMessages(current, [message], "append"));
         }
       },
     });
@@ -345,11 +404,19 @@ export default function ChatScreen() {
   };
 
   const handleLoadOlderMessages = () => {
-    if (!selectedConversation || !messagePagination?.hasMore || isLoadingOlderMessages) {
+    if (
+      !selectedConversation ||
+      !messagePagination?.hasMore ||
+      isLoadingOlderMessages
+    ) {
       return;
     }
 
-    loadMessages(selectedConversation.conversation_id, messagePagination.page + 1, false);
+    loadMessages(
+      selectedConversation.conversation_id,
+      messagePagination.page + 1,
+      false,
+    );
   };
 
   const handleCloseThread = () => {
@@ -369,29 +436,46 @@ export default function ChatScreen() {
       return;
     }
 
-    setComposerText('');
+    setComposerText("");
     setIsSending(true);
 
-    sendRealtimeMessage(token, selectedConversation.conversation_id, { content }, (payload) => {
-      setIsSending(false);
+    sendRealtimeMessage(
+      token,
+      selectedConversation.conversation_id,
+      { content },
+      (payload) => {
+        setIsSending(false);
 
-      if (!payload.success || !payload.data) {
-        setComposerText(content);
-        setError(payload.message || 'Không thể gửi tin nhắn.');
-        return;
-      }
+        if (!payload.success || !payload.data) {
+          setComposerText(content);
+          setError(payload.message || "Không thể gửi tin nhắn.");
+          return;
+        }
 
-      setMessages((current) => mergeMessages(current, [payload.data!.message], 'append'));
-      setSelectedConversation((current) =>
-        current?.conversation_id === payload.data!.conversation.conversation_id
-          ? touchConversationWithMessage(payload.data!.conversation, payload.data!.message)
-          : current,
-      );
-      setConversations((current) =>
-        upsertConversation(current, touchConversationWithMessage(payload.data!.conversation, payload.data!.message)),
-      );
-      setError('');
-    });
+        setMessages((current) =>
+          mergeMessages(current, [payload.data!.message], "append"),
+        );
+        setSelectedConversation((current) =>
+          current?.conversation_id ===
+          payload.data!.conversation.conversation_id
+            ? touchConversationWithMessage(
+                payload.data!.conversation,
+                payload.data!.message,
+              )
+            : current,
+        );
+        setConversations((current) =>
+          upsertConversation(
+            current,
+            touchConversationWithMessage(
+              payload.data!.conversation,
+              payload.data!.message,
+            ),
+          ),
+        );
+        setError("");
+      },
+    );
   };
 
   if (selectedConversation) {
@@ -399,7 +483,11 @@ export default function ChatScreen() {
       <ScreenShell
         left={
           <View style={styles.threadHeader}>
-            <Pressable hitSlop={10} onPress={handleCloseThread} style={styles.headerIconButton}>
+            <Pressable
+              hitSlop={10}
+              onPress={handleCloseThread}
+              style={styles.headerIconButton}
+            >
               <Ionicons color={AppColors.text} name="arrow-back" size={23} />
             </Pressable>
             <UserAvatar
@@ -418,25 +506,37 @@ export default function ChatScreen() {
         right={
           <View style={styles.threadActions}>
             <Ionicons color={AppColors.text} name="call-outline" size={22} />
-            <Ionicons color={AppColors.text} name="videocam-outline" size={23} />
+            <Ionicons
+              color={AppColors.text}
+              name="videocam-outline"
+              size={23}
+            />
           </View>
-        }>
+        }
+      >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-          style={styles.threadContainer}>
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+          style={styles.threadContainer}
+        >
           <FlatList
             ref={messageListRef}
             ListEmptyComponent={
               isLoadingMessages ? (
-                <ActivityIndicator color={AppColors.accent} style={styles.emptyLoader} />
+                <ActivityIndicator
+                  color={AppColors.accent}
+                  style={styles.emptyLoader}
+                />
               ) : (
                 <Text style={styles.emptyText}>Hãy gửi lời chào đầu tiên.</Text>
               )
             }
             ListHeaderComponent={
               messagePagination?.hasMore ? (
-                <Pressable onPress={handleLoadOlderMessages} style={styles.olderButton}>
+                <Pressable
+                  onPress={handleLoadOlderMessages}
+                  style={styles.olderButton}
+                >
                   {isLoadingOlderMessages ? (
                     <ActivityIndicator color={AppColors.accent} size="small" />
                   ) : (
@@ -454,7 +554,10 @@ export default function ChatScreen() {
               }
             }}
             renderItem={({ item }) => (
-              <MessageBubble message={item} mine={Number(item.sender_id) === Number(user?.user_id)} />
+              <MessageBubble
+                message={item}
+                mine={Number(item.sender_id) === Number(user?.user_id)}
+              />
             )}
             showsVerticalScrollIndicator={false}
           />
@@ -468,7 +571,9 @@ export default function ChatScreen() {
             <TextInput
               multiline
               onChangeText={setComposerText}
-              onSubmitEditing={Platform.OS === 'ios' ? undefined : handleSendMessage}
+              onSubmitEditing={
+                Platform.OS === "ios" ? undefined : handleSendMessage
+              }
               placeholder="Nhắn tin..."
               placeholderTextColor={AppColors.tabInactive}
               style={styles.composerInput}
@@ -479,8 +584,11 @@ export default function ChatScreen() {
               onPress={handleSendMessage}
               style={[
                 styles.sendButton,
-                !composerText.trim() || isSending ? styles.sendButtonDisabled : null,
-              ]}>
+                !composerText.trim() || isSending
+                  ? styles.sendButtonDisabled
+                  : null,
+              ]}
+            >
               {isSending ? (
                 <ActivityIndicator color={AppColors.surface} size="small" />
               ) : (
@@ -495,26 +603,49 @@ export default function ChatScreen() {
 
   return (
     <ScreenShell
-      titleNode={<Text style={styles.screenTitle}>Chats</Text>}
+      left={
+        <View style={styles.headerLeft}>
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.headerIconButton}
+          >
+            <Ionicons color={AppColors.text} name="arrow-back" size={23} />
+          </Pressable>
+          <Text style={styles.screenTitle}>Chats</Text>
+        </View>
+      }
       right={
         <View style={styles.headerActions}>
-          <Pressable onPress={() => router.push(chatRoute.ai)} style={styles.chatAI}>
-            <Image source={require('../../assets/images/icon-ai.png')} style={styles.chatAIImg}/>
+          <Pressable
+            onPress={() => router.push(chatRoute.ai)}
+            style={styles.chatAI}
+          >
+            <Image
+              source={require("../../assets/images/icon-ai.png")}
+              style={styles.chatAIImg}
+            />
           </Pressable>
           <Ionicons color={AppColors.text} name="create-outline" size={24} />
         </View>
-      }>
+      }
+    >
       <FlatList
         ListEmptyComponent={
           isLoadingConversations || isOpeningDirect ? (
-            <ActivityIndicator color={AppColors.accent} style={styles.emptyLoader} />
+            <ActivityIndicator
+              color={AppColors.accent}
+              style={styles.emptyLoader}
+            />
           ) : (
             <Text style={styles.emptyText}>Chưa có cuộc trò chuyện nào.</Text>
           )
         }
         ListFooterComponent={
           conversationPagination?.hasMore ? (
-            <Pressable onPress={handleLoadMoreConversations} style={styles.loadMoreButton}>
+            <Pressable
+              onPress={handleLoadMoreConversations}
+              style={styles.loadMoreButton}
+            >
               <Text style={styles.loadMoreText}>Tải thêm</Text>
             </Pressable>
           ) : null
@@ -538,7 +669,10 @@ export default function ChatScreen() {
           />
         }
         renderItem={({ item }) => (
-          <ConversationRow conversation={item} onPress={() => openConversation(item)} />
+          <ConversationRow
+            conversation={item}
+            onPress={() => openConversation(item)}
+          />
         )}
         showsVerticalScrollIndicator={false}
       />
@@ -568,12 +702,31 @@ function ConversationListHeader({
         />
       </View>
 
-      <ScrollView contentContainerStyle={styles.filterRow} horizontal showsHorizontalScrollIndicator={false}>
-        {['Tất cả', 'Chưa đọc', 'Nhóm', 'Đang hoạt động'].map((label, index) => (
-          <View key={label} style={[styles.filterChip, index === 0 ? styles.filterChipActive : null]}>
-            <Text style={[styles.filterText, index === 0 ? styles.filterTextActive : null]}>{label}</Text>
-          </View>
-        ))}
+      <ScrollView
+        contentContainerStyle={styles.filterRow}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        {["Tất cả", "Chưa đọc", "Nhóm", "Đang hoạt động"].map(
+          (label, index) => (
+            <View
+              key={label}
+              style={[
+                styles.filterChip,
+                index === 0 ? styles.filterChipActive : null,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  index === 0 ? styles.filterTextActive : null,
+                ]}
+              >
+                {label}
+              </Text>
+            </View>
+          ),
+        )}
       </ScrollView>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -590,12 +743,18 @@ function ConversationRow({
 }) {
   const avatarUrl = resolveMediaUrl(conversation.avatar_url);
   const preview = getPreviewText(conversation);
-  const time = formatConversationTime(conversation.last_message_at || conversation.updated_at);
+  const time = formatConversationTime(
+    conversation.last_message_at || conversation.updated_at,
+  );
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.conversationRow, pressed ? styles.rowPressed : null]}>
+      style={({ pressed }) => [
+        styles.conversationRow,
+        pressed ? styles.rowPressed : null,
+      ]}
+    >
       <UserAvatar imageUrl={avatarUrl} name={conversation.title} size={58} />
 
       <View style={styles.conversationMain}>
@@ -620,22 +779,52 @@ function ConversationRow({
   );
 }
 
-function MessageBubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
+function MessageBubble({
+  message,
+  mine,
+}: {
+  message: ChatMessage;
+  mine: boolean;
+}) {
   return (
-    <View style={[styles.messageRow, mine ? styles.messageRowMine : styles.messageRowOther]}>
+    <View
+      style={[
+        styles.messageRow,
+        mine ? styles.messageRowMine : styles.messageRowOther,
+      ]}
+    >
       {!mine ? (
-        <UserAvatar imageUrl={resolveMediaUrl(message.sender?.avatar_url)} name={message.sender?.name} size={30} />
+        <UserAvatar
+          imageUrl={resolveMediaUrl(message.sender?.avatar_url)}
+          name={message.sender?.name}
+          size={30}
+        />
       ) : null}
-      <View style={[styles.messageBubble, mine ? styles.messageBubbleMine : styles.messageBubbleOther]}>
+      <View
+        style={[
+          styles.messageBubble,
+          mine ? styles.messageBubbleMine : styles.messageBubbleOther,
+        ]}
+      >
         {!mine ? (
           <Text numberOfLines={1} style={styles.messageSender}>
             {message.sender?.name}
           </Text>
         ) : null}
-        <Text style={[styles.messageText, mine ? styles.messageTextMine : styles.messageTextOther]}>
+        <Text
+          style={[
+            styles.messageText,
+            mine ? styles.messageTextMine : styles.messageTextOther,
+          ]}
+        >
           {message.content}
         </Text>
-        <Text style={[styles.messageTime, mine ? styles.messageTimeMine : styles.messageTimeOther]}>
+        <Text
+          style={[
+            styles.messageTime,
+            mine ? styles.messageTimeMine : styles.messageTimeOther,
+          ]}
+        >
           {formatConversationTime(message.created_at)}
         </Text>
       </View>
@@ -645,11 +834,11 @@ function MessageBubble({ message, mine }: { message: ChatMessage; mine: boolean 
 
 const styles = StyleSheet.create({
   composerBar: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     backgroundColor: AppColors.surface,
     borderTopColor: AppColors.border,
     borderTopWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -664,19 +853,19 @@ const styles = StyleSheet.create({
     maxHeight: 120,
     minHeight: 42,
     paddingHorizontal: 14,
-    paddingTop: Platform.OS === 'ios' ? 11 : 8,
+    paddingTop: Platform.OS === "ios" ? 11 : 8,
   },
   composerTool: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.accentSoft,
     borderRadius: 19,
     height: 38,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 38,
   },
   conversationBottomLine: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 10,
   },
   conversationMain: {
@@ -690,12 +879,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   conversationRow: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.surface,
     borderRadius: 18,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    marginHorizontal: 18,
+    marginHorizontal: 10,
     marginTop: 10,
     padding: 12,
   },
@@ -711,8 +900,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   conversationTopLine: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 10,
   },
   emptyLoader: {
@@ -724,7 +913,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingHorizontal: 18,
     paddingVertical: 26,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorText: {
     color: AppColors.accent,
@@ -758,8 +947,8 @@ const styles = StyleSheet.create({
     color: AppColors.surface,
   },
   headerActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 14,
   },
   chatAI: {
@@ -767,13 +956,18 @@ const styles = StyleSheet.create({
     height: 20,
   },
   chatAIImg: {
-    width: '100%',
-    height: '100%'
+    width: "100%",
+    height: "100%",
+  },
+  headerLeft: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 5,
   },
   headerIconButton: {
-    alignItems: 'center',
+    alignItems: "center",
     height: 36,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 34,
   },
   listContent: {
@@ -784,7 +978,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   loadMoreButton: {
-    alignSelf: 'center',
+    alignSelf: "center",
     backgroundColor: AppColors.text,
     borderRadius: 16,
     marginTop: 16,
@@ -798,7 +992,7 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     borderRadius: 20,
-    maxWidth: '78%',
+    maxWidth: "78%",
     paddingHorizontal: 13,
     paddingVertical: 9,
   },
@@ -811,17 +1005,17 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 6,
   },
   messageRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
+    alignItems: "flex-end",
+    flexDirection: "row",
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 4,
   },
   messageRowMine: {
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   messageRowOther: {
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
   },
   messageSender: {
     color: AppColors.muted,
@@ -841,25 +1035,25 @@ const styles = StyleSheet.create({
     color: AppColors.text,
   },
   messageTime: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     fontFamily: AppFonts.body,
     fontSize: 10,
     paddingTop: 4,
   },
   messageTimeMine: {
-    color: 'rgba(255, 255, 255, 0.78)',
+    color: "rgba(255, 255, 255, 0.78)",
   },
   messageTimeOther: {
     color: AppColors.muted,
   },
   messagesContent: {
     flexGrow: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
     paddingBottom: 8,
     paddingTop: 12,
   },
   olderButton: {
-    alignSelf: 'center',
+    alignSelf: "center",
     backgroundColor: AppColors.surface,
     borderColor: AppColors.border,
     borderRadius: 14,
@@ -882,12 +1076,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   searchBar: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.surface,
     borderColor: AppColors.border,
     borderRadius: 18,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     marginHorizontal: 18,
     paddingHorizontal: 14,
@@ -901,19 +1095,19 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   sendButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.accent,
     borderRadius: 19,
     height: 38,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 38,
   },
   sendButtonDisabled: {
     opacity: 0.5,
   },
   threadActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 14,
   },
   threadContainer: {
@@ -927,8 +1121,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   threadHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 9,
   },
   threadSubtitle: {
@@ -945,7 +1139,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   unreadBadge: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.accent,
     borderRadius: 9,
     minWidth: 18,

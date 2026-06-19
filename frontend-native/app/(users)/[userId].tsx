@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
-import type { ComponentProps } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
+import type { ComponentProps } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -11,18 +11,24 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { ScreenShell } from '@/components/screen-shell';
-import { UserAvatar } from '@/components/user-avatar';
-import { Routes } from '@/constants/routes';
-import { AppColors, AppFonts } from '@/constants/theme';
-import { useAuth } from '@/contexts/auth-context';
-import { followApi, postApi, profileApi, resolveMediaUrl } from '@/services/api';
-import { subscribeToPostEvents } from '@/services/post-socket';
-import type { Post, PostsPagination, Profile } from '@/types/auth';
+import { ScreenShell } from "@/components/screen-shell";
+import { UserAvatar } from "@/components/user-avatar";
+import { Routes } from "@/constants/routes";
+import { AppColors, AppFonts } from "@/constants/theme";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  followApi,
+  postApi,
+  profileApi,
+  resolveMediaUrl,
+} from "@/services/api";
+import { subscribeToPostEvents } from "@/services/post-socket";
 
-type IconName = ComponentProps<typeof Ionicons>['name'];
+import type { Post, PostsPagination, Profile } from "@/types/auth";
+
+type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const USER_POST_LIMIT = 15;
 
@@ -50,24 +56,24 @@ const formatDate = (value?: string | null) => {
     return null;
   }
 
-  return date.toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   });
 };
 
-const getGenderLabel = (gender?: Profile['gender']) => {
-  if (gender === '0') {
-    return 'Nam';
+const getGenderLabel = (gender?: Profile["gender"]) => {
+  if (gender === "0") {
+    return "Nam";
   }
 
-  if (gender === '1') {
-    return 'Nữ';
+  if (gender === "1") {
+    return "Nữ";
   }
 
-  if (gender === '2') {
-    return 'Khác';
+  if (gender === "2") {
+    return "Khác";
   }
 
   return null;
@@ -75,26 +81,30 @@ const getGenderLabel = (gender?: Profile['gender']) => {
 
 export default function UserProfileScreen() {
   const params = useLocalSearchParams();
-  const rawUserId = Array.isArray(params.userId) ? params.userId[0] : params.userId;
+  const rawUserId = Array.isArray(params.userId)
+    ? params.userId[0]
+    : params.userId;
   const viewedUserId = Number(rawUserId);
   const hasValidUserId = Number.isInteger(viewedUserId) && viewedUserId > 0;
   const { token, user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [pagination, setPagination] = useState<PostsPagination | null>(null);
-  const [error, setError] = useState('');
-  const [postError, setPostError] = useState('');
+  const [error, setError] = useState("");
+  const [postError, setPostError] = useState("");
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isFollowBusy, setIsFollowBusy] = useState(false);
 
-  const isSelf = Boolean(profile?.is_self || Number(user?.user_id) === Number(viewedUserId));
+  const isSelf = Boolean(
+    profile?.is_self || Number(user?.user_id) === Number(viewedUserId),
+  );
 
   const loadProfile = useCallback(async () => {
     if (!hasValidUserId) {
-      setError('Profile khong hop le.');
+      setError("Profile khong hop le.");
       return;
     }
 
@@ -103,9 +113,13 @@ export default function UserProfileScreen() {
     try {
       const response = await profileApi.getUser(viewedUserId, token);
       setProfile(response.data.profile);
-      setError('');
+      setError("");
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Khong the tai profile.');
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Khong the tai profile.",
+      );
     } finally {
       setIsLoadingProfile(false);
     }
@@ -133,11 +147,17 @@ export default function UserProfileScreen() {
         });
         setPagination(response.data.pagination);
         setPosts((current) =>
-          replace ? response.data.items : mergePosts(current, response.data.items),
+          replace
+            ? response.data.items
+            : mergePosts(current, response.data.items),
         );
-        setPostError('');
+        setPostError("");
       } catch (loadError) {
-        setPostError(loadError instanceof Error ? loadError.message : 'Khong the tai bai viet.');
+        setPostError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Khong the tai bai viet.",
+        );
       } finally {
         setIsLoadingPosts(false);
         setIsLoadingMore(false);
@@ -155,7 +175,10 @@ export default function UserProfileScreen() {
     () =>
       subscribeToPostEvents({
         onCreated: (post) => {
-          if (Number(post.user_id) !== Number(viewedUserId) || post.visibility !== 'public') {
+          if (
+            Number(post.user_id) !== Number(viewedUserId) ||
+            post.visibility !== "public"
+          ) {
             return;
           }
 
@@ -169,11 +192,15 @@ export default function UserProfileScreen() {
           loadProfile();
         },
         onDeleted: ({ post_id }) => {
-          setPosts((current) => current.filter((post) => post.post_id !== post_id));
+          setPosts((current) =>
+            current.filter((post) => post.post_id !== post_id),
+          );
           loadProfile();
         },
         onHidden: ({ post_id }) => {
-          setPosts((current) => current.filter((post) => post.post_id !== post_id));
+          setPosts((current) =>
+            current.filter((post) => post.post_id !== post_id),
+          );
           loadProfile();
         },
         onUpdated: (post) => {
@@ -182,12 +209,14 @@ export default function UserProfileScreen() {
           }
 
           setPosts((current) => {
-            if (post.visibility !== 'public') {
+            if (post.visibility !== "public") {
               return current.filter((item) => item.post_id !== post.post_id);
             }
 
             return current.map((item) =>
-              item.post_id === post.post_id ? { ...post, liked_by_me: item.liked_by_me } : item,
+              item.post_id === post.post_id
+                ? { ...post, liked_by_me: item.liked_by_me }
+                : item,
             );
           });
         },
@@ -215,7 +244,7 @@ export default function UserProfileScreen() {
 
   const handleFollowToggle = async () => {
     if (!token) {
-      setError('Bạn cần đăng nhập.');
+      setError("Bạn cần đăng nhập.");
       return;
     }
 
@@ -243,10 +272,14 @@ export default function UserProfileScreen() {
         : await followApi.unfollow(token, viewedUserId);
 
       setProfile(response.data.profile);
-      setError('');
+      setError("");
     } catch (followError) {
       setProfile(previousProfile);
-      setError(followError instanceof Error ? followError.message : 'Không thể cập nhật follow.');
+      setError(
+        followError instanceof Error
+          ? followError.message
+          : "Không thể cập nhật follow.",
+      );
     } finally {
       setIsFollowBusy(false);
     }
@@ -254,7 +287,7 @@ export default function UserProfileScreen() {
 
   const handleMessage = () => {
     router.push({
-      pathname: '/(chat)/chat',
+      pathname: "/(chat)/chat",
       params: { userId: String(viewedUserId) },
     });
   };
@@ -265,11 +298,31 @@ export default function UserProfileScreen() {
     }
 
     return [
-      { icon: 'at-outline' as IconName, label: 'Username', value: `@${profile.username}` },
-      { icon: 'calendar-outline' as IconName, label: 'Tham gia', value: formatDate(profile.created_at) },
-      { icon: 'person-outline' as IconName, label: 'Gioi tinh', value: getGenderLabel(profile.gender) },
-      { icon: 'mail-outline' as IconName, label: 'Email', value: profile.email },
-      { icon: 'call-outline' as IconName, label: 'Dien thoai', value: profile.phone },
+      {
+        icon: "at-outline" as IconName,
+        label: "Username",
+        value: `@${profile.username}`,
+      },
+      {
+        icon: "calendar-outline" as IconName,
+        label: "Tham gia",
+        value: formatDate(profile.created_at),
+      },
+      {
+        icon: "person-outline" as IconName,
+        label: "Gioi tinh",
+        value: getGenderLabel(profile.gender),
+      },
+      {
+        icon: "mail-outline" as IconName,
+        label: "Email",
+        value: profile.email,
+      },
+      {
+        icon: "call-outline" as IconName,
+        label: "Dien thoai",
+        value: profile.phone,
+      },
     ].filter((item) => Boolean(item.value));
   }, [profile]);
 
@@ -277,21 +330,31 @@ export default function UserProfileScreen() {
     <ScreenShell
       left={
         <View style={styles.headerLeft}>
-          <Pressable hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+          <Pressable
+            hitSlop={10}
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
             <Ionicons color={AppColors.text} name="arrow-back" size={23} />
           </Pressable>
           <View style={styles.headerTitleBlock}>
             <Text numberOfLines={1} style={styles.headerTitle}>
-              {profile?.name ? `${profile.name}` : 'Profile'}
+              {profile?.name ? `${profile.name}` : "Profile"}
             </Text>
-            <Text style={styles.headerSubtitle}>{profile?.username ? `@${profile.username}` : ''}</Text>
+            <Text style={styles.headerSubtitle}>
+              {profile?.username ? `@${profile.username}` : ""}
+            </Text>
           </View>
         </View>
-      }>
+      }
+    >
       <FlatList
         ListEmptyComponent={
           isLoadingPosts ? (
-            <ActivityIndicator color={AppColors.accent} style={styles.emptyLoader} />
+            <ActivityIndicator
+              color={AppColors.accent}
+              style={styles.emptyLoader}
+            />
           ) : (
             <Text style={styles.emptyText}>Chua co bai viet public nao.</Text>
           )
@@ -366,8 +429,10 @@ function ProfileHeader({
   postError: string;
   profile: Profile | null;
 }) {
-  const displayName = profile?.name || 'Emlovy User';
-  const displayHandle = profile?.username ? `@${profile.username}` : '@emlovy';
+  const displayName = profile?.name || "Emlovy User";
+  const displayHandle = profile?.username ? `@${profile.username}` : "@emlovy";
+  const displaySignature = profile?.signature ? profile.signature : null;
+
   const avatarUrl = resolveMediaUrl(profile?.avatar_url || profile?.avata);
 
   return (
@@ -383,10 +448,15 @@ function ProfileHeader({
             {displayHandle}
           </Text>
           {isLoadingProfile ? (
-            <ActivityIndicator color={AppColors.accent} style={styles.profileLoader} />
+            <ActivityIndicator
+              color={AppColors.accent}
+              style={styles.profileLoader}
+            />
           ) : null}
         </View>
       </View>
+
+      <View>{displaySignature && <Text>{displaySignature}</Text>}</View>
 
       <View style={styles.statsRow}>
         <StatCard label="Posts" value={profile?.stats.posts ?? 0} />
@@ -402,8 +472,13 @@ function ProfileHeader({
               styles.actionButton,
               styles.actionButtonPrimary,
               pressed ? styles.actionButtonPressed : null,
-            ]}>
-            <Ionicons color={AppColors.surface} name="create-outline" size={17} />
+            ]}
+          >
+            <Ionicons
+              color={AppColors.surface}
+              name="create-outline"
+              size={17}
+            />
             <Text style={styles.actionButtonPrimaryText}>Edit profile</Text>
           </Pressable>
         ) : (
@@ -412,16 +487,30 @@ function ProfileHeader({
             onPress={onFollowToggle}
             style={({ pressed }) => [
               styles.actionButton,
-              profile?.is_following ? styles.actionButtonFollowing : styles.actionButtonPrimary,
+              profile?.is_following
+                ? styles.actionButtonFollowing
+                : styles.actionButtonPrimary,
               pressed ? styles.actionButtonPressed : null,
               isFollowBusy ? styles.actionButtonDisabled : null,
-            ]}>
+            ]}
+          >
             {isFollowBusy ? (
-              <ActivityIndicator color={profile?.is_following ? AppColors.text : AppColors.surface} size="small" />
+              <ActivityIndicator
+                color={
+                  profile?.is_following ? AppColors.text : AppColors.surface
+                }
+                size="small"
+              />
             ) : (
               <Ionicons
-                color={profile?.is_following ? AppColors.text : AppColors.surface}
-                name={profile?.is_following ? 'checkmark' : 'person-add-outline'}
+                color={
+                  profile?.is_following
+                    ? AppColors.background
+                    : AppColors.surface
+                }
+                name={
+                  profile?.is_following ? "checkmark" : "person-add-outline"
+                }
                 size={17}
               />
             )}
@@ -429,8 +518,9 @@ function ProfileHeader({
               style={[
                 styles.actionButtonPrimaryText,
                 profile?.is_following ? styles.actionButtonFollowingText : null,
-              ]}>
-              {profile?.is_following ? 'Đang follow' : 'Follow'}
+              ]}
+            >
+              {profile?.is_following ? "Đang theo dõi" : "Theo dõi"}
             </Text>
           </Pressable>
         )}
@@ -442,8 +532,13 @@ function ProfileHeader({
               styles.actionButton,
               styles.actionButtonSecondary,
               pressed ? styles.actionButtonPressed : null,
-            ]}>
-            <Ionicons color={AppColors.text} name="chatbubble-ellipses-outline" size={17} />
+            ]}
+          >
+            <Ionicons
+              color={AppColors.text}
+              name="chatbubble-ellipses-outline"
+              size={17}
+            />
             <Text style={styles.actionButtonText}>Nhắn tin</Text>
           </Pressable>
         ) : null}
@@ -451,6 +546,7 @@ function ProfileHeader({
 
       {infoItems.length ? (
         <View style={styles.infoGrid}>
+          <Text>Thông tin cá nhân</Text>
           {infoItems.map((item) => (
             <View key={item.label} style={styles.infoPill}>
               <Ionicons color={AppColors.muted} name={item.icon} size={16} />
@@ -468,9 +564,17 @@ function ProfileHeader({
       <View style={styles.postsHeader}>
         <View>
           <Text style={styles.postsTitle}>Bài viết public</Text>
-          <Text style={styles.postsSubtitle}>Những bài viết người này đang chia sẻ công khai.</Text>
+          <Text style={styles.postsSubtitle}>
+            Những bài viết người này đang chia sẻ công khai.
+          </Text>
         </View>
         <Ionicons color={AppColors.text} name="grid-outline" size={20} />
+      </View>
+
+      <View style={styles.actions}>
+        <Text style={styles.actionText}>Ảnh</Text>
+        <Text style={styles.actionText}>Reels</Text>
+        <Text style={styles.actionText}>Khác</Text>
       </View>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -489,17 +593,23 @@ function StatCard({ label, value }: { label: string; value: number }) {
 }
 
 function PublicPostTile({ post }: { post: Post }) {
-  const imageUrl = resolveMediaUrl(post.media.find((item) => item.type === 'image')?.media_url);
+  const imageUrl = resolveMediaUrl(
+    post.media.find((item) => item.type === "image")?.media_url,
+  );
 
   return (
     <View style={styles.gridItem}>
       {imageUrl ? (
-        <Image contentFit="cover" source={{ uri: imageUrl }} style={styles.gridImage} />
+        <Image
+          contentFit="cover"
+          source={{ uri: imageUrl }}
+          style={styles.gridImage}
+        />
       ) : (
         <View style={styles.gridFallback}>
           <Ionicons color={AppColors.muted} name="chatbox-outline" size={22} />
           <Text numberOfLines={3} style={styles.gridFallbackText}>
-            {post.content || 'Post'}
+            {post.content || "Post"}
           </Text>
         </View>
       )}
@@ -532,7 +642,9 @@ function ProfileFooter({
   total: number;
 }) {
   if (isLoadingMore) {
-    return <ActivityIndicator color={AppColors.accent} style={styles.footerLoader} />;
+    return (
+      <ActivityIndicator color={AppColors.accent} style={styles.footerLoader} />
+    );
   }
 
   if (!total) {
@@ -555,12 +667,12 @@ function ProfileFooter({
 
 const styles = StyleSheet.create({
   actionButton: {
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 16,
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
     minHeight: 44,
     paddingHorizontal: 12,
   },
@@ -568,12 +680,12 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
   actionButtonFollowing: {
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.text,
     borderColor: AppColors.border,
     borderWidth: 1,
   },
   actionButtonFollowingText: {
-    color: AppColors.text,
+    color: AppColors.background,
   },
   actionButtonPressed: {
     opacity: 0.86,
@@ -582,7 +694,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.text,
   },
   actionButtonPrimaryText: {
-    color: AppColors.surface,
+    color: AppColors.background,
     fontFamily: AppFonts.heading,
     fontSize: 13,
   },
@@ -597,13 +709,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   actionsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   backButton: {
-    alignItems: 'center',
+    alignItems: "center",
     height: 36,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 36,
   },
   content: {
@@ -619,7 +731,7 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.body,
     fontSize: 14,
     paddingVertical: 26,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorText: {
     color: AppColors.accent,
@@ -628,7 +740,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   footerContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 12,
     paddingVertical: 20,
   },
@@ -636,36 +748,36 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   gridFallback: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.surfaceMuted,
     gap: 6,
-    height: '100%',
-    justifyContent: 'center',
+    height: "100%",
+    justifyContent: "center",
     padding: 8,
-    width: '100%',
+    width: "100%",
   },
   gridFallbackText: {
     color: AppColors.text,
     fontFamily: AppFonts.body,
     fontSize: 11,
     lineHeight: 15,
-    textAlign: 'center',
+    textAlign: "center",
   },
   gridImage: {
-    height: '100%',
-    width: '100%',
+    height: "100%",
+    width: "100%",
   },
   gridItem: {
     aspectRatio: 1,
     backgroundColor: AppColors.surface,
     borderRadius: 12,
-    overflow: 'hidden',
-    position: 'relative',
-    width: '31.9%',
+    overflow: "hidden",
+    position: "relative",
+    width: "31.9%",
   },
   gridMetric: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 3,
   },
   gridMetricText: {
@@ -674,14 +786,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   gridOverlay: {
-    backgroundColor: 'rgba(20, 20, 20, 0.58)',
+    backgroundColor: "rgba(20, 20, 20, 0.58)",
     bottom: 0,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     left: 0,
     paddingHorizontal: 7,
     paddingVertical: 5,
-    position: 'absolute',
+    position: "absolute",
     right: 0,
   },
   gridRow: {
@@ -689,8 +801,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerLeft: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 8,
   },
   headerSubtitle: {
@@ -710,10 +822,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   heroRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 16,
   },
+  actions: {
+    flexDirection: "row",
+    gap: 14,
+  },
+  actionText: {},
   infoGrid: {
     gap: 10,
   },
@@ -723,12 +840,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   infoPill: {
-    alignItems: 'center',
-    backgroundColor: AppColors.surfaceMuted,
-    borderRadius: 16,
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 10,
-    paddingHorizontal: 12,
     paddingVertical: 10,
   },
   infoTextBlock: {
@@ -757,11 +871,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   postsHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     borderTopColor: AppColors.border,
     borderTopWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingTop: 14,
   },
   postsSubtitle: {
@@ -793,8 +907,13 @@ const styles = StyleSheet.create({
     paddingBottom: 18,
   },
   profileLoader: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingTop: 8,
+  },
+  info: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4.5,
   },
   profileName: {
     color: AppColors.text,
@@ -802,11 +921,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   statCard: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.surfaceMuted,
     borderRadius: 16,
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     minHeight: 70,
     paddingHorizontal: 8,
     paddingVertical: 10,
@@ -823,7 +942,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   statsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
 });

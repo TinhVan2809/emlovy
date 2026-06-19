@@ -1,59 +1,50 @@
 "use client";
-import port from "@/api/api";
-import React, { useState } from "react";
+import Image from "next/image";
+import { RiMultiImageLine, RiVideoOnLine } from "@remixicon/react";
+import { useRouter } from "next/navigation";
 
 function Create() {
-  const [formData, setFormData] = useState({
-    content: "",
-    media_urL: "",
-  });
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
-  ) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement| HTMLFormElement>) => {
-        e.preventDefault();
-        try{
-            const response = await fetch(`${port}/api/posts`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type' : 'application/json',
-                },
-                body: JSON.stringify(formData),
-                credentials: 'include',
-            }) ;
-
-            const data = await response.json();
-
-            if(data.success) {
-                console.log(data);
-                console.log("post successfuly");
-            }
-        } catch(_err) {
-            console.error("Error submit form", _err);
-        }
-  }
-
+  const router = useRouter();
   return (
-    <div className="w-full flex justify-center items-center p-40">
-      <form onSubmit={handleSubmit} className="w-full flex flex-col border border-black">
-        <textarea
-          name="content"
-          placeholder="Enter your caption"
-          onChange={handleChange}
-          className="bg-gray-200"
-        />
-        <input type="file" name="media_url" onChange={handleChange} />
-        <button type="submit" className="bg-amber-400">Dang</button>
-      </form>
+    <div className="w-full h-full flex flex-col py-20">
+      <div className="w-full h-full flex flex-col gap-4">
+        <div className="px-10">
+          <div className="relative flex justify-center w-full h-40 items-center border border-dashed rounded-2xl cursor-pointer" onClick={() => router.push("/create/post")}>
+            <div className="w-30 h-full absolute left-0 top-0">
+              <Image
+                src="/1280w-Bz6D3DbmRuc.jpg"
+                fill
+                priority
+                alt="post img"
+                loading="eager"
+                className="rounded-tl-2xl rounded-bl-2xl"
+              />
+            </div>
+            <div className="flex items-center gap-3 opacity-50">
+              <RiMultiImageLine />
+              <span>Create post</span>
+            </div>
+          </div>
+        </div>
+        <div className="px-10">
+          <div className="relative flex justify-center w-full h-40 items-center border border-dashed rounded-2xl cursor-pointer" onClick={() => router.push("/create/reel")}>
+            <div className="w-30 h-full absolute left-0 top-0">
+              <Image
+                src="/jairo-gonzalez-yBk1U1G9cjI-unsplash.jpg"
+                fill
+                priority
+                alt="post img"
+                loading="eager"
+                className="rounded-tl-2xl rounded-bl-2xl"
+              />
+            </div>
+            <div className="flex items-center gap-3 opacity-50">
+              <RiVideoOnLine />
+              <span>Create Reel</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

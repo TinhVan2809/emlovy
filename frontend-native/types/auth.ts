@@ -3,6 +3,7 @@ export type User = {
   name: string;
   username: string;
   birthday: string | null;
+  signature: string;
   gender: '0' | '1' | '2' | null;
   phone: string | null;
   avata: string | null;

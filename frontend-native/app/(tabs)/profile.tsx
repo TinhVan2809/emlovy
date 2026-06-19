@@ -549,6 +549,7 @@ export default function ProfileScreen() {
                     displayUser?.phone ||
                     "Curated moments and daily moodboards."}
                 </Text>
+                
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 <View style={styles.buttonRowContainer}>
