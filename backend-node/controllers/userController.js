@@ -1,4 +1,5 @@
 const userModel = require("../models/userModel");
+const { createHttpError } = require("../utils/httpError");
 
 const getUserList = async (req, res) => {
   try {
@@ -40,8 +41,51 @@ const getVerifiedUserCount = async (req, res) => {
   }
 };
 
+const updateVerification = async (req, res) => {
+  const { userId } = req.params;
+  const { isVerified } = req.body;
+
+  if (isVerified === undefined) {
+    throw createHttpError(400, "isVerified field is required.");
+  }
+
+  const updatedUser = await userModel.update(userId, { is_verified: isVerified ? 1 : 0 });
+
+  if (!updatedUser) {
+    throw createHttpError(404, "User not found.");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User verification status updated successfully.",
+    data: updatedUser,
+  });
+};
+
+const updateStatus = async (req, res) => {
+  const { userId } = req.params;
+  const { status } = req.body;
+
+  if (status === undefined) {
+    throw createHttpError(400, "status field is required.");
+  }
+
+  const updatedUser = await userModel.update(userId, { status: Number(status) });
+
+  if (!updatedUser) {
+    throw createHttpError(404, "User not found.");
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User status updated successfully.",
+    data: updatedUser,
+  });
+};
 
 module.exports = {
   getUserList,
   getVerifiedUserCount,
+  updateVerification,
+  updateStatus,
 };

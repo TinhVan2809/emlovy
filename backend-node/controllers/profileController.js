@@ -203,7 +203,7 @@ const updateUserProfile = async (req, res) => {
   let profile;
 
   try {
-    profile = await profileModel.updateByUserId(userId, updates); // Cập nhật người dùng mục tiêu
+    profile = await profileModel.updateByUserId(userId, updates); 
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") {
       throw createHttpError(409, "Username hoặc email đã được sử dụng.");

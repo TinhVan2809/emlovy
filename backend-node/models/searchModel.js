@@ -1,11 +1,12 @@
 const { execute, query } = require("../config/database");
 const { hydratePosts } = require("../models/postModel");
 const postModel = require("../models/postModel");
+const userModel = require("../models/userModel");
 
 // Tìm kiếm users
 const searchUsers = async (searchTerm, viewerId) => {
   const sql = `
-    SELECT ${buildProfileSelectFields({ publicPostsOnly: true, viewerId })}
+    SELECT ${userModel.buildProfileSelectFields({ publicPostsOnly: true, viewerId })}
     FROM users u
     WHERE (u.user_id LIKE :searchTerm OR u.username LIKE :searchTerm OR u.name LIKE :searchTerm OR u.email LIKE :searchTerm)
       AND u.status = 1
