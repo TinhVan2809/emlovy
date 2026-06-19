@@ -248,6 +248,104 @@ const getFeed = async ({
   };
 };
 
+const getFollowingFeed = async ({
+  page = 1,
+  limit = 10,
+  viewerId,
+  postType = "post",
+}) => {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.min(30, Math.max(1, Number(limit) || 10));
+  const offset = (safePage - 1) * safeLimit;
+
+  // 1. Retrieve all users that the current user follows
+  const followedUsers = await query(
+    `
+      SELECT following_id
+      FROM follows
+      WHERE follower_id = :viewerId
+    `,
+    { viewerId }
+  );
+
+  const followedUserIds = followedUsers.map((row) => row.following_id);
+
+  // If the user is not following anyone, return empty list with correct pagination format
+  if (followedUserIds.length === 0) {
+    return {
+      items: [],
+      pagination: {
+        page: safePage,
+        limit: safeLimit,
+        total: 0,
+        totalPages: 0,
+        hasMore: false,
+      },
+    };
+  }
+
+  // 2. Build parameter map and placeholder markers dynamically to prevent SQL injection and avoid mixing placeholder styles
+  const params = {
+    postType,
+    viewerId,
+    limit: safeLimit,
+    offset,
+  };
+
+  const followedPlaceholderNames = [];
+  followedUserIds.forEach((id, index) => {
+    const key = `followedId${index}`;
+    params[key] = id;
+    followedPlaceholderNames.push(`:${key}`);
+  });
+
+  const placeholders = followedPlaceholderNames.join(", ");
+
+  // 3. Retrieve total count of posts from followed users
+  const countRows = await query(
+    `
+      SELECT COUNT(*) AS total
+      FROM posts p
+      WHERE p.is_deleted = 0
+        AND p.post_type = :postType
+        AND p.visibility != 'private'
+        AND p.user_id IN (${placeholders})
+    `,
+    params,
+  );
+
+  const total = Number(countRows[0]?.total || 0);
+
+  // 4. Retrieve paginated list of posts with author hydration and liked status
+  const rows = await query(
+    `
+      SELECT ${buildPostSelectFields(viewerId)}
+      FROM posts p
+      JOIN users u ON u.user_id = p.user_id
+      WHERE p.is_deleted = 0
+        AND p.post_type = :postType
+        AND p.visibility != 'private'
+        AND p.user_id IN (${placeholders})
+      ORDER BY p.is_pinned DESC, p.created_at DESC
+      LIMIT :limit OFFSET :offset
+    `,
+    params,
+  );
+
+  const items = await hydratePosts(rows);
+
+  return {
+    items,
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit),
+      hasMore: offset + items.length < total,
+    },
+  };
+};
+
 const updateWithMedia = async (postId, fields, media = [], replaceMedia = false) => {
   await withTransaction(async (connection) => {
     const allowedFields = ["content", "visibility", "location", "latitude", "longitude"];
@@ -298,6 +396,7 @@ module.exports = {
   findById,
   createWithMedia,
   getFeed,
+  getFollowingFeed,
   updateWithMedia,
   softDelete,
   hydratePosts,

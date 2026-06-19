@@ -32,6 +32,9 @@ router.post(
 router.post("/comments/:commentId/like", authenticate, asyncHandler(postInteractionController.likeComment));
 router.delete("/comments/:commentId/like", authenticate, asyncHandler(postInteractionController.unlikeComment));
 
+// Following feed
+router.get("/following", authenticate, asyncHandler(postController.getFollowingFeed));
+
 // Create post (authenticated)
 router.post(
   "/",

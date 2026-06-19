@@ -153,6 +153,32 @@ const getUserPosts = async (req, res) => {
   res.status(200).json({ success: true, data: posts });
 };
 
+const getFollowingFeed = async (req, res) => {
+  const user = req.user;
+
+  if (!user) {
+    throw createHttpError(401, "Ban chua dang nhap.");
+  }
+
+  const page = Number.parseInt(req.query.page || "1", 10) || 1;
+  const limit = Number.parseInt(req.query.limit || "10", 10) || 10;
+
+  const feedData = await postModel.getFollowingFeed({
+    page,
+    limit,
+    viewerId: user.user_id,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Feed retrieved successfully",
+    data: {
+      posts: feedData.items,
+      pagination: feedData.pagination,
+    },
+  });
+};
+
 const updatePost = async (req, res) => {
   const user = req.user;
   const postId = parsePostId(req.params.id);
@@ -257,6 +283,7 @@ module.exports = {
   getFeed,
   getMyPosts,
   getUserPosts,
+  getFollowingFeed,
   updatePost,
   deletePost,
 };
