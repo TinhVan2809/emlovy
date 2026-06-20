@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import port from "@/api/api";
 import PostCard from "./PostCard";
 import { useSocket } from "@/context/SocketContext";
@@ -28,103 +29,124 @@ type Post = {
   share_count: number;
 };
 
+type PostsPage = {
+  items: Post[];
+  pagination: { hasMore: boolean };
+};
+
+async function fetchPostsPage({
+  pageParam,
+}: {
+  pageParam: number;
+}): Promise<PostsPage> {
+  const res = await fetch(`${port}/api/posts?page=${pageParam}&limit=10`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to fetch posts");
+  const result = await res.json();
+  return result.data; // { items, pagination }
+}
+
 export default function PostFeed() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const { socket } = useSocket();
+  const queryClient = useQueryClient();
 
   const observerTarget = useRef<HTMLDivElement>(null);
-  const isFirstRender = useRef(true);
 
-  const fetchPosts = useCallback(async (pageNum: number, isInitial = false) => {
-    try {
-      if (isInitial) setLoading(true);
-      else setLoadingMore(true);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useInfiniteQuery({
+    queryKey: ["posts"], // key này = "địa chỉ" cache, dùng lại ở mọi nơi cần đụng tới feed
+    queryFn: fetchPostsPage,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.pagination.hasMore ? allPages.length + 1 : undefined,
+  });
 
-      const response = await fetch(
-        `${port}/api/posts?page=${pageNum}&limit=10`,
-        {
-          credentials: "include",
-        },
-      );
-      const result = await response.json();
-      const { items, pagination } = result.data;
+  const posts = data?.pages.flatMap((page) => page.items) ?? [];
 
-      setPosts((prev) => (isInitial ? items : [...prev, ...items]));
-      setHasMore(pagination.hasMore);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    fetchPosts(1, true);
-  }, [fetchPosts]);
-
-  // Gọi fetch mỗi khi `page` thay đổi (bỏ qua lần mount đầu vì page=1 đã fetch ở trên)
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    fetchPosts(page);
-  }, [page, fetchPosts]);
-
-  // Socket realtime
   useEffect(() => {
     if (!socket) return;
-    const handler = (newPost: Post) => setPosts((prev) => [newPost, ...prev]);
+
+    const handler = (newPost: Post) => {
+      queryClient.setQueryData(["posts"], (old: any) => {
+        if (!old) return old;
+        const [firstPage, ...restPages] = old.pages;
+
+        // chặn trùng key: nếu post đã có trong cache thì bỏ qua
+        const alreadyExists = firstPage.items.some(
+          (p: Post) => p.post_id === newPost.post_id,
+        );
+        if (alreadyExists) return old;
+
+        return {
+          ...old,
+          pages: [
+            { ...firstPage, items: [newPost, ...firstPage.items] },
+            ...restPages,
+          ],
+        };
+      });
+    };
+
     socket.on("post:created", handler);
     return () => {
       socket.off("post:created", handler);
     };
-  }, [socket]);
+  }, [socket, queryClient]);
 
-  // IntersectionObserver — sentinel giờ LUÔN tồn tại trong DOM nên effect này chỉ cần chạy 1 lần
   useEffect(() => {
     const target = observerTarget.current;
     if (!target) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          setPage((prev) => prev + 1);
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
         }
       },
-      { threshold: 0, rootMargin: "200px" }, // load sớm trước khi chạm đáy tuyệt đối
+      { threshold: 0},
     );
 
     observer.observe(target);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-4 md:gap-8 w-full items-center">
+        {[1, 2, 3].map((n) => (
+          <div
+            key={n}
+            className="w-full max-w-xl h-40 bg-gray-200 animate-pulse rounded-xl"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <p className="text-sm text-red-500">Không tải được bài viết.</p>;
+  }
 
   return (
     <div className="flex flex-col gap-4 md:gap-8 w-full items-center">
-      {loading && posts.length === 0
-        ? [1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className="w-full max-w-xl h-40 bg-gray-200 animate-pulse rounded-xl"
-            />
-          ))
-        : posts.map((post) => <PostCard i={post} key={post.post_id} />)}
-
-      {/* Sentinel: KHÔNG còn nằm trong nhánh `if (loading) return` nữa */}
+      {posts.map((post) => (
+        <PostCard i={post} key={post.post_id} />
+      ))}
       <div
         ref={observerTarget}
         className="h-10 w-full flex justify-center items-center"
       >
-        {loadingMore && (
+        {isFetchingNextPage && (
           <p className="text-sm text-gray-500">Loading more posts...</p>
         )}
-        {!hasMore && !loading && (
+        {!hasNextPage && (
           <p className="text-sm text-gray-500">No more posts to show.</p>
         )}
       </div>
