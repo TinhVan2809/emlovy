@@ -1,4 +1,6 @@
 import { UserProvider } from "@/context/useUserContext";
+import { SocketProvider } from "@/context/SocketContext";
+
 export default function RootLayout({
   children,
 }: {
@@ -14,7 +16,9 @@ export default function RootLayout({
         <meta charSet="UTF-8"/>
       </head>
       <UserProvider>
-        <body>{children}</body>
+        <SocketProvider>
+          <body>{children}</body>
+        </SocketProvider>
       </UserProvider>
     </html>
   );
