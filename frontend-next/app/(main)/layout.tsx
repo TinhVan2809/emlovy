@@ -1,5 +1,4 @@
 import "./globals.css";
-import Footer from "@/components/Footer";
 import SidebarLeft from "@/components/SidebarLeft";
 import SidebarRight from "@/components/SidebarRight";
 
@@ -15,7 +14,6 @@ export default function RootLayout({
       </div>
       <div className="md:col-span-4 flex flex-col justify-center w-full items-center">
         <main className="w-full">{children}</main>
-        <Footer />
       </div>
       <div className="hidden md:block md:col-span-2">
         <SidebarRight />

@@ -76,6 +76,7 @@ function PostCard({ i }: PostCardProps) {
                     alt="avatar"
                     fill
                     className="rounded-full object-cover"
+                    loading="eager"
                   />
                 </div>
                 <div className="flex flex-col">
@@ -117,6 +118,7 @@ function PostCard({ i }: PostCardProps) {
                         priority={false}
                         className="object-contain"
                         sizes="(max-width: 768px) 100vw, 600px"
+                        loading="eager"
                       />
                     </div>
                   );

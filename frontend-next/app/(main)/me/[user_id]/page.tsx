@@ -59,6 +59,7 @@ function Profile({ params }: Props) {
     const response = await fetch(`${port}/api/profile/me?user_id=${user_id}`, {
       method: "GET",
       credentials: "include",
+      cache: 'force-cache',
     });
 
     const data = await response.json();

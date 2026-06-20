@@ -10,9 +10,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useUser } from "@/context/useUserContext";
 import port from "@/api/api";
+import { useRouter } from "next/navigation";
 
 function SidebarLeft() {
   const {user} = useUser();
+  const router = useRouter();
 
   const avatarSrc = user?.avatar_url
     ? `${port}${user.avatar_url}`
@@ -21,7 +23,7 @@ function SidebarLeft() {
   return (
     <div className="flex w-full bg-white py-2 fixed z-1000 bottom-0 md:w-auto md:bg-auto md:flex-col md:justify-between md:h-screen  md:top-0 md:py-6 md:px-5">
       <div className="hidden md:px-3 md:block">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 cursor-pointer" onClick={() => router.push("/")}>
           <Image src={"/logo.png"} width={42} height={42} alt="logo.png" loading="eager"/>
           <span className="font-[Playwrite_DK_Uloopet]">Emlovy</span>
         </div>
@@ -71,7 +73,7 @@ function SidebarLeft() {
         <div className="">More</div>
         <Link href={`/me/${user?.user_id}`} className="flex items-center gap-3 mt-2 cursor-pointer duration-200 hover:bg-black/3 rounded-md py-1">
           <div className="relative w-10 h-10 shrink-0">
-            <Image src={avatarSrc} alt="avatar" fill className="rounded-full" priority loading="eager"/>
+            <Image src={avatarSrc} alt="avatar" fill className="rounded-full" loading="eager"/>
           </div>
           <div className="flex flex-col">
             <p className="text-sm font-semibold truncate max-w-35">{user?.name || "Guest"}</p>
