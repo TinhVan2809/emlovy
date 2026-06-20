@@ -93,7 +93,7 @@ export default function CreatePost() {
               <div className="" key={index}>
                 {m.type.startsWith("image/") ? (
                   <div className="relative w-30 h-30">
-                    <Image src={URL.createObjectURL(m)} fill alt="image" className="rounded-md"/>
+                    <Image src={URL.createObjectURL(m)} fill alt="image" className="rounded-md" loading="eager"/>
                   </div>
                 ) : (
                   ""

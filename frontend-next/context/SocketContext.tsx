@@ -27,12 +27,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     socketInstance.on('connect', () => {
       setIsConnected(true);
-      console.log('Connected to Socket.IO server');
     });
 
     socketInstance.on('disconnect', () => {
       setIsConnected(false);
-      console.log('Disconnected from Socket.IO server');
     });
 
     setSocket(socketInstance);
