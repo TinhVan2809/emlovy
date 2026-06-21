@@ -9,8 +9,9 @@ import {
   RiSendPlaneLine,
   RiBookmarkLine,
 } from "@remixicon/react";
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import CommentSheet from "./comments-sheet";
 
 interface PostMedia {
   post_media_id: number;
@@ -53,6 +54,9 @@ function PostCard({ i }: PostCardProps) {
     setSelectedPostId(post_id);
     setPostOptionsMenu((v) => !v);
   };
+
+  // State lưu trạng thái comment
+  const [isComment, setIsComment] = useState<boolean>(false);
 
   const avatarSrc = i.author?.avatar_url
     ? `${port}${i.author.avatar_url}`
@@ -103,6 +107,19 @@ function PostCard({ i }: PostCardProps) {
       setIsLiking(false);
     }
   }, [liked, likeCount, isLiking, i.post_id]);
+
+  // Mở comment
+  const onToggleComment = (post_id: number | null) => {
+    setIsComment((v) => !v);
+    setSelectedPostId(post_id);
+  }
+
+  // Đóng comment
+  const onCloseComment = () => {
+    setIsComment((v) => !v);
+    setSelectedPostId(null);
+  }
+
 
   return (
     <>
@@ -188,7 +205,7 @@ function PostCard({ i }: PostCardProps) {
                   {likeCount > 0 ? likeCount : null}
                 </span>
               </button>
-              <button className="flex items-center gap-1.5 hover:opacity-60 transition">
+              <button className="flex items-center gap-1.5 hover:opacity-60 transition" onClick={() => onToggleComment(i.post_id)}>
                 <RiChat3Line size={24} />
                 <span className="text-sm font-medium">
                   {i.comment_count > 0 ? i.comment_count : null}
@@ -233,6 +250,13 @@ function PostCard({ i }: PostCardProps) {
                 Hủy
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Mở comment */}
+        {isComment && (
+          <div className="">
+            <CommentSheet onClose={onCloseComment} post_id={selectedPostId} kind={"post"}/>
           </div>
         )}
     </>
