@@ -5,6 +5,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import port from "@/api/api";
 import PostCard from "./PostCard";
 import { useSocket } from "@/context/SocketContext";
+import { useUser } from "@/context/useUserContext";
 
 type PostMedia = {
   post_media_id: number;

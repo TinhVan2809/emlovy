@@ -41,7 +41,7 @@ const createApp = () => {
 
   // Fall back to common localhost origins for development
   const allowedOrigins = [
-    config.cors.origins.length > 0 ? config.cors.origins : true,
+    (config.cors.origins.length > 0 ? config.cors.origins : []),
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5173",

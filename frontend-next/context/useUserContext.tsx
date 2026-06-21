@@ -95,7 +95,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []); // No dependencies needed for fetchMe itself, as it doesn't rely on external state that changes
+  }, []); 
 
   // Expose fetchMe as refreshUser
   const refreshUser = useCallback(async () => {
@@ -105,7 +105,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Khi app khởi động → kiểm tra session từ server
   useEffect(() => {
     fetchMe();
-  }, [fetchMe]); // Add fetchMe to dependency array so it runs on mount and if fetchMe itself changes (though it's useCallback'd)
+  }, [fetchMe]);
 
   return (
     <UserContext.Provider
