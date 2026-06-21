@@ -83,7 +83,7 @@ const toPublicComment = (row) => {
 const findPostForUpdate = async (connection, postId) => {
   const [rows] = await connection.execute(
     `
-      SELECT post_id, like_count, comment_count
+      SELECT post_id, like_count, comment_count, visibility
       FROM posts
       WHERE post_id = ? AND is_deleted = 0
       LIMIT 1
@@ -244,7 +244,7 @@ const createComment = async ({ postId, userId, content }) => {
 
   const [comment, post] = await Promise.all([
     findCommentById(commentId, userId),
-    getPostSummary(postId, "comment_count"),
+    getPostSummary(postId, "comment_count, visibility"),
   ]);
 
   return {
@@ -252,6 +252,7 @@ const createComment = async ({ postId, userId, content }) => {
     post: {
       post_id: postId,
       comment_count: Number(post?.comment_count || 0),
+      visibility: post?.visibility || null,
     },
   };
 };
@@ -283,7 +284,7 @@ const createReply = async ({ postId, parentCommentId, userId, content }) => {
 
   const [comment, post] = await Promise.all([
     findCommentById(replyId, userId),
-    getPostSummary(postId, "comment_count"),
+    getPostSummary(postId, "comment_count, visibility"),
   ]);
 
   return {
@@ -291,6 +292,7 @@ const createReply = async ({ postId, parentCommentId, userId, content }) => {
     post: {
       post_id: postId,
       comment_count: Number(post?.comment_count || 0),
+      visibility: post?.visibility || null,
     },
   };
 };
