@@ -12,9 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import {
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserAvatar } from "@/components/user-avatar";
 import { AppColors, AppFonts } from "@/constants/theme";
@@ -513,7 +511,12 @@ export function CommentsSheet({
   );
 
   const sheetStyle = useMemo(
-    () => [styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) }],
+    () => [
+      styles.sheet,
+      {
+        paddingBottom: Math.max(insets.bottom, 12),
+      },
+    ],
     [insets.bottom],
   );
 
@@ -570,7 +573,7 @@ export function CommentsSheet({
           {replyingTo ? (
             <View style={styles.replyBanner}>
               <Text numberOfLines={1} style={styles.replyBannerText}>
-                Dang tra loi @{replyingTo.author?.username || "emlovy"}
+                Đang trả lời @{replyingTo.author?.username || "emlovy"}
               </Text>
               <Pressable hitSlop={8} onPress={() => setReplyingTo(null)}>
                 <Ionicons
@@ -674,7 +677,7 @@ const CommentItem = memo(function CommentItem({
             <Text style={styles.commentActionText}>{comment.like_count}</Text>
           </Pressable>
           <Pressable onPress={handleReply} style={styles.commentAction}>
-            <Text style={styles.commentActionText}>Tra loi</Text>
+            <Text style={styles.commentActionText}>Trả lời</Text>
           </Pressable>
         </View>
 
@@ -734,7 +737,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   commentBubble: {
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.commentBubble,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -812,7 +815,6 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     alignItems: "flex-end",
-    backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
     borderRadius: 22,
     borderWidth: 1,
@@ -852,7 +854,7 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     alignItems: "center",
-    backgroundColor: AppColors.accent,
+    backgroundColor: '#000',
     borderRadius: 18,
     height: 36,
     justifyContent: "center",
@@ -866,7 +868,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.surface,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
-    maxHeight: '94%',
+    maxHeight: "92%",
     minHeight: "55%",
   },
   sheetHeader: {
@@ -894,7 +896,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingBottom: 2,
+    paddingVertical: 8,
   },
   sortText: {
     color: AppColors.text,

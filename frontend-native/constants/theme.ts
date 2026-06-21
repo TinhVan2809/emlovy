@@ -19,6 +19,7 @@ export const AppColors = {
   success: '#1F9D6E',
   shadow: '#2A1C16',
   checkmark: '#2040e4',
+  commentBubble: 'rgba(0, 0, 0, 0.02)',
 };
 
 export const AppFonts = {
