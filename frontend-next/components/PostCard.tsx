@@ -67,6 +67,7 @@ function PostCard({ i }: PostCardProps) {
   const [isLiking, setIsLiking] = useState<boolean>(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLiked(i.liked_by_me ?? false);
     setLikeCount(i.like_count ?? 0);
   }, [i.liked_by_me, i.like_count]);
