@@ -196,6 +196,7 @@ export type CommentMutationResult = {
   post: {
     post_id: number;
     comment_count: number;
+    visibility?: PostVisibility | null;
   };
 };
 

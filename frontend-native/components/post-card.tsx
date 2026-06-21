@@ -456,7 +456,6 @@ const styles = StyleSheet.create({
     maxWidth: 210,
   },
   mediaFrame: {
-    // borderRadius: 10,
     overflow: "hidden",
   },
   mediaImage: {

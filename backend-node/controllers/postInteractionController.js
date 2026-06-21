@@ -1,4 +1,5 @@
 const postInteractionModel = require("../models/postInteractionModel");
+const { getIo } = require("../utils/socket");
 const { createHttpError } = require("../utils/httpError");
 
 const parsePositiveInteger = (value, fieldName) => {
@@ -81,6 +82,15 @@ const createComment = async (req, res) => {
     content,
   });
 
+  const io = getIo();
+  if (io && data.post?.visibility === "public") {
+    io.emit("post:commented", {
+      post_id: postId,
+      comment_count: data.post.comment_count,
+      comment: data.comment,
+    });
+  }
+
   res.status(201).json({ success: true, data });
 };
 
@@ -95,6 +105,15 @@ const createReply = async (req, res) => {
     userId: user.user_id,
     content,
   });
+
+  const io = getIo();
+  if (io && data.post?.visibility === "public") {
+    io.emit("post:commented", {
+      post_id: postId,
+      comment_count: data.post.comment_count,
+      comment: data.comment,
+    });
+  }
 
   res.status(201).json({ success: true, data });
 };

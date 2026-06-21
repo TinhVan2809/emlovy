@@ -162,6 +162,24 @@ export default function HomeScreen() {
             return [post, ...current];
           });
         },
+        onCommented: ({ post_id, comment_count }) => {
+          setPosts((current) => {
+            let didPatch = false;
+            const next = current.map((post) => {
+              if (
+                post.post_id !== post_id ||
+                post.comment_count === comment_count
+              ) {
+                return post;
+              }
+
+              didPatch = true;
+              return { ...post, comment_count };
+            });
+
+            return didPatch ? next : current;
+          });
+        },
         onDeleted: ({ post_id }) => {
           setPosts((current) =>
             current.filter((post) => post.post_id !== post_id),

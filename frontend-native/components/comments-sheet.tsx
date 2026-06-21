@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Image } from 'expo-image';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -7,9 +8,11 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,8 +20,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserAvatar } from '@/components/user-avatar';
 import { AppColors, AppFonts } from '@/constants/theme';
 import { postApi, reelApi, resolveMediaUrl } from '@/services/api';
+import { subscribeToPostEvents } from '@/services/post-socket';
 import { subscribeToReelEvents } from '@/services/reel-socket';
-import type { Post, PostComment } from '@/types/auth';
+import type { Post, PostComment, PostMedia } from '@/types/auth';
 
 const COMMENT_LIMIT = 20;
 
@@ -29,6 +33,16 @@ type CommentsSheetProps = {
   kind?: 'post' | 'reel';
   token?: string | null;
   visible: boolean;
+};
+
+type CommentCacheEntry = {
+  hasMore: boolean;
+  items: PostComment[];
+  page: number;
+};
+
+type ResolvedPostMedia = PostMedia & {
+  uri: string;
 };
 
 const formatRelativeTime = (value: string) => {
@@ -48,44 +62,111 @@ const formatRelativeTime = (value: string) => {
   }
 
   if (diffMs < hour) {
-    return `${Math.floor(diffMs / minute)} phut`;
+    return `${Math.floor(diffMs / minute)} phút`;
   }
 
   if (diffMs < day) {
-    return `${Math.floor(diffMs / hour)} gio`;
+    return `${Math.floor(diffMs / hour)} giờ`;
   }
 
-  return `${Math.floor(diffMs / day)} ngay`;
+  return `${Math.floor(diffMs / day)} ngày`;
 };
+
+const hasCommentInTree = (comments: PostComment[], commentId: number) =>
+  comments.some(
+    (comment) =>
+      comment.id === commentId ||
+      comment.replies.some((reply) => reply.id === commentId),
+  );
 
 const patchCommentTree = (
   comments: PostComment[],
   commentId: number,
-  patch: Partial<Pick<PostComment, 'like_count' | 'liked_by_me' | 'reply_count' | 'replies'>>,
-) =>
-  comments.map((comment) => {
+  patch: Partial<
+    Pick<
+      PostComment,
+      'like_count' | 'liked_by_me' | 'reply_count' | 'replies'
+    >
+  >,
+) => {
+  let didPatch = false;
+
+  const next = comments.map((comment) => {
     if (comment.id === commentId) {
+      didPatch = true;
       return { ...comment, ...patch };
     }
 
-    return {
-      ...comment,
-      replies: comment.replies.map((reply) => (reply.id === commentId ? { ...reply, ...patch } : reply)),
-    };
-  });
-
-const appendReply = (comments: PostComment[], reply: PostComment) =>
-  comments.map((comment) => {
-    if (comment.id !== reply.parent_id) {
+    if (!comment.replies.length) {
       return comment;
     }
 
+    let didPatchReply = false;
+    const replies = comment.replies.map((reply) => {
+      if (reply.id !== commentId) {
+        return reply;
+      }
+
+      didPatchReply = true;
+      return { ...reply, ...patch };
+    });
+
+    if (!didPatchReply) {
+      return comment;
+    }
+
+    didPatch = true;
+    return { ...comment, replies };
+  });
+
+  return didPatch ? next : comments;
+};
+
+const addIncomingComment = (
+  comments: PostComment[],
+  nextComment: PostComment,
+) => {
+  if (hasCommentInTree(comments, nextComment.id)) {
+    return comments;
+  }
+
+  if (!nextComment.parent_id) {
+    return [nextComment, ...comments];
+  }
+
+  let didAppend = false;
+  const next = comments.map((comment) => {
+    if (comment.id !== nextComment.parent_id) {
+      return comment;
+    }
+
+    didAppend = true;
     return {
       ...comment,
+      replies: [...comment.replies, nextComment],
       reply_count: comment.reply_count + 1,
-      replies: [...comment.replies, reply],
     };
   });
+
+  return didAppend ? next : comments;
+};
+
+const mergeCommentPage = (
+  current: PostComment[],
+  incoming: PostComment[],
+) => {
+  const seen = new Set(current.map((comment) => comment.id));
+  const nextItems = incoming.filter((comment) => {
+    if (seen.has(comment.id)) {
+      return false;
+    }
+
+    seen.add(comment.id);
+    return true;
+  });
+
+  return nextItems.length ? [...current, ...nextItems] : current;
+};
 
 export function CommentsSheet({
   kind = 'post',
@@ -96,6 +177,7 @@ export function CommentsSheet({
   visible,
 }: CommentsSheetProps) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const [comments, setComments] = useState<PostComment[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -105,18 +187,61 @@ export function CommentsSheet({
   const [error, setError] = useState('');
   const [input, setInput] = useState('');
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
+  const commentsCacheRef = useRef(new Map<string, CommentCacheEntry>());
+  const loadRequestRef = useRef(0);
   const postId = post?.post_id || null;
+  const cacheKey = postId ? `${kind}:${postId}` : null;
 
-  const canSubmit = useMemo(() => input.trim().length > 0 && !isSubmitting, [input, isSubmitting]);
+  const canSubmit = useMemo(
+    () => input.trim().length > 0 && !isSubmitting,
+    [input, isSubmitting],
+  );
 
-  const loadComments = useCallback(
-    async (nextPage = 1, replace = true) => {
-      if (!postId) {
+  const writeCache = useCallback(
+    (
+      items: PostComment[],
+      nextPage = page,
+      nextHasMore = hasMore,
+    ) => {
+      if (!cacheKey) {
         return;
       }
 
+      commentsCacheRef.current.set(cacheKey, {
+        hasMore: nextHasMore,
+        items,
+        page: nextPage,
+      });
+    },
+    [cacheKey, hasMore, page],
+  );
+
+  const setCommentsWithCache = useCallback(
+    (updater: (current: PostComment[]) => PostComment[]) => {
+      setComments((current) => {
+        const next = updater(current);
+
+        if (next !== current) {
+          writeCache(next);
+        }
+
+        return next;
+      });
+    },
+    [writeCache],
+  );
+
+  const loadComments = useCallback(
+    async (nextPage = 1, replace = true, silent = false) => {
+      if (!postId || !cacheKey) {
+        return;
+      }
+
+      const requestId = loadRequestRef.current + 1;
+      loadRequestRef.current = requestId;
+
       if (replace) {
-        setIsLoading(true);
+        setIsLoading(!silent);
       } else {
         setIsLoadingMore(true);
       }
@@ -136,69 +261,118 @@ export function CommentsSheet({
                 token,
               });
 
-        setComments((current) => (replace ? response.data.items : [...current, ...response.data.items]));
-        setPage(response.data.pagination.page);
-        setHasMore(response.data.pagination.hasMore);
+        if (loadRequestRef.current !== requestId) {
+          return;
+        }
+
+        const pagination = response.data.pagination;
+        setComments((current) => {
+          const nextItems = replace
+            ? response.data.items
+            : mergeCommentPage(current, response.data.items);
+
+          commentsCacheRef.current.set(cacheKey, {
+            hasMore: pagination.hasMore,
+            items: nextItems,
+            page: pagination.page,
+          });
+
+          return nextItems;
+        });
+        setPage(pagination.page);
+        setHasMore(pagination.hasMore);
         setError('');
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'Khong the tai binh luan.');
+        if (loadRequestRef.current === requestId) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : 'Khong the tai binh luan.',
+          );
+        }
       } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
+        if (loadRequestRef.current === requestId) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
       }
     },
-    [kind, postId, token],
+    [cacheKey, kind, postId, token],
   );
 
   useEffect(() => {
-    if (visible && postId) {
-      setComments([]);
-      setInput('');
-      setReplyingTo(null);
-      loadComments(1, true);
+    if (!visible || !postId || !cacheKey) {
+      loadRequestRef.current += 1;
+      setIsLoading(false);
+      setIsLoadingMore(false);
+      return;
     }
-  }, [loadComments, postId, visible]);
+
+    const cached = commentsCacheRef.current.get(cacheKey);
+
+    setComments(cached?.items || []);
+    setPage(cached?.page || 1);
+    setHasMore(cached?.hasMore || false);
+    setInput('');
+    setReplyingTo(null);
+    setError('');
+    loadComments(1, true, Boolean(cached));
+  }, [cacheKey, loadComments, postId, visible]);
+
+  const applyIncomingComment = useCallback(
+    (nextComment: PostComment) => {
+      setCommentsWithCache((current) =>
+        addIncomingComment(current, nextComment),
+      );
+    },
+    [setCommentsWithCache],
+  );
 
   useEffect(() => {
-    if (kind !== 'reel' || !visible || !postId) {
+    if (!visible || !postId) {
       return undefined;
     }
 
-    const unsubscribe = subscribeToReelEvents({
-      onCommented: (payload) => {
-        if (!payload || payload.post_id !== postId) return;
+    const handleCommented = (payload: {
+      post_id: number;
+      comment_count: number;
+      comment?: PostComment;
+    }) => {
+      if (!payload || payload.post_id !== postId) {
+        return;
+      }
 
-        const nextComment = payload.comment;
+      if (payload.comment) {
+        applyIncomingComment(payload.comment);
+      }
 
-        if (!nextComment) return;
+      onPostCommentCountChange?.(postId, payload.comment_count);
+    };
 
-        setComments((current) => {
-          // avoid duplicates
-          if (current.some((c) => c.id === nextComment.id)) return current;
+    return kind === 'reel'
+      ? subscribeToReelEvents({ onCommented: handleCommented })
+      : subscribeToPostEvents({ onCommented: handleCommented });
+  }, [
+    applyIncomingComment,
+    kind,
+    onPostCommentCountChange,
+    postId,
+    visible,
+  ]);
 
-          if (nextComment.parent_id) {
-            return appendReply(current, nextComment);
-          }
-
-          return [nextComment, ...current];
-        });
-
-        onPostCommentCountChange?.(postId, payload.comment_count);
-      },
-    });
-
-    return unsubscribe;
-  }, [kind, visible, postId, onPostCommentCountChange]);
-
-  const handleLoadMore = () => {
+  const handleLoadMore = useCallback(() => {
     if (!hasMore || isLoading || isLoadingMore) {
       return;
     }
 
     loadComments(page + 1, false);
-  };
+  }, [hasMore, isLoading, isLoadingMore, loadComments, page]);
 
-  const handleSubmit = async () => {
+  const handleReplyTo = useCallback((comment: PostComment) => {
+    setReplyingTo(comment);
+  }, []);
+
+  const handleSubmit = useCallback(async () => {
     if (!post || !canSubmit) {
       return;
     }
@@ -223,109 +397,158 @@ export function CommentsSheet({
       setInput('');
       setReplyingTo(null);
       setError('');
-      onPostCommentCountChange?.(post.post_id, response.data.post.comment_count);
+      onPostCommentCountChange?.(
+        post.post_id,
+        response.data.post.comment_count,
+      );
 
-      if (nextComment.parent_id) {
-        setComments((current) => appendReply(current, nextComment));
-      } else {
-        setComments((current) => [nextComment, ...current]);
+      if (nextComment) {
+        applyIncomingComment(nextComment);
       }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Khong the gui binh luan.');
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : 'Khong the gui binh luan.',
+      );
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    applyIncomingComment,
+    canSubmit,
+    input,
+    kind,
+    onPostCommentCountChange,
+    post,
+    replyingTo,
+    token,
+  ]);
 
-  const handleToggleCommentLike = async (comment: PostComment) => {
-    if (!token) {
-      setError('Ban can dang nhap de tha tym.');
-      return;
-    }
+  const handleToggleCommentLike = useCallback(
+    async (comment: PostComment) => {
+      if (!token) {
+        setError('Ban can dang nhap de tha tym.');
+        return;
+      }
 
-    const shouldLike = !comment.liked_by_me;
-    const optimisticLikeCount = Math.max(0, comment.like_count + (shouldLike ? 1 : -1));
+      const shouldLike = !comment.liked_by_me;
+      const optimisticLikeCount = Math.max(
+        0,
+        comment.like_count + (shouldLike ? 1 : -1),
+      );
 
-    setComments((current) =>
-      patchCommentTree(current, comment.id, {
-        liked_by_me: shouldLike,
-        like_count: optimisticLikeCount,
-      }),
-    );
-
-    try {
-      const response = shouldLike
-        ? await postApi.likeComment(token, comment.id)
-        : await postApi.unlikeComment(token, comment.id);
-
-      setComments((current) =>
+      setCommentsWithCache((current) =>
         patchCommentTree(current, comment.id, {
-          liked_by_me: response.data.liked_by_me,
-          like_count: response.data.like_count,
+          liked_by_me: shouldLike,
+          like_count: optimisticLikeCount,
         }),
       );
-      setError('');
-    } catch (likeError) {
-      setComments((current) =>
-        patchCommentTree(current, comment.id, {
-          liked_by_me: comment.liked_by_me,
-          like_count: comment.like_count,
-        }),
-      );
-      setError(likeError instanceof Error ? likeError.message : 'Khong the cap nhat tym.');
-    }
-  };
 
-  const renderComment = (comment: PostComment, isReply = false, rootComment: PostComment = comment) => {
-    const authorName = comment.author?.name || 'Emlovy User';
-    const handle = comment.author?.username ? `@${comment.author.username}` : '@emlovy';
-    const avatarUrl = resolveMediaUrl(comment.author?.avatar_url || comment.author?.avata);
+      try {
+        const response = shouldLike
+          ? await postApi.likeComment(token, comment.id)
+          : await postApi.unlikeComment(token, comment.id);
 
-    return (
-      <View key={comment.id} style={[styles.commentRow, isReply ? styles.replyRow : null]}>
-        <UserAvatar imageUrl={avatarUrl} name={authorName} size={isReply ? 34 : 42} />
-        <View style={styles.commentBody}>
-          <View style={styles.commentBubble}>
-            <View style={styles.commentMetaRow}>
-              <Text numberOfLines={1} style={styles.commentAuthor}>
-                {handle}
-              </Text>
-              <Text style={styles.commentTime}>{formatRelativeTime(comment.created_at)}</Text>
-            </View>
-            <Text style={styles.commentText}>{comment.content}</Text>
+        setCommentsWithCache((current) =>
+          patchCommentTree(current, comment.id, {
+            liked_by_me: response.data.liked_by_me,
+            like_count: response.data.like_count,
+          }),
+        );
+        setError('');
+      } catch (likeError) {
+        setCommentsWithCache((current) =>
+          patchCommentTree(current, comment.id, {
+            liked_by_me: comment.liked_by_me,
+            like_count: comment.like_count,
+          }),
+        );
+        setError(
+          likeError instanceof Error
+            ? likeError.message
+            : 'Khong the cap nhat tym.',
+        );
+      }
+    },
+    [setCommentsWithCache, token],
+  );
+
+  const keyExtractor = useCallback((item: PostComment) => String(item.id), []);
+
+  const renderCommentItem = useCallback(
+    ({ item }: { item: PostComment }) => (
+      <CommentItem
+        comment={item}
+        onLike={handleToggleCommentLike}
+        onReply={handleReplyTo}
+      />
+    ),
+    [handleReplyTo, handleToggleCommentLike],
+  );
+
+  const listHeader = useMemo(
+    () => (
+      <View>
+        {/* {post ? <PostMediaPreview post={post} width={width} /> : null} */}
+        <View style={styles.sortRow}>
+          <View style={styles.sortPill}>
+            <Ionicons color={AppColors.accent} name="heart" size={13} />
+            <Text style={styles.sortText}>Top comments</Text>
           </View>
-
-          <View style={styles.commentActions}>
-            <Pressable onPress={() => handleToggleCommentLike(comment)} style={styles.commentAction}>
-              <Ionicons
-                color={comment.liked_by_me ? AppColors.accent : AppColors.muted}
-                name={comment.liked_by_me ? 'heart' : 'heart-outline'}
-                size={15}
-              />
-              <Text style={styles.commentActionText}>{comment.like_count}</Text>
-            </Pressable>
-            <Pressable onPress={() => setReplyingTo(rootComment)} style={styles.commentAction}>
-              <Text style={styles.commentActionText}>Trả lời</Text>
-            </Pressable>
-          </View>
-
-          {!isReply && comment.replies.length > 0 ? (
-            <View style={styles.replies}>
-              {comment.replies.map((reply) => renderComment(reply, true, comment))}
-            </View>
+          {post ? (
+            <Text style={styles.countText}>
+              {post.comment_count} Bình luận
+            </Text>
           ) : null}
         </View>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
-    );
-  };
+    ),
+    [error, post],
+  );
+
+  const listEmpty = useMemo(
+    () => (
+      <Text style={styles.emptyText}>
+        Ở đây yên tĩnh quá. Hãy nêu cảm nghĩ của bạn.
+      </Text>
+    ),
+    [],
+  );
+
+  const listFooter = useMemo(
+    () =>
+      isLoadingMore ? (
+        <ActivityIndicator
+          color={AppColors.accent}
+          style={styles.footerLoader}
+        />
+      ) : null,
+    [isLoadingMore],
+  );
+
+  const commentListContentStyle = useMemo(
+    () => [
+      styles.commentList,
+      comments.length === 0 ? styles.commentListEmpty : null,
+    ],
+    [comments.length],
+  );
+
+  const sheetStyle = useMemo(
+    () => [styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) }],
+    [insets.bottom],
+  );
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
+    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible} presentationStyle="overFullScreen" statusBarTranslucent>
       <View style={styles.overlay}>
         <Pressable onPress={onClose} style={StyleSheet.absoluteFillObject} />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          style={sheetStyle}
+        >
           <View style={styles.grabber} />
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle}>Bình luận</Text>
@@ -334,38 +557,33 @@ export function CommentsSheet({
             </Pressable>
           </View>
 
-          <View style={styles.sortRow}>
-            <View style={styles.sortPill}>
-              <Ionicons color={AppColors.accent} name="heart" size={13} />
-              <Text style={styles.sortText}>Top comments</Text>
-            </View>
-            {post ? <Text style={styles.countText}>{post.comment_count} bình luận</Text> : null}
-          </View>
-
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
           {isLoading ? (
             <ActivityIndicator color={AppColors.accent} style={styles.loader} />
           ) : (
             <FlatList
-              ListEmptyComponent={<Text style={styles.emptyText}>Hãy trở thành người bình luận đầu tiên.</Text>}
-              ListFooterComponent={
-                isLoadingMore ? <ActivityIndicator color={AppColors.accent} style={styles.footerLoader} /> : null
-              }
-              contentContainerStyle={styles.commentList}
+              ListEmptyComponent={listEmpty}
+              ListFooterComponent={listFooter}
+              ListHeaderComponent={listHeader}
+              contentContainerStyle={commentListContentStyle}
               data={comments}
-              keyExtractor={(item) => String(item.id)}
+              initialNumToRender={8}
+              keyExtractor={keyExtractor}
+              keyboardShouldPersistTaps="handled"
+              maxToRenderPerBatch={8}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.35}
-              renderItem={({ item }) => renderComment(item)}
+              removeClippedSubviews={Platform.OS === 'android'}
+              renderItem={renderCommentItem}
               showsVerticalScrollIndicator={false}
+              updateCellsBatchingPeriod={70}
+              windowSize={7}
             />
           )}
 
           {replyingTo ? (
             <View style={styles.replyBanner}>
               <Text numberOfLines={1} style={styles.replyBannerText}>
-                Đang trả lời @{replyingTo.author?.username || 'emlovy'}
+                Dang tra loi @{replyingTo.author?.username || 'emlovy'}
               </Text>
               <Pressable hitSlop={8} onPress={() => setReplyingTo(null)}>
                 <Ionicons color={AppColors.muted} name="close-circle" size={18} />
@@ -378,7 +596,7 @@ export function CommentsSheet({
               maxLength={1000}
               multiline
               onChangeText={setInput}
-              placeholder={replyingTo ? 'Viết phản hồi...' : 'Viết bình luận...'}
+              placeholder={replyingTo ? 'Viet phan hoi...' : 'Viet binh luan...'}
               placeholderTextColor={AppColors.muted}
               style={styles.input}
               value={input}
@@ -386,7 +604,11 @@ export function CommentsSheet({
             <Pressable
               disabled={!canSubmit}
               onPress={handleSubmit}
-              style={[styles.sendButton, !canSubmit ? styles.sendButtonDisabled : null]}>
+              style={[
+                styles.sendButton,
+                !canSubmit ? styles.sendButtonDisabled : null,
+              ]}
+            >
               {isSubmitting ? (
                 <ActivityIndicator color={AppColors.surface} size="small" />
               ) : (
@@ -399,6 +621,170 @@ export function CommentsSheet({
     </Modal>
   );
 }
+
+// const PostMediaPreview = memo(function PostMediaPreview({
+//   post,
+//   width,
+// }: {
+//   post: Post;
+//   width: number;
+// }) {
+//   const previewWidth = Math.max(260, width - 36);
+//   const authorName = post.author?.name || 'Emlovy User';
+//   const authorHandle = post.author?.username
+//     ? `@${post.author.username}`
+//     : '@emlovy';
+//   const avatarUrl = resolveMediaUrl(
+//     post.author?.avatar_url || post.author?.avata,
+//   );
+//   const mediaItems = useMemo(
+//     () =>
+//       post.media
+//         .map((media) => ({
+//           ...media,
+//           uri: resolveMediaUrl(media.media_url),
+//         }))
+//         .filter((media): media is ResolvedPostMedia => Boolean(media.uri)),
+//     [post.media],
+//   );
+
+//   return (
+//     <View style={styles.postPreview}>
+//       <View style={styles.postPreviewHeader}>
+//         <UserAvatar imageUrl={avatarUrl} name={authorName} size={38} />
+//         <View style={styles.postPreviewMeta}>
+//           <Text numberOfLines={1} style={styles.postPreviewName}>
+//             {authorName}
+//           </Text>
+//           <Text numberOfLines={1} style={styles.postPreviewHandle}>
+//             {authorHandle}
+//           </Text>
+//         </View>
+//       </View>
+
+//       {post.content ? (
+//         <Text numberOfLines={3} style={styles.postPreviewCaption}>
+//           {post.content}
+//         </Text>
+//       ) : null}
+
+//       {mediaItems.length > 0 ? (
+//         <ScrollView
+//           horizontal
+//           pagingEnabled
+//           showsHorizontalScrollIndicator={false}
+//           style={styles.postMediaScroller}
+//         >
+//           {mediaItems.map((media, index) => (
+//             <View
+//               key={`${media.post_media_id}-${index}`}
+//               style={[styles.postMediaFrame, { width: previewWidth }]}
+//             >
+//               {media.type === 'image' ? (
+//                 <Image
+//                   contentFit="cover"
+//                   source={{ uri: media.uri }}
+//                   style={StyleSheet.absoluteFill}
+//                   transition={160}
+//                 />
+//               ) : (
+//                 <View style={styles.videoPreview}>
+//                   <Ionicons
+//                     color={AppColors.surface}
+//                     name="play-circle"
+//                     size={42}
+//                   />
+//                 </View>
+//               )}
+//             </View>
+//           ))}
+//         </ScrollView>
+//       ) : null}
+//     </View>
+//   );
+// });
+
+// PostMediaPreview.displayName = 'PostMediaPreview';
+
+const CommentItem = memo(function CommentItem({
+  comment,
+  isReply = false,
+  onLike,
+  onReply,
+  rootComment,
+}: {
+  comment: PostComment;
+  isReply?: boolean;
+  onLike: (comment: PostComment) => void;
+  onReply: (comment: PostComment) => void;
+  rootComment?: PostComment;
+}) {
+  const replyTarget = rootComment || comment;
+  const authorName = comment.author?.name || 'Emlovy User';
+  const handle = comment.author?.username
+    ? `@${comment.author.username}`
+    : '@emlovy';
+  const avatarUrl = resolveMediaUrl(
+    comment.author?.avatar_url || comment.author?.avata,
+  );
+  const createdAt = useMemo(
+    () => formatRelativeTime(comment.created_at),
+    [comment.created_at],
+  );
+  const handleLike = useCallback(() => onLike(comment), [comment, onLike]);
+  const handleReply = useCallback(
+    () => onReply(replyTarget),
+    [onReply, replyTarget],
+  );
+
+  return (
+    <View style={[styles.commentRow, isReply ? styles.replyRow : null]}>
+      <UserAvatar imageUrl={avatarUrl} name={authorName} size={isReply ? 34 : 42} />
+      <View style={styles.commentBody}>
+        <View style={styles.commentBubble}>
+          <View style={styles.commentMetaRow}>
+            <Text numberOfLines={1} style={styles.commentAuthor}>
+              {handle}
+            </Text>
+            <Text style={styles.commentTime}>{createdAt}</Text>
+          </View>
+          <Text style={styles.commentText}>{comment.content}</Text>
+        </View>
+
+        <View style={styles.commentActions}>
+          <Pressable onPress={handleLike} style={styles.commentAction}>
+            <Ionicons
+              color={comment.liked_by_me ? AppColors.accent : AppColors.muted}
+              name={comment.liked_by_me ? 'heart' : 'heart-outline'}
+              size={15}
+            />
+            <Text style={styles.commentActionText}>{comment.like_count}</Text>
+          </Pressable>
+          <Pressable onPress={handleReply} style={styles.commentAction}>
+            <Text style={styles.commentActionText}>Tra loi</Text>
+          </Pressable>
+        </View>
+
+        {!isReply && comment.replies.length > 0 ? (
+          <View style={styles.replies}>
+            {comment.replies.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                isReply
+                onLike={onLike}
+                onReply={onReply}
+                rootComment={comment}
+              />
+            ))}
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+});
+
+CommentItem.displayName = 'CommentItem';
 
 const styles = StyleSheet.create({
   closeButton: {
@@ -442,8 +828,11 @@ const styles = StyleSheet.create({
   },
   commentList: {
     gap: 14,
+    paddingBottom: 10,
     paddingHorizontal: 18,
-    paddingVertical: 10,
+  },
+  commentListEmpty: {
+    flexGrow: 1,
   },
   commentMetaRow: {
     alignItems: 'center',
@@ -484,7 +873,7 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.body,
     fontSize: 12,
     lineHeight: 17,
-    paddingHorizontal: 18,
+    paddingHorizontal: 2,
     paddingTop: 8,
   },
   footerLoader: {
@@ -527,6 +916,48 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  // postMediaFrame: {
+  //   aspectRatio: 1,
+  //   backgroundColor: AppColors.surfaceMuted,
+  //   borderRadius: 8,
+  //   marginRight: 10,
+  //   overflow: 'hidden',
+  // },
+  // postMediaScroller: {
+  //   marginTop: 12,
+  // },
+  // postPreview: {
+  //   borderBottomColor: AppColors.border,
+  //   marginBottom: 12,
+  //   paddingBottom: 14,
+  // },
+  // postPreviewCaption: {
+  //   color: AppColors.text,
+  //   fontFamily: AppFonts.body,
+  //   fontSize: 14,
+  //   lineHeight: 20,
+  //   paddingTop: 10,
+  // },
+  // postPreviewHandle: {
+  //   color: AppColors.muted,
+  //   fontFamily: AppFonts.body,
+  //   fontSize: 12,
+  // },
+  // postPreviewHeader: {
+  //   alignItems: 'center',
+  //   flexDirection: 'row',
+  //   gap: 10,
+  //   paddingTop: 10,
+  // },
+  // postPreviewMeta: {
+  //   flex: 1,
+  //   gap: 2,
+  // },
+  // postPreviewName: {
+  //   color: AppColors.text,
+  //   fontFamily: AppFonts.heading,
+  //   fontSize: 14,
+  // },
   replies: {
     gap: 12,
     paddingTop: 12,
@@ -564,8 +995,8 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.surface,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
-    maxHeight: '86%',
-    minHeight: '58%',
+    maxHeight: '94%',
+    minHeight: '55%',
   },
   sheetHeader: {
     alignItems: 'center',
@@ -592,12 +1023,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingTop: 6,
+    paddingBottom: 2,
   },
   sortText: {
     color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 12,
+  },
+  videoPreview: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    backgroundColor: '#111111',
+    justifyContent: 'center',
   },
 });

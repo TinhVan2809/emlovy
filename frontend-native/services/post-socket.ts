@@ -1,12 +1,13 @@
 import { io, Socket } from 'socket.io-client';
 
 import { API_ORIGIN } from '@/services/api';
-import type { Post } from '@/types/auth';
+import type { Post, PostComment } from '@/types/auth';
 
 type PostEventHandlers = {
   onCreated?: (post: Post) => void;
   onUpdated?: (post: Post) => void;
   onHidden?: (payload: { post_id: number }) => void;
+  onCommented?: (payload: { post_id: number; comment_count: number; comment?: PostComment }) => void;
   onDeleted?: (payload: { post_id: number }) => void;
 };
 
@@ -40,6 +41,10 @@ export const subscribeToPostEvents = (handlers: PostEventHandlers) => {
     activeSocket.on('post:deleted', handlers.onDeleted);
   }
 
+  if (handlers.onCommented) {
+    activeSocket.on('post:commented', handlers.onCommented);
+  }
+
   if (handlers.onHidden) {
     activeSocket.on('post:hidden', handlers.onHidden);
   }
@@ -55,6 +60,10 @@ export const subscribeToPostEvents = (handlers: PostEventHandlers) => {
 
     if (handlers.onDeleted) {
       activeSocket.off('post:deleted', handlers.onDeleted);
+    }
+
+    if (handlers.onCommented) {
+      activeSocket.off('post:commented', handlers.onCommented);
     }
 
     if (handlers.onHidden) {
