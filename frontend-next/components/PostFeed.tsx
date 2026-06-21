@@ -5,7 +5,6 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import port from "@/api/api";
 import PostCard from "./PostCard";
 import { useSocket } from "@/context/SocketContext";
-import { useUser } from "@/context/useUserContext";
 
 type PostMedia = {
   post_media_id: number;
@@ -75,6 +74,7 @@ export default function PostFeed() {
     if (!socket) return;
 
     const handler = (newPost: Post) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       queryClient.setQueryData(["posts"], (old: any) => {
         if (!old) return old;
         const [firstPage, ...restPages] = old.pages;
