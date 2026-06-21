@@ -4,13 +4,13 @@ import port from "@/api/api";
 import {
   RiMoreLine,
   RiHeart3Line,
+  RiHeart3Fill,
   RiChat3Line,
   RiSendPlaneLine,
   RiBookmarkLine,
 } from "@remixicon/react";
-import { Suspense, useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Skeleton from "./Skeleton";
 
 interface PostMedia {
   post_media_id: number;
@@ -34,6 +34,7 @@ interface Post {
   like_count: number;
   comment_count: number;
   share_count: number;
+  liked_by_me?: boolean;
 }
 
 interface PostCardProps {
@@ -57,9 +58,54 @@ function PostCard({ i }: PostCardProps) {
     ? `${port}${i.author.avatar_url}`
     : "/Profile-Default.webp";
 
+  const [liked, setLiked] = useState<boolean>(i.liked_by_me ?? false);
+  const [likeCount, setLikeCount] = useState<number>(i.like_count ?? 0);
+  const [isLiking, setIsLiking] = useState<boolean>(false);
+
+  useEffect(() => {
+    setLiked(i.liked_by_me ?? false);
+    setLikeCount(i.like_count ?? 0);
+  }, [i.liked_by_me, i.like_count]);
+
+  const handleTogglePostLike = useCallback(async () => {
+    if (isLiking) return;
+
+    const nextLiked = !liked;
+    const nextLikeCount = Math.max(0, likeCount + (nextLiked ? 1 : -1));
+
+    setLiked(nextLiked);
+    setLikeCount(nextLikeCount);
+    setIsLiking(true);
+
+    try {
+      const response = await fetch(`${port}/api/posts/${i.post_id}/like`, {
+        method: nextLiked ? "POST" : "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Không thể cập nhật lượt thích.");
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        setLiked(result.data.liked_by_me);
+        setLikeCount(result.data.like_count);
+      } else {
+        throw new Error(result.message || "Có lỗi xảy ra");
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      // Revert back on error
+      setLiked(!nextLiked);
+      setLikeCount(likeCount);
+    } finally {
+      setIsLiking(false);
+    }
+  }, [liked, likeCount, isLiking, i.post_id]);
+
   return (
     <>
-      <Suspense fallback={<Skeleton />}>
         <div
           className="w-full max-w-150 md:rounded-xl bg-white mb-4"
           key={i.post_id}
@@ -99,9 +145,9 @@ function PostCard({ i }: PostCardProps) {
               {i.content}
             </p>
           </div>
-          <div className="relative w-full bg-black overflow-hidden flex justify-center">
+          <div className="relative w-full bg-black overflow-hidden flex justify-center rounded-md">
             {i.media && i.media.length > 0 && (
-              <div className="w-full flex flex-col gap-1">
+              <div className="w-full flex flex-col gap-1 rounded-md">
                 {i.media.map((m: PostMedia) => {
                   const mediaSrc = m.media_url
                     ? `${port}${m.media_url}`
@@ -109,14 +155,14 @@ function PostCard({ i }: PostCardProps) {
                   return (
                     <div
                       key={m.post_media_id}
-                      className="relative w-full min-h-75 md:min-h-100"
+                      className="relative w-full min-h-75 md:min-h-100 rounded-md"
                     >
                       <Image
                         src={mediaSrc}
                         alt="post_url"
                         fill
                         priority={false}
-                        className="object-contain"
+                        className="object-contain rounded-md"
                         sizes="(max-width: 768px) 100vw, 600px"
                         loading="eager"
                       />
@@ -128,10 +174,18 @@ function PostCard({ i }: PostCardProps) {
           </div>
           <div className="flex justify-between items-center px-4 py-3">
             <div className="flex gap-4">
-              <button className="flex items-center gap-1.5 hover:opacity-60 transition">
-                <RiHeart3Line size={24} />
+              <button
+                onClick={handleTogglePostLike}
+                disabled={isLiking}
+                className="flex items-center gap-1.5 hover:opacity-60 transition"
+              >
+                {liked ? (
+                  <RiHeart3Fill size={24} className="text-red-500 fill-current" />
+                ) : (
+                  <RiHeart3Line size={24} />
+                )}
                 <span className="text-sm font-medium">
-                  {i.like_count > 0 ? i.like_count : null}
+                  {likeCount > 0 ? likeCount : null}
                 </span>
               </button>
               <button className="flex items-center gap-1.5 hover:opacity-60 transition">
@@ -181,7 +235,6 @@ function PostCard({ i }: PostCardProps) {
             </div>
           </div>
         )}
-      </Suspense>
     </>
   );
 }

@@ -9,7 +9,8 @@ const usernamePattern = /^[a-zA-Z0-9_]{3,30}$/;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const validGenders = new Set(["0", "1", "2"]);
 
-const normalizeText = (value) => (typeof value === "string" ? value.trim() : "");
+const normalizeText = (value) =>
+  typeof value === "string" ? value.trim() : "";
 const normalizeOptionalText = (value) => {
   const text = normalizeText(value);
   return text || null;
@@ -45,7 +46,10 @@ const validateRegisterPayload = (body) => {
   }
 
   if (!usernamePattern.test(username)) {
-    throw createHttpError(400, "Username phải có 3-30 ký tự, chỉ gồm chữ, số hoặc dấu gạch dưới.");
+    throw createHttpError(
+      400,
+      "Username phải có 3-30 ký tự, chỉ gồm chữ, số hoặc dấu gạch dưới.",
+    );
   }
 
   if (email && !emailPattern.test(email)) {
@@ -72,7 +76,9 @@ const validateRegisterPayload = (body) => {
 };
 
 const validateLoginPayload = (body) => {
-  const login = normalizeText(body.login || body.username || body.email).toLowerCase();
+  const login = normalizeText(
+    body.login || body.username || body.email,
+  ).toLowerCase();
   const password = typeof body.password === "string" ? body.password : "";
 
   if (!login || !password) {
@@ -98,7 +104,10 @@ const register = async (req, res) => {
     throw createHttpError(409, message);
   }
 
-  const passwordHash = await bcrypt.hash(payload.password, config.auth.bcryptSaltRounds);
+  const passwordHash = await bcrypt.hash(
+    payload.password,
+    config.auth.bcryptSaltRounds,
+  );
 
   let user;
 
@@ -122,6 +131,13 @@ const register = async (req, res) => {
   });
 };
 
+// Object option
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+};
+
 const login = async (req, res) => {
   const { login: loginName, password } = validateLoginPayload(req.body);
   const userWithPassword = await userModel.findByLogin(loginName);
@@ -134,7 +150,10 @@ const login = async (req, res) => {
     throw createHttpError(403, "Tài khoản đang bị khóa.");
   }
 
-  const isPasswordValid = await bcrypt.compare(password, userWithPassword.password);
+  const isPasswordValid = await bcrypt.compare(
+    password,
+    userWithPassword.password,
+  );
 
   if (!isPasswordValid) {
     throw createHttpError(401, "Tài khoản hoặc mật khẩu không đúng.");
@@ -144,10 +163,8 @@ const login = async (req, res) => {
   const token = createToken(user);
 
   res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, 
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   res.status(200).json({
@@ -171,18 +188,13 @@ const me = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  res.clearCookie("token", cookieOptions);
 
   res.status(200).json({
     success: true,
     message: "Đăng xuất thành công.",
   });
-}
+};
 
 module.exports = {
   login,

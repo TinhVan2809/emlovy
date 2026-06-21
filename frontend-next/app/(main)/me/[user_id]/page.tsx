@@ -180,6 +180,7 @@ function Profile({ params }: Props) {
             <button>Cài đặt quyền riêng tư</button>
             <button>Mã QR</button>
             <button onClick={logout}>Đăng xuất</button>
+            <button onClick={() => setIsSetting(false)}>Hủy</button>
           </div>
         </div>
       )}

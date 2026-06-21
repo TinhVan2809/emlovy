@@ -8,7 +8,7 @@ const optionalAuthenticate = async (req, _res, next) => {
     const authorizationHeader = req.headers.authorization || "";
     const token = authorizationHeader.startsWith("Bearer ")
       ? authorizationHeader.slice("Bearer ".length)
-      : "";
+      : req.cookies?.token || "";
 
     if (!token) {
       next();
