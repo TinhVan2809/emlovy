@@ -1,10 +1,10 @@
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import "react-native-reanimated";
 
-import { AuthProvider } from '@/contexts/auth-context';
-import { AppColors } from '@/constants/theme';
+import { AuthProvider } from "@/contexts/auth-context";
+import { AppColors } from "@/constants/theme";
 
 const navigationTheme = {
   ...DefaultTheme,
@@ -27,7 +27,8 @@ export default function RootLayout() {
           screenOptions={{
             contentStyle: { backgroundColor: AppColors.background },
             headerShown: false,
-          }}>
+          }}
+        >
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />

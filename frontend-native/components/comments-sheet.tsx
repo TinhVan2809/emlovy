@@ -1,6 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -8,21 +7,21 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import {
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { UserAvatar } from '@/components/user-avatar';
-import { AppColors, AppFonts } from '@/constants/theme';
-import { postApi, reelApi, resolveMediaUrl } from '@/services/api';
-import { subscribeToPostEvents } from '@/services/post-socket';
-import { subscribeToReelEvents } from '@/services/reel-socket';
-import type { Post, PostComment, PostMedia } from '@/types/auth';
+import { UserAvatar } from "@/components/user-avatar";
+import { AppColors, AppFonts } from "@/constants/theme";
+import { postApi, reelApi, resolveMediaUrl } from "@/services/api";
+import { subscribeToPostEvents } from "@/services/post-socket";
+import { subscribeToReelEvents } from "@/services/reel-socket";
+import type { Post, PostComment } from "@/types/auth";
 
 const COMMENT_LIMIT = 20;
 
@@ -30,7 +29,7 @@ type CommentsSheetProps = {
   onClose: () => void;
   onPostCommentCountChange?: (postId: number, commentCount: number) => void;
   post: Post | null;
-  kind?: 'post' | 'reel';
+  kind?: "post" | "reel";
   token?: string | null;
   visible: boolean;
 };
@@ -41,16 +40,12 @@ type CommentCacheEntry = {
   page: number;
 };
 
-type ResolvedPostMedia = PostMedia & {
-  uri: string;
-};
-
 const formatRelativeTime = (value: string) => {
   const date = new Date(value);
   const diffMs = Date.now() - date.getTime();
 
   if (!Number.isFinite(diffMs)) {
-    return '';
+    return "";
   }
 
   const minute = 60 * 1000;
@@ -58,7 +53,7 @@ const formatRelativeTime = (value: string) => {
   const day = 24 * hour;
 
   if (diffMs < minute) {
-    return 'vua xong';
+    return "vua xong";
   }
 
   if (diffMs < hour) {
@@ -83,10 +78,7 @@ const patchCommentTree = (
   comments: PostComment[],
   commentId: number,
   patch: Partial<
-    Pick<
-      PostComment,
-      'like_count' | 'liked_by_me' | 'reply_count' | 'replies'
-    >
+    Pick<PostComment, "like_count" | "liked_by_me" | "reply_count" | "replies">
   >,
 ) => {
   let didPatch = false;
@@ -151,10 +143,7 @@ const addIncomingComment = (
   return didAppend ? next : comments;
 };
 
-const mergeCommentPage = (
-  current: PostComment[],
-  incoming: PostComment[],
-) => {
+const mergeCommentPage = (current: PostComment[], incoming: PostComment[]) => {
   const seen = new Set(current.map((comment) => comment.id));
   const nextItems = incoming.filter((comment) => {
     if (seen.has(comment.id)) {
@@ -169,7 +158,7 @@ const mergeCommentPage = (
 };
 
 export function CommentsSheet({
-  kind = 'post',
+  kind = "post",
   onClose,
   onPostCommentCountChange,
   post,
@@ -177,15 +166,14 @@ export function CommentsSheet({
   visible,
 }: CommentsSheetProps) {
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const [comments, setComments] = useState<PostComment[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [input, setInput] = useState('');
+  const [error, setError] = useState("");
+  const [input, setInput] = useState("");
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
   const commentsCacheRef = useRef(new Map<string, CommentCacheEntry>());
   const loadRequestRef = useRef(0);
@@ -198,11 +186,7 @@ export function CommentsSheet({
   );
 
   const writeCache = useCallback(
-    (
-      items: PostComment[],
-      nextPage = page,
-      nextHasMore = hasMore,
-    ) => {
+    (items: PostComment[], nextPage = page, nextHasMore = hasMore) => {
       if (!cacheKey) {
         return;
       }
@@ -248,7 +232,7 @@ export function CommentsSheet({
 
       try {
         const response =
-          kind === 'reel'
+          kind === "reel"
             ? await reelApi.getComments(postId, {
                 limit: COMMENT_LIMIT,
                 page: nextPage,
@@ -257,7 +241,7 @@ export function CommentsSheet({
             : await postApi.getComments(postId, {
                 limit: COMMENT_LIMIT,
                 page: nextPage,
-                sort: 'top',
+                sort: "top",
                 token,
               });
 
@@ -281,13 +265,13 @@ export function CommentsSheet({
         });
         setPage(pagination.page);
         setHasMore(pagination.hasMore);
-        setError('');
+        setError("");
       } catch (loadError) {
         if (loadRequestRef.current === requestId) {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : 'Khong the tai binh luan.',
+              : "Khong the tai binh luan.",
           );
         }
       } finally {
@@ -313,9 +297,9 @@ export function CommentsSheet({
     setComments(cached?.items || []);
     setPage(cached?.page || 1);
     setHasMore(cached?.hasMore || false);
-    setInput('');
+    setInput("");
     setReplyingTo(null);
-    setError('');
+    setError("");
     loadComments(1, true, Boolean(cached));
   }, [cacheKey, loadComments, postId, visible]);
 
@@ -349,16 +333,10 @@ export function CommentsSheet({
       onPostCommentCountChange?.(postId, payload.comment_count);
     };
 
-    return kind === 'reel'
+    return kind === "reel"
       ? subscribeToReelEvents({ onCommented: handleCommented })
       : subscribeToPostEvents({ onCommented: handleCommented });
-  }, [
-    applyIncomingComment,
-    kind,
-    onPostCommentCountChange,
-    postId,
-    visible,
-  ]);
+  }, [applyIncomingComment, kind, onPostCommentCountChange, postId, visible]);
 
   const handleLoadMore = useCallback(() => {
     if (!hasMore || isLoading || isLoadingMore) {
@@ -378,7 +356,7 @@ export function CommentsSheet({
     }
 
     if (!token) {
-      setError('Ban can dang nhap de binh luan.');
+      setError("Ban can dang nhap de binh luan.");
       return;
     }
 
@@ -389,14 +367,14 @@ export function CommentsSheet({
     try {
       const response = parent
         ? await postApi.reply(token, post.post_id, parent.id, content)
-        : kind === 'reel'
+        : kind === "reel"
           ? await reelApi.comment(token, post.post_id, content)
           : await postApi.comment(token, post.post_id, content);
 
       const nextComment = response.data.comment;
-      setInput('');
+      setInput("");
       setReplyingTo(null);
-      setError('');
+      setError("");
       onPostCommentCountChange?.(
         post.post_id,
         response.data.post.comment_count,
@@ -409,7 +387,7 @@ export function CommentsSheet({
       setError(
         submitError instanceof Error
           ? submitError.message
-          : 'Khong the gui binh luan.',
+          : "Khong the gui binh luan.",
       );
     } finally {
       setIsSubmitting(false);
@@ -428,7 +406,7 @@ export function CommentsSheet({
   const handleToggleCommentLike = useCallback(
     async (comment: PostComment) => {
       if (!token) {
-        setError('Ban can dang nhap de tha tym.');
+        setError("Ban can dang nhap de tha tym.");
         return;
       }
 
@@ -456,7 +434,7 @@ export function CommentsSheet({
             like_count: response.data.like_count,
           }),
         );
-        setError('');
+        setError("");
       } catch (likeError) {
         setCommentsWithCache((current) =>
           patchCommentTree(current, comment.id, {
@@ -467,7 +445,7 @@ export function CommentsSheet({
         setError(
           likeError instanceof Error
             ? likeError.message
-            : 'Khong the cap nhat tym.',
+            : "Khong the cap nhat tym.",
         );
       }
     },
@@ -497,9 +475,7 @@ export function CommentsSheet({
             <Text style={styles.sortText}>Top comments</Text>
           </View>
           {post ? (
-            <Text style={styles.countText}>
-              {post.comment_count} Bình luận
-            </Text>
+            <Text style={styles.countText}>{post.comment_count} Bình luận</Text>
           ) : null}
         </View>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -542,17 +518,28 @@ export function CommentsSheet({
   );
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible} presentationStyle="overFullScreen" statusBarTranslucent>
+    <Modal
+      animationType="slide"
+      onRequestClose={onClose}
+      transparent
+      visible={visible}
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+    >
       <View style={styles.overlay}>
         <Pressable onPress={onClose} style={StyleSheet.absoluteFillObject} />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={sheetStyle}
         >
           <View style={styles.grabber} />
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle}>Bình luận</Text>
-            <Pressable hitSlop={10} onPress={onClose} style={styles.closeButton}>
+            <Pressable
+              hitSlop={10}
+              onPress={onClose}
+              style={styles.closeButton}
+            >
               <Ionicons color={AppColors.text} name="close" size={22} />
             </Pressable>
           </View>
@@ -572,7 +559,7 @@ export function CommentsSheet({
               maxToRenderPerBatch={8}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.35}
-              removeClippedSubviews={Platform.OS === 'android'}
+              removeClippedSubviews={Platform.OS === "android"}
               renderItem={renderCommentItem}
               showsVerticalScrollIndicator={false}
               updateCellsBatchingPeriod={70}
@@ -583,10 +570,14 @@ export function CommentsSheet({
           {replyingTo ? (
             <View style={styles.replyBanner}>
               <Text numberOfLines={1} style={styles.replyBannerText}>
-                Dang tra loi @{replyingTo.author?.username || 'emlovy'}
+                Dang tra loi @{replyingTo.author?.username || "emlovy"}
               </Text>
               <Pressable hitSlop={8} onPress={() => setReplyingTo(null)}>
-                <Ionicons color={AppColors.muted} name="close-circle" size={18} />
+                <Ionicons
+                  color={AppColors.muted}
+                  name="close-circle"
+                  size={18}
+                />
               </Pressable>
             </View>
           ) : null}
@@ -596,7 +587,9 @@ export function CommentsSheet({
               maxLength={1000}
               multiline
               onChangeText={setInput}
-              placeholder={replyingTo ? 'Viet phan hoi...' : 'Viet binh luan...'}
+              placeholder={
+                replyingTo ? "Viet phan hoi..." : "Viet binh luan..."
+              }
               placeholderTextColor={AppColors.muted}
               style={styles.input}
               value={input}
@@ -622,90 +615,6 @@ export function CommentsSheet({
   );
 }
 
-// const PostMediaPreview = memo(function PostMediaPreview({
-//   post,
-//   width,
-// }: {
-//   post: Post;
-//   width: number;
-// }) {
-//   const previewWidth = Math.max(260, width - 36);
-//   const authorName = post.author?.name || 'Emlovy User';
-//   const authorHandle = post.author?.username
-//     ? `@${post.author.username}`
-//     : '@emlovy';
-//   const avatarUrl = resolveMediaUrl(
-//     post.author?.avatar_url || post.author?.avata,
-//   );
-//   const mediaItems = useMemo(
-//     () =>
-//       post.media
-//         .map((media) => ({
-//           ...media,
-//           uri: resolveMediaUrl(media.media_url),
-//         }))
-//         .filter((media): media is ResolvedPostMedia => Boolean(media.uri)),
-//     [post.media],
-//   );
-
-//   return (
-//     <View style={styles.postPreview}>
-//       <View style={styles.postPreviewHeader}>
-//         <UserAvatar imageUrl={avatarUrl} name={authorName} size={38} />
-//         <View style={styles.postPreviewMeta}>
-//           <Text numberOfLines={1} style={styles.postPreviewName}>
-//             {authorName}
-//           </Text>
-//           <Text numberOfLines={1} style={styles.postPreviewHandle}>
-//             {authorHandle}
-//           </Text>
-//         </View>
-//       </View>
-
-//       {post.content ? (
-//         <Text numberOfLines={3} style={styles.postPreviewCaption}>
-//           {post.content}
-//         </Text>
-//       ) : null}
-
-//       {mediaItems.length > 0 ? (
-//         <ScrollView
-//           horizontal
-//           pagingEnabled
-//           showsHorizontalScrollIndicator={false}
-//           style={styles.postMediaScroller}
-//         >
-//           {mediaItems.map((media, index) => (
-//             <View
-//               key={`${media.post_media_id}-${index}`}
-//               style={[styles.postMediaFrame, { width: previewWidth }]}
-//             >
-//               {media.type === 'image' ? (
-//                 <Image
-//                   contentFit="cover"
-//                   source={{ uri: media.uri }}
-//                   style={StyleSheet.absoluteFill}
-//                   transition={160}
-//                 />
-//               ) : (
-//                 <View style={styles.videoPreview}>
-//                   <Ionicons
-//                     color={AppColors.surface}
-//                     name="play-circle"
-//                     size={42}
-//                   />
-//                 </View>
-//               )}
-//             </View>
-//           ))}
-//         </ScrollView>
-//       ) : null}
-//     </View>
-//   );
-// });
-
-// PostMediaPreview.displayName = 'PostMediaPreview';
-
 const CommentItem = memo(function CommentItem({
   comment,
   isReply = false,
@@ -720,10 +629,10 @@ const CommentItem = memo(function CommentItem({
   rootComment?: PostComment;
 }) {
   const replyTarget = rootComment || comment;
-  const authorName = comment.author?.name || 'Emlovy User';
+  const authorName = comment.author?.name || "Emlovy User";
   const handle = comment.author?.username
     ? `@${comment.author.username}`
-    : '@emlovy';
+    : "@emlovy";
   const avatarUrl = resolveMediaUrl(
     comment.author?.avatar_url || comment.author?.avata,
   );
@@ -739,7 +648,11 @@ const CommentItem = memo(function CommentItem({
 
   return (
     <View style={[styles.commentRow, isReply ? styles.replyRow : null]}>
-      <UserAvatar imageUrl={avatarUrl} name={authorName} size={isReply ? 34 : 42} />
+      <UserAvatar
+        imageUrl={avatarUrl}
+        name={authorName}
+        size={isReply ? 34 : 42}
+      />
       <View style={styles.commentBody}>
         <View style={styles.commentBubble}>
           <View style={styles.commentMetaRow}>
@@ -755,7 +668,7 @@ const CommentItem = memo(function CommentItem({
           <Pressable onPress={handleLike} style={styles.commentAction}>
             <Ionicons
               color={comment.liked_by_me ? AppColors.accent : AppColors.muted}
-              name={comment.liked_by_me ? 'heart' : 'heart-outline'}
+              name={comment.liked_by_me ? "heart" : "heart-outline"}
               size={15}
             />
             <Text style={styles.commentActionText}>{comment.like_count}</Text>
@@ -784,18 +697,18 @@ const CommentItem = memo(function CommentItem({
   );
 });
 
-CommentItem.displayName = 'CommentItem';
+CommentItem.displayName = "CommentItem";
 
 const styles = StyleSheet.create({
   closeButton: {
-    alignItems: 'center',
+    alignItems: "center",
     height: 36,
-    justifyContent: 'center',
+    justifyContent: "center",
     width: 36,
   },
   commentAction: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 4,
     minHeight: 26,
   },
@@ -805,8 +718,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   commentActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 16,
     paddingLeft: 8,
     paddingTop: 6,
@@ -835,13 +748,13 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   commentMetaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 8,
   },
   commentRow: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
+    alignItems: "flex-start",
+    flexDirection: "row",
     gap: 10,
   },
   commentText: {
@@ -866,7 +779,7 @@ const styles = StyleSheet.create({
     fontFamily: AppFonts.body,
     fontSize: 14,
     paddingVertical: 28,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorText: {
     color: AppColors.accent,
@@ -880,7 +793,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
   },
   grabber: {
-    alignSelf: 'center',
+    alignSelf: "center",
     backgroundColor: AppColors.border,
     borderRadius: 999,
     height: 4,
@@ -898,12 +811,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   inputRow: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     backgroundColor: AppColors.surfaceMuted,
     borderColor: AppColors.border,
     borderRadius: 22,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: 18,
     marginTop: 10,
     paddingRight: 4,
@@ -912,61 +825,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.28)',
+    backgroundColor: "rgba(0, 0, 0, 0.28)",
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
-  // postMediaFrame: {
-  //   aspectRatio: 1,
-  //   backgroundColor: AppColors.surfaceMuted,
-  //   borderRadius: 8,
-  //   marginRight: 10,
-  //   overflow: 'hidden',
-  // },
-  // postMediaScroller: {
-  //   marginTop: 12,
-  // },
-  // postPreview: {
-  //   borderBottomColor: AppColors.border,
-  //   marginBottom: 12,
-  //   paddingBottom: 14,
-  // },
-  // postPreviewCaption: {
-  //   color: AppColors.text,
-  //   fontFamily: AppFonts.body,
-  //   fontSize: 14,
-  //   lineHeight: 20,
-  //   paddingTop: 10,
-  // },
-  // postPreviewHandle: {
-  //   color: AppColors.muted,
-  //   fontFamily: AppFonts.body,
-  //   fontSize: 12,
-  // },
-  // postPreviewHeader: {
-  //   alignItems: 'center',
-  //   flexDirection: 'row',
-  //   gap: 10,
-  //   paddingTop: 10,
-  // },
-  // postPreviewMeta: {
-  //   flex: 1,
-  //   gap: 2,
-  // },
-  // postPreviewName: {
-  //   color: AppColors.text,
-  //   fontFamily: AppFonts.heading,
-  //   fontSize: 14,
-  // },
   replies: {
     gap: 12,
     paddingTop: 12,
   },
   replyBanner: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 8,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     paddingHorizontal: 22,
     paddingTop: 6,
   },
@@ -980,11 +851,11 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
   },
   sendButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.accent,
     borderRadius: 18,
     height: 36,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginBottom: 4,
     width: 36,
   },
@@ -996,12 +867,12 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     maxHeight: '94%',
-    minHeight: '55%',
+    minHeight: "55%",
   },
   sheetHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 18,
     paddingTop: 10,
   },
@@ -1011,18 +882,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   sortPill: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: AppColors.accentSoft,
     borderRadius: 999,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   sortRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingBottom: 2,
   },
   sortText: {
@@ -1032,8 +903,8 @@ const styles = StyleSheet.create({
   },
   videoPreview: {
     ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    backgroundColor: '#111111',
-    justifyContent: 'center',
+    alignItems: "center",
+    backgroundColor: "#111111",
+    justifyContent: "center",
   },
 });
