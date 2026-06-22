@@ -111,7 +111,7 @@ export default function PostFeed() {
           fetchNextPage();
         }
       },
-      { threshold: 0},
+      { threshold: 0 },
     );
 
     observer.observe(target);
@@ -120,12 +120,23 @@ export default function PostFeed() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-4 md:gap-8 w-full items-center">
+      <div className="flex flex-col gap-5 md:gap-8 w-full items-center">
         {[1, 2, 3].map((n) => (
           <div
+            className="w-full max-w-xl animate-pulse flex flex-col gap-3"
             key={n}
-            className="w-full max-w-xl h-40 bg-gray-200 animate-pulse rounded-xl"
-          />
+          > 
+            <div className="flex w-full gap-2 items-center">
+              <div className="bg-gray-200 rounded-full w-10 h-10" />
+              <div className="flex flex-col gap-1">
+                <div className="bg-gray-200 rounded-2xl w-40 h-3" />
+                <div className="bg-gray-200 rounded-2xl w-20 h-2" />
+              </div>
+            </div>
+            <div className="w-full h-3 rounded-2xl bg-gray-200" />
+            <div className="w-full h-3 rounded-2xl bg-gray-200" />
+            <div className="bg-gray-200 rounded-md h-60" />
+          </div>
         ))}
       </div>
     );
