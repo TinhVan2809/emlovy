@@ -1,6 +1,12 @@
 "use client";
 import Image from "next/image";
+
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
 import port from "@/api/api";
+
 import {
   RiMoreLine,
   RiHeart3Line,
@@ -162,30 +168,39 @@ function PostCard({ i }: PostCardProps) {
             {i.content}
           </p>
         </div>
-        <div className="relative w-full bg-black overflow-hidden flex justify-center rounded-md">
+        <div className="relative w-full bg-black overflow-hidden flex justify-center md:rounded-md">
           {i.media && i.media.length > 0 && (
-            <div className="w-full flex flex-col gap-1 rounded-md">
-              {i.media.map((m: PostMedia) => {
-                const mediaSrc = m.media_url
-                  ? `${port}${m.media_url}`
-                  : "/placeholder.jpg";
-                return (
-                  <div
-                    key={m.post_media_id}
-                    className="relative w-full min-h-75 md:min-h-100 rounded-md"
-                  >
-                    <Image
-                      src={mediaSrc}
-                      alt="post_url"
-                      fill
-                      priority={false}
-                      className="object-contain rounded-md"
-                      sizes="(max-width: 768px) 100vw, 600px"
-                      loading="eager"
-                    />
-                  </div>
-                );
-              })}
+            <div className="w-full flex flex-col gap-1">
+              <Swiper
+                modules={[Pagination]}
+                pagination={i.media.length > 1 ? { type: "fraction" } : false}
+                grabCursor
+                spaceBetween={0}
+                slidesPerView={1}
+                className="w-full bg-black/60 text-white text-xs font-medium"
+              >
+                {i.media.map((m: PostMedia) => {
+                  const mediaSrc = m.media_url
+                    ? `${port}${m.media_url}`
+                    : "/placeholder.jpg";
+                  return (
+                    <SwiperSlide
+                      key={m.post_media_id}
+                      className="relative w-full min-h-75 md:min-h-100"
+                    >
+                      <Image
+                        src={mediaSrc}
+                        alt="post_url"
+                        fill
+                        priority={false}
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, 600px"
+                        loading="eager"
+                      />
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
             </div>
           )}
         </div>
