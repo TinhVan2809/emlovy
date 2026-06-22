@@ -1,8 +1,15 @@
 "use client";
 import port from "@/api/api";
 import { VscUnmute, VscMute } from "react-icons/vsc";
+import Image from "next/image";
 
 import { TbPlayerPauseFilled, TbPlayerPlayFilled } from "react-icons/tb";
+import { CiHeart, CiBookmark } from "react-icons/ci";
+import { PiShareNetworkThin } from "react-icons/pi";
+import { IoChatbubbleOutline } from "react-icons/io5";
+import { RiMoreLine } from "react-icons/ri";
+import { IoMdHeart } from "react-icons/io";
+
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
 type ReelItem = {
@@ -11,6 +18,9 @@ type ReelItem = {
   media: Array<{ media_url: string }>;
   content?: string;
   liked_by_me?: boolean;
+  like_count: number;
+  comment_count: number;
+  avatar_url?: string | null;
 };
 
 function ReelCard({
@@ -86,6 +96,10 @@ function ReelCard({
     setProgress(pct);
   };
 
+  const videoSrc = v.author?.avatar_url
+    ? `${port}${v.author?.avatar_url}`
+    : "/default-avata.jpeg";
+
   return (
     <div
       className="max-w-87.5 w-full border rounded-lg overflow-hidden bg-black shadow-lg"
@@ -151,6 +165,72 @@ function ReelCard({
               className="w-full h-1 accent-white"
               aria-label="Seek"
             />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="absolute right-0 bottom-0 z-1 inset-0 flex justify-end items-end">
+          <div className="flex w-full justify-between items-end">
+            <div className="py-8 px-5 flex flex-col gap-1">
+              <div className="flex gap-1.5 text-white items-center">
+                <div className="relative h-9 w-9">
+                  <Image
+                    src={videoSrc}
+                    alt="avatar"
+                    fill
+                    className="rounded-full"
+                    loading="eager"
+                  />
+                </div>
+                <span className="text-sm">{v.author?.name}</span>
+                <button className="text-[12px] px-2 rounded-[20px] border border-0.5">
+                  Theo dõi
+                </button>
+              </div>
+              <div className="">
+                <span className="text-white text-sm">{v.content}</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-5 py-10 px-2 justify-center items-center">
+              <div className="flex flex-col items-center">
+                {v.liked_by_me ? (
+                  <IoMdHeart size={30} className="text-red-500" />
+                ) : (
+                  <CiHeart
+                    size={41}
+                    className="text-white p-1.5 rounded-full hover:bg-white/10"
+                  />
+                )}
+                <span className="text-[10px] text-white">{v.like_count}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <IoChatbubbleOutline
+                  size={36}
+                  className="text-white p-1.5 rounded-full hover:bg-white/10"
+                />
+                <span className="text-[10px] text-white">
+                  {v.comment_count}
+                </span>
+              </div>
+              <div className="">
+                <PiShareNetworkThin
+                  size={36}
+                  className="text-white p-1.5 rounded-full hover:bg-white/10"
+                />
+              </div>
+              <div className="">
+                <CiBookmark
+                  size={36}
+                  className="text-white p-1.5 rounded-full hover:bg-white/10"
+                />
+              </div>
+              <div className="">
+                <RiMoreLine
+                  size={36}
+                  className="text-white p-1.5 rounded-full hover:bg-white/10"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -10,6 +10,9 @@ type ReelItem = {
   media: Array<{ media_url: string }>;
   content?: string;
   liked_by_me?: boolean;
+  like_count: number;
+  comment_count: number;
+  avatar_url?: string | null;
 };
 
 export default function Reels() {
@@ -20,7 +23,7 @@ export default function Reels() {
     const fetchReels = async () => {
       try {
         const response = await fetch(`${port}/api/reels`, {
-         next: {revalidate: 120}
+         credentials: 'include',
         });
         const data = await response.json();
         // Handle both nested and flat array responses
@@ -64,7 +67,7 @@ export default function Reels() {
   }, [videos]);
 
   return (
-    <div className="flex flex-col gap-8 p-4 items-center">
+    <div className="flex flex-col gap-8 p-4 items-center bg-[#121212]">
       {videos.length > 0 ? (
         <div className="flex flex-col gap-8">
           {videos.map((v: ReelItem) => (

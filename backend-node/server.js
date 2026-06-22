@@ -154,7 +154,7 @@ const attachSocketUser = async (socket) => {
       socket.join(userRoom(user.user_id));
     }
   } catch (_error) {
-    // Other realtime features can work anonymously; chat events still require socket.data.user.
+    console.error("Error attach socket", _error);
   }
 };
 
