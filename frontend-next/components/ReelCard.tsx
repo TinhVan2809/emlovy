@@ -1,5 +1,8 @@
 "use client";
 import port from "@/api/api";
+import { VscUnmute, VscMute } from "react-icons/vsc";
+
+import { TbPlayerPauseFilled, TbPlayerPlayFilled } from "react-icons/tb";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
 type ReelItem = {
@@ -20,15 +23,15 @@ function ReelCard({
   const localRef = useRef<HTMLVideoElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0); // percent 0-100
 
   useEffect(() => {
     // expose the video element to parent and ensure initial mute
     setVideoRef(localRef.current);
     if (localRef.current) {
-      localRef.current.muted = true;
-      setIsMuted(true);
+      localRef.current.muted = false;
+      setIsMuted(false);
     }
     return () => setVideoRef(null);
   }, [setVideoRef]);
@@ -98,6 +101,7 @@ function ReelCard({
             src={`${port}${v.media[0].media_url}`}
             muted={isMuted}
             playsInline
+            autoPlay
             loop
             width={1080}
             height={1920}
@@ -120,17 +124,7 @@ function ReelCard({
               aria-label={isMuted ? "Unmute" : "Mute"}
               className="bg-black/60 text-white p-2 rounded-full shadow-sm"
             >
-              {isMuted ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9.383 3.35A1 1 0 018 4v12a1 1 0 01-1.707.707L3.586 15H2a1 1 0 01-1-1V6a1 1 0 011-1h1.586l2.707-1.707A1 1 0 018 2v1.35z" />
-                  <path d="M15.536 6.464a5 5 0 010 7.072 1 1 0 01-1.414-1.414 3 3 0 000-4.244 1 1 0 011.414-1.414z" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9.383 3.35A1 1 0 018 4v12a1 1 0 01-1.707.707L3.586 15H2a1 1 0 01-1-1V6a1 1 0 011-1h1.586l2.707-1.707A1 1 0 018 2v1.35z" />
-                  <path d="M12.586 5.586a1 1 0 011.414 0 5 5 0 010 7.072 1 1 0 01-1.414-1.414 3 3 0 000-4.244 1 1 0 010-1.414z" />
-                </svg>
-              )}
+              {isMuted ? <VscMute /> : <VscUnmute />}
             </button>
           </div>
 
@@ -143,15 +137,7 @@ function ReelCard({
               aria-label={isPlaying ? "Pause" : "Play"}
               className="bg-white/90 text-black p-3 rounded-full shadow-lg"
             >
-              {isPlaying ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
+              {isPlaying ? <TbPlayerPauseFilled /> : <TbPlayerPlayFilled />}
             </button>
           </div>
 
@@ -167,10 +153,6 @@ function ReelCard({
             />
           </div>
         </div>
-      </div>
-      <div className="p-4 bg-white">
-        <p className="font-bold text-sm text-black">{v.author?.name || "Anonymous"}</p>
-        <p className="text-gray-600 text-sm">{v.content || ""}</p>
       </div>
     </div>
   );
