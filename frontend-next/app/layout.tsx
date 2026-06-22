@@ -1,6 +1,7 @@
 import { UserProvider } from "@/context/useUserContext";
 import { SocketProvider } from "@/context/SocketContext";
 import QueryProvider from "./providers/QueryProvider";
+import "./globals.css";
 
 export default function RootLayout({
   children,
