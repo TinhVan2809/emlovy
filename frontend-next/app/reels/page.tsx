@@ -50,7 +50,7 @@ export default function Reels() {
           }
         });
       },
-      { threshold: 0.6 }, // Video will play when 60% is visible
+      { threshold: 0.6 }, // Callback chỉ kích hoạt khi đúng 60% diện tích video xuất hiện trong viewport. Giá trị từ 0 (1px) đến 1 (100%). 
     );
 
     const currentRefs = videoRefs.current;

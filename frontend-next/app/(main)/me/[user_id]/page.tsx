@@ -59,7 +59,7 @@ function Profile({ params }: Props) {
     const response = await fetch(`${port}/api/profile/me?user_id=${user_id}`, {
       method: "GET",
       credentials: "include",
-      cache: 'force-cache',
+      cache: "force-cache",
     });
 
     const data = await response.json();
@@ -174,13 +174,31 @@ function Profile({ params }: Props) {
 
       {isSetting && (
         <div className="fixed z-1000 top-0 left-0 w-full h-screen bg-black/10 flex justify-center items-center">
-          <div className="bg-white flex flex-col gap-5 p-3 rounded-2xl">
-            <button>Cài đặt trang cá nhân</button>
-            <button>Cài đặt hệ thống</button>
-            <button>Cài đặt quyền riêng tư</button>
-            <button>Mã QR</button>
-            <button onClick={logout}>Đăng xuất</button>
-            <button onClick={() => setIsSetting(false)}>Hủy</button>
+          <div className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+              Cài đặt trang cá nhân
+            </button>
+            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+              Cài đặt hệ thống
+            </button>
+            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+              Cài đặt quyền riêng tư
+            </button>
+            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+              Mã QR
+            </button>
+            <button
+              className="p-4 border-b border-black/10 hover:bg-gray-50 transition"
+              onClick={logout}
+            >
+              Đăng xuất
+            </button>
+            <button
+              className="p-4 border-b border-black/10 hover:bg-gray-50 transition"
+              onClick={() => setIsSetting(false)}
+            >
+              Hủy
+            </button>
           </div>
         </div>
       )}

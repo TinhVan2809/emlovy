@@ -52,12 +52,8 @@ function PostCard({ i }: PostCardProps) {
   const router = useRouter();
   const [postOptionsMenu, setPostOptionsMenu] = useState<boolean>(false);
 
-  // state lưu giá trị của post_id
-  const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
-
   // hàm mở PostOptionsMenu
-  const onPostOptionsMenu = (post_id: number | null) => {
-    setSelectedPostId(post_id);
+  const onPostOptionsMenu = () => {
     setPostOptionsMenu((v) => !v);
   };
 
@@ -116,15 +112,16 @@ function PostCard({ i }: PostCardProps) {
   }, [liked, likeCount, isLiking, i.post_id]);
 
   // Mở comment
-  const onToggleComment = (post_id: number | null) => {
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const onToggleComment = (post: Post | null) => {
     setIsComment((v) => !v);
-    setSelectedPostId(post_id);
+    setSelectedPost(post);
   };
 
   // Đóng comment
   const onCloseComment = () => {
     setIsComment((v) => !v);
-    setSelectedPostId(null);
+    setSelectedPost(null);
   };
 
   return (
@@ -159,7 +156,7 @@ function PostCard({ i }: PostCardProps) {
             </div>
             <div
               className="cursor-pointer duration-150 hover:bg-gray-100 p-2 rounded-full"
-              onClick={() => onPostOptionsMenu(i.post_id)}
+              onClick={() => onPostOptionsMenu()}
             >
               <RiMoreLine size={20} />
             </div>
@@ -222,7 +219,7 @@ function PostCard({ i }: PostCardProps) {
             </button>
             <button
               className="flex items-center gap-1.5 hover:opacity-60 transition"
-              onClick={() => onToggleComment(i.post_id)}
+              onClick={() => onToggleComment(i)}
             >
               <RiChat3Line size={24} />
               <span className="text-sm font-medium">
@@ -246,7 +243,7 @@ function PostCard({ i }: PostCardProps) {
       {postOptionsMenu && (
         <div
           className="w-full h-screen bg-black/40 fixed inset-0 z-1000 flex justify-center items-center p-4"
-          onClick={() => onPostOptionsMenu(null)}
+          onClick={() => onPostOptionsMenu()}
         >
           <div
             className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
@@ -263,7 +260,7 @@ function PostCard({ i }: PostCardProps) {
             </button>
             <button
               className="p-4 hover:bg-gray-50 transition"
-              onClick={() => onPostOptionsMenu(null)}
+              onClick={() => onPostOptionsMenu()}
             >
               Hủy
             </button>
@@ -276,7 +273,7 @@ function PostCard({ i }: PostCardProps) {
         <div className="">
           <CommentSheet
             onClose={onCloseComment}
-            post_id={selectedPostId}
+            post={selectedPost}
             kind={"post"}
           />
         </div>
