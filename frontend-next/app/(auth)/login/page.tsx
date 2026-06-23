@@ -67,7 +67,6 @@ function Login() {
           await refreshUser();
           await router.push("/admin/dashboard");
         }
-        console.log("Login success", data);
       } else {
         alert(data.message || "Login failed");
       }
