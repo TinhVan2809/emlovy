@@ -9,6 +9,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 import { RiHeart3Line, RiHeart3Fill } from "@remixicon/react";
 import { useSocket } from "@/context/SocketContext";
+import {RiAddLine, RiSendInsFill} from '@remixicon/react';
 
 interface PostMedia {
   post_media_id: number;
@@ -81,12 +82,14 @@ function CommentItem({ comment }: { comment: Comment }) {
         />
       </div>
       <div className="flex flex-col w-full">
-        <div className="bg-gray-100 rounded-xl px-3 py-2">
-          <p className="font-semibold text-sm">{comment.author.name}</p>
+        <div className="bg-gray-100 rounded-xl px-3 py-2 w-fit">
+         <p className="flex items-center gap-3 md:gap-5">
+           <span className="font-semibold text-sm">{comment.author.name}</span>
+           <span className="text-[10px] text-black/50">{new Date(comment.created_at).toLocaleDateString()}</span>
+         </p>
           <p className="text-sm">{comment.content}</p>
         </div>
         <div className="flex gap-3 text-xs px-3 text-gray-500">
-          <span>{new Date(comment.created_at).toLocaleDateString()}</span>
           <button className="font-semibold">Thích</button>
           <button className="font-semibold">Phản hồi</button>
           {comment.like_count > 0 && (
@@ -200,9 +203,6 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
 
   if (!post) return null;
 
-  const authorAvatarSrc = post.author?.avatar_url
-    ? `${port}${post.author.avatar_url}`
-    : "/Profile-Default.webp";
 
   return (
     <div
@@ -210,10 +210,10 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-7xl h-[90vh] bg-white shadow-2xl rounded-lg flex overflow-hidden"
+        className="w-full h-full md:h-[90vh] md:max-w-7xl bg-white shadow-2xl md:rounded-lg flex flex-col md:flex-row overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-1/2 bg-black flex items-center justify-center">
+        <div className="w-full h-[55%] md:h-full md:w-1/2 bg-black flex items-center justify-center">
           {post.media && post.media.length > 0 && (
             <Swiper
               modules={[SwiperPagination]}
@@ -238,20 +238,7 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
             </Swiper>
           )}
         </div>
-        <div className="w-1/2 flex flex-col">
-          <div className="p-4 border-b">
-            <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10">
-                <Image
-                  src={authorAvatarSrc}
-                  alt="avatar"
-                  fill
-                  className="rounded-full object-cover"
-                />
-              </div>
-              <p className="font-semibold text-sm">{post.author?.name}</p>
-            </div>
-          </div>
+        <div className="w-full md:w-1/2 flex flex-col flex-1">
           <div
             ref={commentsContainerRef}
             onScroll={handleScroll}
@@ -268,21 +255,35 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
             )}
             {isLoading && (
               <div className="w-full flex flex-col gap-4 items-center justify-center animate-pulse">
-                <div className="w-full flex gap-1 flex-col">
+                <div className="w-60 flex gap-1 flex-col">
                   <div className="flex items-center gap-1.5">
                     <div className="bg-gray-100 rounded-full w-8 h-8"></div>
                     <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
                   </div>
                   <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
                 </div>
-                <div className="w-full flex gap-1 flex-col">
+                <div className="w-40 flex gap-1 flex-col">
                   <div className="flex items-center gap-1.5">
                     <div className="bg-gray-100 rounded-full w-8 h-8"></div>
                     <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
                   </div>
                   <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
                 </div>
-                <div className="w-full flex gap-1 flex-col">
+                <div className="w-50 flex gap-1 flex-col">
+                  <div className="flex items-center gap-1.5">
+                    <div className="bg-gray-100 rounded-full w-8 h-8"></div>
+                    <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
+                  </div>
+                  <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
+                </div>
+                <div className="w-50 flex gap-1 flex-col">
+                  <div className="flex items-center gap-1.5">
+                    <div className="bg-gray-100 rounded-full w-8 h-8"></div>
+                    <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
+                  </div>
+                  <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
+                </div>
+                <div className="w-70 flex gap-1 flex-col">
                   <div className="flex items-center gap-1.5">
                     <div className="bg-gray-100 rounded-full w-8 h-8"></div>
                     <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
@@ -292,12 +293,24 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
               </div>
             )}
           </div>
-          <div className="p-4 border-t">
-            <input
-              name=""
-              placeholder="Nhập bình luận của bạn"
-              className="w-full outline-0"
-            />
+          <div className="p-4">
+            <div className="p-4 bg-gray-200 rounded-2xl flex tems-center justify-between">
+            <div className="flex gap-2">
+               <p className="p-1 rounded-full bg-white cursor-pointer">
+                <RiAddLine size={22}/>
+               </p>
+            
+               <input
+                name=""
+                placeholder="Nhập bình luận của bạn"
+                className="w-full outline-0"
+              />
+           
+            </div>
+            <button className="">
+              <RiSendInsFill size={22}/>
+            </button>
+          </div>
           </div>
         </div>
       </div>
