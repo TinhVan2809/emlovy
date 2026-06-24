@@ -41,7 +41,7 @@ const createApp = () => {
 
   // Fall back to common localhost origins for development
   const allowedOrigins = [
-    (config.cors.origins.length > 0 ? config.cors.origins : []),
+    config.cors.origins.length > 0 ? config.cors.origins : [],
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
@@ -65,7 +65,7 @@ const createApp = () => {
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH ", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   };
 
