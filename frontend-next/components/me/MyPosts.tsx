@@ -15,7 +15,6 @@ type Props = {
 
 function MyPosts({myPosts}: Props) {
 
-    console.log(myPosts);
     return ( 
        <div className="flex flex-col gap-4 md:gap-8 items-center w-full">
          {myPosts.map((post: Post) => (

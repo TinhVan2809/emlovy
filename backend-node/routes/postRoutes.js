@@ -17,23 +17,81 @@ router.get("/", optionalAuthenticate, asyncHandler(postController.getFeed));
 router.get("/me", authenticate, asyncHandler(postController.getMyPosts));
 
 // Public posts by user
-router.get("/user/:userId", optionalAuthenticate, asyncHandler(postController.getUserPosts));
+router.get(
+  "/user/:userId",
+  optionalAuthenticate,
+  asyncHandler(postController.getUserPosts),
+);
 
 // Post reactions and comments
-router.post("/:id/like", authenticate, asyncHandler(postInteractionController.likePost));
-router.delete("/:id/like", authenticate, asyncHandler(postInteractionController.unlikePost));
-router.get("/:id/comments", optionalAuthenticate, asyncHandler(postInteractionController.getComments));
-router.post("/:id/comments", authenticate, asyncHandler(postInteractionController.createComment));
+router.post(
+  "/:id/like",
+  authenticate,
+  asyncHandler(postInteractionController.likePost),
+);
+
+// unlike post
+router.delete(
+  "/:id/like",
+  authenticate,
+  asyncHandler(postInteractionController.unlikePost),
+);
+
+// Get comments
+router.get(
+  "/:id/comments",
+  optionalAuthenticate,
+  asyncHandler(postInteractionController.getComments),
+);
+
+// Upload comments
+router.post(
+  "/:id/comments",
+  authenticate,
+  asyncHandler(postInteractionController.createComment),
+);
+
+// Replise comments
 router.post(
   "/:id/comments/:commentId/replies",
   authenticate,
   asyncHandler(postInteractionController.createReply),
 );
-router.post("/comments/:commentId/like", authenticate, asyncHandler(postInteractionController.likeComment));
-router.delete("/comments/:commentId/like", authenticate, asyncHandler(postInteractionController.unlikeComment));
+
+// like comment
+router.post(
+  "/comments/:commentId/like",
+  authenticate,
+  asyncHandler(postInteractionController.likeComment),
+);
+
+// Unlike comment
+router.delete(
+  "/comments/:commentId/like",
+  authenticate,
+  asyncHandler(postInteractionController.unlikeComment),
+);
+
+// Edit comment
+router.patch(
+  "/comments/:commentId",
+  authenticate,
+  asyncHandler(postInteractionController.editComment),
+);
+
+// Delete comment
+router.delete(
+  "/comments/:commentId",
+  authenticate,
+  asyncHandler(postInteractionController.deleteCommentByUser),
+)
 
 // Following feed
-router.get("/following", authenticate, asyncHandler(postController.getFollowingFeed));
+router.get(
+  "/following",
+  authenticate,
+  asyncHandler(postController.getFollowingFeed),
+);
 
 // Create post (authenticated)
 router.post(

@@ -140,6 +140,51 @@ const unlikeComment = async (req, res) => {
   res.status(200).json({ success: true, data });
 };
 
+
+// Delete comment
+const deleteCommentByUser = async (req, res) => {
+  const user = requireUser(req);
+  const commentId = parsePositiveInteger(req.params.commentId, "Comment id");
+  const data = await postInteractionModel.deleteCommentByUser({
+    commentId, 
+    userId: user.user_id,
+  });
+
+  const io = getIo();
+  if (io) {
+    io.emit("comment:deleted", {
+      commentId: data.deleted_comment_id,
+      postId: data.post_id,
+    });
+    io.emit("post:comment_count_updated", {
+      post_id: data.post_id,
+      comment_count: data.post.comment_count,
+    });
+  }
+
+  res.status(200).json({ success: true, data });
+};
+
+const editComment = async (req, res) => {
+  const user = requireUser(req);
+  const commentId = parsePositiveInteger(req.params.commentId, "Comment id");
+  const content = normalizeContent(req.body?.content);
+
+  const updatedComment = await postInteractionModel.editComment({
+    commentId,
+    userId: user.user_id,
+    content,
+  });
+
+  const io = getIo();
+  if (io) {
+    // Broadcast the update to all clients.
+    io.emit("comment:updated", updatedComment);
+  }
+
+  res.status(200).json({ success: true, data: updatedComment });
+};
+
 module.exports = {
   createComment,
   createReply,
@@ -148,4 +193,6 @@ module.exports = {
   likePost,
   unlikeComment,
   unlikePost,
+  deleteCommentByUser,
+  editComment,
 };

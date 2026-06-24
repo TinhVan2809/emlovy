@@ -98,7 +98,7 @@ const findPostForUpdate = async (connection, postId) => {
 const findCommentForUpdate = async (connection, commentId) => {
   const [rows] = await connection.execute(
     `
-      SELECT id, post_id, parent_id, like_count
+      SELECT id, post_id, parent_id, like_count, user_id, content
       FROM comments
       WHERE id = ? AND is_deleted = 0
       LIMIT 1
@@ -368,6 +368,92 @@ const unlikeComment = async ({ commentId, userId }) => {
   return next;
 };
 
+const deleteCommentByUser = async ({ commentId, userId }) => {
+  const result = await withTransaction(async (connection) => {
+    // Step 1: Find the target comment, its post, and verify ownership.
+    const comment = await findCommentForUpdate(connection, commentId);
+
+    if (!comment) {
+      throw createHttpError(404, "Khong tim thay binh luan.");
+    }
+
+    // Also lock the post row to safely update the counter.
+    const post = await findPostForUpdate(connection, comment.post_id);
+    if (!post) {
+      throw createHttpError(404, "Không tìm thấy bài viết của bình luận.");
+    }
+
+    if (comment.user_id !== userId) {
+      throw createHttpError(403, "Bạn không có quyền xóa bình luận này.");
+    }
+
+    // Step 2: Identify all comments to be deleted (the comment itself and all its replies recursively).
+    const [allCommentIdsRows] = await connection.execute(
+      `WITH RECURSIVE comment_tree AS (
+        SELECT id FROM comments WHERE id = ?
+        UNION ALL
+        SELECT c.id FROM comments c JOIN comment_tree ct ON c.parent_id = ct.id WHERE c.is_deleted = 0
+       ) SELECT id FROM comment_tree`,
+      [commentId],
+    );
+    const allCommentIds = allCommentIdsRows.map((row) => row.id);
+    const commentsToDeleteCount = allCommentIds.length;
+
+    if (commentsToDeleteCount > 0) {
+      const placeholders = allCommentIds.map(() => "?").join(",");
+
+      // Step 3: Delete all likes associated with these comments.
+      await connection.execute(`DELETE FROM likes WHERE comment_id IN (${placeholders})`, allCommentIds);
+
+      // Step 4: Delete all comments in the tree.
+      await connection.execute(`DELETE FROM comments WHERE id IN (${placeholders})`, allCommentIds);
+
+      // Step 5: Update the comment count on the parent post.
+      await connection.execute(
+        `UPDATE posts SET comment_count = GREATEST(0, comment_count - ?) WHERE post_id = ?`,
+        [commentsToDeleteCount, comment.post_id],
+      );
+    }
+
+    const updatedPost = await getPostSummary(comment.post_id, "comment_count, visibility");
+
+    return {
+      deleted_comment_id: commentId,
+      post_id: comment.post_id,
+      post: updatedPost,
+    };
+  });
+
+  return result;
+};
+
+const editComment = async ({ commentId, userId, content }) => {
+  await withTransaction(async (connection) => {
+    // Step 1: Find the comment and verify ownership.
+    const comment = await findCommentForUpdate(connection, commentId);
+
+    if (!comment) {
+      throw createHttpError(404, "Không tìm thấy bình luận.");
+    }
+
+    if (comment.user_id !== userId) {
+      throw createHttpError(403, "Bạn không có quyền chỉnh sửa bình luận này.");
+    }
+
+    // Step 2: Update the comment only if content has changed.
+    if (comment.content !== content) {
+      await connection.execute(
+        `UPDATE comments SET content = ?, is_edited = 1 WHERE id = ?`,
+        [content, commentId],
+      );
+    }
+  });
+
+  // Step 3: Fetch the updated comment with all its details to return.
+  const updatedComment = await findCommentById(commentId, userId);
+  return updatedComment;
+};
+
 const attachReplies = async (comments, viewerId = null) => {
   if (!comments.length) {
     return comments;
@@ -464,4 +550,6 @@ module.exports = {
   likePost,
   unlikeComment,
   unlikePost,
+  deleteCommentByUser,
+  editComment,
 };
