@@ -127,7 +127,7 @@ function PostCard({ i }: PostCardProps) {
   return (
     <>
       <div
-        className="w-full max-w-150 md:rounded-xl bg-white mb-4"
+        className="w-full max-w-150 lg:rounded-xl bg-white mb-4"
         key={i.post_id}
       >
         <div className="flex flex-col gap-3 p-4">

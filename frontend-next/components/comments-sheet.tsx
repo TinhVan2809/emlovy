@@ -8,8 +8,9 @@ import { Pagination as SwiperPagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import { RiHeart3Line, RiHeart3Fill } from "@remixicon/react";
-import { useSocket } from "@/context/SocketContext";import { useUser } from "@/context/useUserContext";
-import {RiAddLine, RiSendInsFill, RiMore2Fill} from '@remixicon/react';
+import { useSocket } from "@/context/SocketContext";
+import { useUser } from "@/context/useUserContext";
+import { RiAddLine, RiSendInsFill, RiMore2Fill, RiMessage3Line } from "@remixicon/react";
 
 interface PostMedia {
   post_media_id: number;
@@ -60,6 +61,12 @@ type Pagination = {
   totalPages: number;
   hasMore: boolean;
 };
+type User = {
+  user_id: string;
+  name: string;
+  username?: string;
+  avatar_url?: string | null;
+};
 
 type Props = {
   onClose: React.MouseEventHandler<HTMLDivElement>;
@@ -74,7 +81,7 @@ function CommentItem({
 }: {
   comment: Comment;
   onReply: (comment: Comment) => void;
-  currentUser: any;
+  currentUser: User | null;
 }) {
   const avatarSrc = comment.author?.avatar_url
     ? `${port}${comment.author.avatar_url}`
@@ -91,58 +98,66 @@ function CommentItem({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const hasReplies = comment.replies && comment.replies.length > 0;
-  const isOwner = currentUser?.user_id === comment.author.user_id; // Nếu user_id của người đang đăng nhập bằng user_id của người bình luận => isOwner = true.
+  const isOwner = Number(currentUser?.user_id) === comment.author.user_id; // Nếu user_id của người đang đăng nhập bằng user_id của người bình luận => isOwner = true.
 
   const handleDelete = async () => {
-    if (isDeleting || !window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
+    if (
+      isDeleting ||
+      !window.confirm("Bạn có chắc chắn muốn xóa bình luận này?")
+    )
+      return;
     setIsDeleting(true);
     try {
-        const response = await fetch(`${port}/api/posts/comments/${comment.id}`, {
-            method: 'DELETE',
-            credentials: 'include'
-        });
-        if (!response.ok) throw new Error("Failed to delete comment");
-        // Socket event will handle UI removal
-        setIsMenuOpen(false);
+      const response = await fetch(`${port}/api/posts/comments/${comment.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to delete comment");
+      // Socket event will handle UI removal
+      setIsMenuOpen(false);
     } catch (error) {
-        console.error("Error deleting comment:", error);
-        alert("Không thể xóa bình luận. Vui lòng thử lại.");
+      console.error("Error deleting comment:", error);
+      alert("Không thể xóa bình luận. Vui lòng thử lại.");
     } finally {
-        setIsDeleting(false);
+      setIsDeleting(false);
     }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (isSubmittingEdit || !editedContent.trim() || editedContent.trim() === comment.content) {
-        setIsEditing(false);
-        return;
-      };
-      setIsSubmittingEdit(true);
-      try {
-          const response = await fetch(`${port}/api/posts/comments/${comment.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ content: editedContent.trim() })
-          });
-          if (!response.ok) throw new Error("Failed to update comment");
-          // On success, just exit edit mode. Socket event will update the content.
-          setIsEditing(false);
-          setIsMenuOpen(false);
-      } catch (error) {
-          console.error("Error updating comment:", error);
-          alert("Không thể cập nhật bình luận. Vui lòng thử lại.");
-      } finally {
-          setIsSubmittingEdit(false);
-      }
+    e.preventDefault();
+    if (
+      isSubmittingEdit ||
+      !editedContent.trim() ||
+      editedContent.trim() === comment.content
+    ) {
+      setIsEditing(false);
+      return;
+    }
+    setIsSubmittingEdit(true);
+    try {
+      const response = await fetch(`${port}/api/posts/comments/${comment.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ content: editedContent.trim() }),
+      });
+      if (!response.ok) throw new Error("Failed to update comment");
+      // On success, just exit edit mode. Socket event will update the content.
+      setIsEditing(false);
+      setIsMenuOpen(false);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      alert("Không thể cập nhật bình luận. Vui lòng thử lại.");
+    } finally {
+      setIsSubmittingEdit(false);
+    }
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditedContent(comment.content);
     setIsMenuOpen(false);
-  }
+  };
   const handleToggleLike = async () => {
     if (isLiking) return;
     setIsLiking(true);
@@ -203,27 +218,60 @@ function CommentItem({
               autoFocus
             />
             <div className="flex items-center gap-2 mt-2 text-xs">
-              <button type="submit" disabled={isSubmittingEdit} className="font-semibold text-blue-600">Lưu</button>
-              <button type="button" onClick={handleCancelEdit} className="font-semibold">Hủy</button>
+              <button
+                type="submit"
+                disabled={isSubmittingEdit}
+                className="font-semibold text-blue-600"
+              >
+                Lưu
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="font-semibold"
+              >
+                Hủy
+              </button>
             </div>
           </form>
         ) : (
           <>
             <div className="bg-gray-100 rounded-xl px-3 py-2 w-fit relative group">
               <p className="flex items-center gap-3 md:gap-5">
-                <span className="font-semibold text-sm">{comment.author.name}</span>
-                <span className="text-[10px] text-black/50">{new Date(comment.created_at).toLocaleDateString()}</span>
+                <span className="font-semibold text-sm">
+                  {comment.author.name}
+                </span>
+                <span className="text-[10px] text-black/50">
+                  {new Date(comment.created_at).toLocaleDateString()}
+                </span>
               </p>
               <p className="text-sm">{comment.content}</p>
               {isOwner && (
                 <div className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => setIsMenuOpen(o => !o)} className="p-1 bg-white rounded-full shadow">
+                  <button
+                    onClick={() => setIsMenuOpen((o) => !o)}
+                    className="p-1 bg-white rounded-full shadow"
+                  >
                     <RiMore2Fill size={14} />
                   </button>
                   {isMenuOpen && (
                     <div className="absolute top-full right-0 mt-1 bg-white shadow-lg rounded-md text-sm w-28 z-10">
-                      <button onClick={() => { setIsEditing(true); setIsMenuOpen(false); }} className="block w-full text-left px-3 py-2 hover:bg-gray-100">Chỉnh sửa</button>
-                      <button onClick={handleDelete} disabled={isDeleting} className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600">Xóa</button>
+                      <button
+                        onClick={() => {
+                          setIsEditing(true);
+                          setIsMenuOpen(false);
+                        }}
+                        className="block w-full text-left px-3 py-2 hover:bg-gray-100"
+                      >
+                        Chỉnh sửa
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600"
+                      >
+                        Xóa
+                      </button>
                     </div>
                   )}
                 </div>
@@ -252,20 +300,29 @@ function CommentItem({
               <span>{likeCount}</span>
             </div>
           )}
-          {comment.is_edited && !isEditing && <span className="text-gray-400">(đã chỉnh sửa)</span>}
+          {comment.is_edited && !isEditing && (
+            <span className="text-gray-400">(đã chỉnh sửa)</span>
+          )}
         </div>
         {hasReplies && (
           <button
             onClick={() => setAreRepliesVisible(!areRepliesVisible)}
             className="w-fit text-xs font-semibold text-gray-600 mt-1 px-3 hover:underline"
           >
-            {areRepliesVisible ? "Ẩn phản hồi" : `Xem ${comment.replies.length} phản hồi`}
+            {areRepliesVisible
+              ? "Ẩn phản hồi"
+              : `Xem ${comment.replies.length} phản hồi`}
           </button>
         )}
         {hasReplies && areRepliesVisible && (
           <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
             {comment.replies.map((reply) => (
-              <CommentItem key={reply.id} comment={reply} onReply={onReply} currentUser={currentUser} />
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                onReply={onReply}
+                currentUser={currentUser}
+              />
             ))}
           </div>
         )}
@@ -274,13 +331,14 @@ function CommentItem({
   );
 }
 
-export default function CommentSheet({ onClose, post, kind }: Props) {
+export default function CommentSheet({ onClose, post }: Props) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const { socket } = useSocket();  const { user: currentUser } = useUser();
+  const { socket } = useSocket();
+  const { user: currentUser } = useUser();
   const [commentContent, setCommentContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
@@ -341,36 +399,36 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
         });
       }
     };
-    
+
     const handleUpdatedComment = (updatedComment: Comment) => {
       const updateRecursive = (items: Comment[]): Comment[] => {
-          return items.map(item => {
-              if (item.id === updatedComment.id) {
-                  return { ...item, ...updatedComment };
-              }
-              if (item.replies && item.replies.length > 0) {
-                  return { ...item, replies: updateRecursive(item.replies) };
-              }
-              return item;
-          });
+        return items.map((item) => {
+          if (item.id === updatedComment.id) {
+            return { ...item, ...updatedComment };
+          }
+          if (item.replies && item.replies.length > 0) {
+            return { ...item, replies: updateRecursive(item.replies) };
+          }
+          return item;
+        });
       };
-      setComments(prev => updateRecursive(prev));
+      setComments((prev) => updateRecursive(prev));
     };
 
     const handleDeletedComment = ({ commentId }: { commentId: number }) => {
       const removeRecursive = (items: Comment[], id: number): Comment[] => {
-          return items.reduce((acc, item) => {
-              if (item.id === id) {
-                  return acc; // Skip this item
-              }
-              if (item.replies) {
-                  item.replies = removeRecursive(item.replies, id);
-              }
-              acc.push(item);
-              return acc;
-          }, [] as Comment[]);
+        return items.reduce((acc, item) => {
+          if (item.id === id) {
+            return acc; // Skip this item
+          }
+          if (item.replies) {
+            item.replies = removeRecursive(item.replies, id);
+          }
+          acc.push(item);
+          return acc;
+        }, [] as Comment[]);
       };
-      setComments(prev => removeRecursive(prev, commentId));
+      setComments((prev) => removeRecursive(prev, commentId));
     };
 
     socket.on("post:commented", handleNewComment);
@@ -455,7 +513,6 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
 
   if (!post) return null;
 
-
   return (
     <div
       className="w-full h-screen fixed top-0 right-0 z-10000 bg-black/50 flex justify-center items-center"
@@ -508,7 +565,11 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
                 ))}
               </div>
             ) : (
-              <p>Chưa có bình luận nào.</p>
+              <div className="flex flex-col justify-center items-center h-full">
+                <RiMessage3Line size={40} className="opacity-45"/>
+                  <span>Chưa có bình luận nào</span>
+                  <span>Hãy trở thành người bình luận đầu tiên</span>
+              </div>
             )}
             {isLoading && (
               <div className="w-full flex flex-col gap-4 items-center justify-center animate-pulse">
@@ -555,7 +616,9 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
               <div className="text-sm text-gray-500 mb-2 flex justify-between items-center">
                 <span>
                   Đang trả lời{" "}
-                  <span className="font-semibold">{replyingTo.author.name}</span>
+                  <span className="font-semibold">
+                    {replyingTo.author.name}
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -568,7 +631,10 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
             )}
             <div className="p-2 bg-gray-100 rounded-2xl flex items-center justify-between">
               <div className="flex items-center gap-2 w-full">
-                <button type="button" className="p-1 rounded-full bg-white cursor-pointer">
+                <button
+                  type="button"
+                  className="p-1 rounded-full bg-white cursor-pointer"
+                >
                   <RiAddLine size={22} />
                 </button>
 
@@ -584,7 +650,11 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
                   disabled={isSubmitting}
                 />
               </div>
-              <button type="submit" disabled={!commentContent.trim() || isSubmitting} className="text-blue-500 disabled:text-gray-400 p-2">
+              <button
+                type="submit"
+                disabled={!commentContent.trim() || isSubmitting}
+                className="text-blue-500 disabled:text-gray-400 p-2"
+              >
                 <RiSendInsFill size={22} />
               </button>
             </div>

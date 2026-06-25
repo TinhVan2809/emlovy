@@ -4,7 +4,17 @@ import { useState, useRef } from "react";
 import { RiAddLargeLine } from "@remixicon/react";
 import port from "@/api/api";
 import Image from "next/image";
-import { useSocket } from "@/context/SocketContext";
+// import { useSocket } from "@/context/SocketContext";
+
+import {
+  RiEmotionHappyLine,
+  RiAtLine,
+  RiHashtag,
+  RiMapPinLine,
+  RiLinksLine,
+  RiTimer2Line,
+  RiSendPlaneFill
+} from "@remixicon/react";
 
 export default function CreatePost() {
   const [content, setContent] = useState("");
@@ -12,7 +22,7 @@ export default function CreatePost() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { socket } = useSocket();
+  // const { socket } = useSocket();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Hiển thị tên file đã chọn (nếu cần)
@@ -64,7 +74,8 @@ export default function CreatePost() {
       }
 
       if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (_err) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (_err: any) {
       setError(_err.message || "Đã xảy ra lỗi không xác định.");
     } finally {
       setLoading(false);
@@ -90,16 +101,22 @@ export default function CreatePost() {
           <div className="w-full">
             <div className="flex flex-wrap gap-4">
               {media.map((m, index) => (
-              <div className="" key={index}>
-                {m.type.startsWith("image/") ? (
-                  <div className="relative w-30 h-30">
-                    <Image src={URL.createObjectURL(m)} fill alt="image" className="rounded-md" loading="eager"/>
-                  </div>
-                ) : (
-                  ""
-                )}
-              </div>
-            ))}
+                <div className="" key={index}>
+                  {m.type.startsWith("image/") ? (
+                    <div className="relative w-30 h-30">
+                      <Image
+                        src={URL.createObjectURL(m)}
+                        fill
+                        alt="image"
+                        className="rounded-md object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    ""
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -120,25 +137,73 @@ export default function CreatePost() {
           </div>
         </div>
         <hr className="h-1 w-full border-black/10" />
-        <div className="w-full flex items-center justify-between bg-[#fafafa] px-10 py-5">
-          <div className="flex gap-2 items-center">
-            <button className="border border-gray-200 px-3 py-1 rounded-2xl text-sm text-black/50">
-              Save draft
-            </button>
-            <button className="border border-gray-200 px-3 py-1 rounded-2xl text-sm text-black/50">
-              Preview
-            </button>
-            <button className="border border-gray-200 px-3 py-1 rounded-2xl text-sm text-black/50">
-              Schedule
-            </button>
+        <div className="w-full flex items-center justify-between">
+          <div className="flex flex-col gap-3 w-full pt-5">
+            <div className="flex items-center gap-3 px-10">
+              <button className="p-1 rounded-md hover:bg-[#c0c0cc72]">
+                <RiEmotionHappyLine
+                  size={18}
+                  className="text-[#aaaab6]"
+                />
+              </button>
+              <button className="p-1 rounded-md hover:bg-[#c0c0cc72]">
+                <RiAtLine
+                  size={18}
+                  className="text-[#aaaab6]"
+                />
+              </button>
+              <button className="p-1 rounded-md hover:bg-[#c0c0cc72]">
+                <RiHashtag
+                  size={18}
+                  className="text-[#aaaab6]"
+                />
+              </button>
+              <button className="p-1 rounded-md hover:bg-[#c0c0cc72]">
+                <RiMapPinLine
+                  size={18}
+                  className="text-[#aaaab6]"
+                />
+              </button>
+              <button className="p-1 rounded-md hover:bg-[#c0c0cc72]">
+                <RiLinksLine
+                  size={18}
+                  className="text-[#aaaab6]"
+                />
+              </button>
+              <button className="p-1 rounded-md hover:bg-[#c0c0cc72]">
+                <RiTimer2Line
+                  size={18}
+                  className="text-[#aaaab6]"
+                />
+              </button>
+            </div>
+            <div className="flex flex-col md:flex-row gap-2 items-center bg-[#fafafa] p-5 md:px-10 md:py-5 w-full justify-between">
+              <div className="flex items-center gap-3">
+                <button className="border border-gray-200 px-3 py-1 rounded-2xl text-sm text-black/50">
+                  Save draft
+                </button>
+                <button className="border border-gray-200 px-3 py-1 rounded-2xl text-sm text-black/50">
+                  Preview
+                </button>
+                <button className="border border-gray-200 px-3 py-1 rounded-2xl text-sm text-black/50">
+                  Schedule
+                </button>
+              </div>
+
+              <button
+                onClick={handleUpload}
+                disabled={loading}
+                className={`px-3 py-2 rounded-2xl bg-[#5c4cf8] text-sm text-white duration-150 hover:shadow-xl ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {loading ? "Đang tải lên..." : (
+                  <div className="flex items-center gap-1">
+                    <RiSendPlaneFill size={20}/>
+                    <span>Đăng ngay</span>
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
-          <button
-            onClick={handleUpload}
-            disabled={loading}
-            className={`px-3 py-1 rounded-2xl bg-[#5c4cf8] text-sm text-white duration-150 hover:shadow-xl ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            {loading ? "Uploading..." : "Upload now"}
-          </button>
         </div>
       </div>
     </div>

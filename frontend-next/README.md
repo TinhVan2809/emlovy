@@ -21,20 +21,6 @@
   - Xử lý Token tập trung qua HttpOnly Cookies.
 - **Responsive Design:** Giao diện tương thích hoàn toàn với Mobile Web, Tablet và Desktop.
 
-## Cấu trúc thư mục
-
-```text
-frontend-next/
-├── app/                # App Router (Pages, Layouts, API Route handlers)
-├── components/         # Các UI Components dùng chung
-├── constants/          # Định nghĩa Route, Theme, Config
-├── contexts/           # Quản lý State toàn cục (Auth, Socket)
-├── services/           # Axios instance và các hàm gọi API backend
-├── types/              # Định nghĩa kiểu dữ liệu TypeScript
-├── proxy.ts            # Logic Middleware kiểm soát Auth & Protected Routes
-└── public/             # Tài nguyên tĩnh (Images, SVGs, Fonts)
-```
-
 ## Cài đặt & Phát triển
 
 ### Yêu cầu hệ thống (khuyến nghị)

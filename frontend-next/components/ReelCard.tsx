@@ -4,7 +4,7 @@ import { VscUnmute, VscMute } from "react-icons/vsc";
 import Image from "next/image";
 
 import { TbPlayerPauseFilled, TbPlayerPlayFilled } from "react-icons/tb";
-import { CiHeart, CiBookmark } from "react-icons/ci";
+import { CiHeart, CiBookmark, CiSearch } from "react-icons/ci";
 import { PiShareNetworkThin } from "react-icons/pi";
 import { IoChatbubbleOutline } from "react-icons/io5";
 import { RiMoreLine } from "react-icons/ri";
@@ -14,13 +14,12 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
 type ReelItem = {
   post_id: number;
-  author?: { name: string };
+  author?: { name: string; avatar_url?: string | null };
   media: Array<{ media_url: string }>;
   content?: string;
   liked_by_me?: boolean;
   like_count: number;
   comment_count: number;
-  avatar_url?: string | null;
 };
 
 function ReelCard({
@@ -127,11 +126,14 @@ function ReelCard({
 
         {/* Overlay controls: appear on hover */}
         <div
-          className={`absolute inset-0 z-10 flex flex-col justify-between p-3 transition-opacity duration-150 pointer-events-none ${
+          className={`absolute inset-0 z-10 flex flex-col justify-between transition-opacity duration-150 pointer-events-none ${
             isHovered ? "opacity-100" : "opacity-0"
           }`}
         >
-          <div className="flex justify-end pointer-events-auto">
+          <div className="flex p-3 justify-between pointer-events-auto">
+            <button  className="bg-black/60 text-white p-2 rounded-full shadow-sm">
+              <CiSearch />
+            </button>
             <button
               onClick={toggleMute}
               aria-pressed={!isMuted}
@@ -168,10 +170,10 @@ function ReelCard({
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Author info and Actions */}
         <div className="absolute right-0 bottom-0 z-1 inset-0 flex justify-end items-end">
           <div className="flex w-full justify-between items-end">
-            <div className="py-8 px-5 flex flex-col gap-1">
+            <div className="py-3 px-5 flex flex-col gap-1">
               <div className="flex gap-1.5 text-white items-center">
                 <div className="relative h-9 w-9">
                   <Image
@@ -191,7 +193,7 @@ function ReelCard({
                 <span className="text-white text-sm">{v.content}</span>
               </div>
             </div>
-            <div className="flex flex-col gap-5 py-10 px-2 justify-center items-center">
+            <div className="flex flex-col gap-5 py-7 px-2 justify-center items-center">
               <div className="flex flex-col items-center">
                 {v.liked_by_me ? (
                   <IoMdHeart size={30} className="text-red-500" />

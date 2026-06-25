@@ -23,7 +23,7 @@ export default function Reels() {
     const fetchReels = async () => {
       try {
         const response = await fetch(`${port}/api/reels`, {
-         credentials: 'include',
+          credentials: "include",
         });
         const data = await response.json();
         // Handle both nested and flat array responses
@@ -50,7 +50,7 @@ export default function Reels() {
           }
         });
       },
-      { threshold: 0.6 }, // Callback chỉ kích hoạt khi đúng 60% diện tích video xuất hiện trong viewport. Giá trị từ 0 (1px) đến 1 (100%). 
+      { threshold: 0.6 }, // Callback chỉ kích hoạt khi đúng 60% diện tích video xuất hiện trong viewport. Giá trị từ 0 (1px) đến 1 (100%).
     );
 
     const currentRefs = videoRefs.current;
@@ -67,18 +67,25 @@ export default function Reels() {
   }, [videos]);
 
   return (
-    <div className="flex flex-col gap-8 p-4 items-center bg-[#121212]">
-      {videos.length > 0 ? (
-        <div className="flex flex-col gap-8">
-          {videos.map((v: ReelItem) => (
-            <ReelCard
-              v={v}
-              key={v.post_id}
-              setVideoRef={(el) => (videoRefs.current[v.post_id] = el)}
-            />
-          ))}
+    <div className="gap-8 p-4 bg-[#121212]">
+      <div className="flex justify-center">
+        <div className="fixed top-0 left-0 z-100 p-4">
+          <span className="text-white text-2xl">Reels</span>
         </div>
-      ) : null}
+        <div className="">
+          {videos.length > 0 ? (
+            <div className="flex flex-col gap-8">
+              {videos.map((v: ReelItem) => (
+                <ReelCard
+                  v={v}
+                  key={v.post_id}
+                  setVideoRef={(el) => (videoRefs.current[v.post_id] = el)}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

@@ -19,21 +19,6 @@
 - **Admin Management:** API dành riêng cho quản trị viên để kiểm duyệt nội dung và người dùng.
 - **Media Storage:** Xử lý và phân phối tài nguyên đa phương tiện tĩnh.
 
-## Cấu trúc thư mục
-```text
-backend-node/
-├── config/             # Cấu hình môi trường (Database, Secret keys)
-├── controllers/        # Logic xử lý yêu cầu từ Router
-├── middleware/         # Kiểm tra xác thực (Auth), phân quyền và lọc dữ liệu
-├── models/             # Định nghĩa cấu trúc dữ liệu và truy vấn MySQL
-├── routes/             # Định nghĩa các endpoint API
-├── uploads/            # Lưu trữ tệp tin vật lý (avatars, posts)
-│   ├── avatars/
-│   └── posts/
-├── utils/              # Các hàm bổ trợ (Helper functions)
-└── server.js           # Điểm khởi đầu của ứng dụng (Entry point)
-```
-
 ## Thiết lập môi trường & Cài đặt
 
 ### 1. Yêu cầu hệ thống (Khuyến nghị)
