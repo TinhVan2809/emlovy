@@ -10,7 +10,16 @@ import "swiper/css/pagination";
 import { RiHeart3Line, RiHeart3Fill } from "@remixicon/react";
 import { useSocket } from "@/context/SocketContext";
 import { useUser } from "@/context/useUserContext";
-import { RiAddLine, RiSendInsFill, RiMore2Fill, RiMessage3Line } from "@remixicon/react";
+import {
+  RiAddLine,
+  RiSendInsFill,
+  RiMore2Fill,
+  RiMessage3Line,
+} from "@remixicon/react";
+
+import { LuImagePlus } from "react-icons/lu";
+import { MdInsertEmoticon } from "react-icons/md";
+import { RiAttachmentLine, RiHashtag } from "@remixicon/react";
 
 interface PostMedia {
   post_media_id: number;
@@ -343,6 +352,9 @@ export default function CommentSheet({ onClose, post }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
+  // State trạng thái đóng mở thêm hình ảnh/icons/hastag khi thêm bình luận
+  const [isMenu, setIsMenu] = useState(false);
+
   const fetchComments = useCallback(
     async (pageNum: number, replace = false) => {
       if (!post) return;
@@ -566,9 +578,9 @@ export default function CommentSheet({ onClose, post }: Props) {
               </div>
             ) : (
               <div className="flex flex-col justify-center items-center h-full">
-                <RiMessage3Line size={40} className="opacity-45"/>
-                  <span>Chưa có bình luận nào</span>
-                  <span>Hãy trở thành người bình luận đầu tiên</span>
+                <RiMessage3Line size={40} className="opacity-45" />
+                <span>Chưa có bình luận nào</span>
+                <span>Hãy trở thành người bình luận đầu tiên</span>
               </div>
             )}
             {isLoading && (
@@ -630,14 +642,36 @@ export default function CommentSheet({ onClose, post }: Props) {
               </div>
             )}
             <div className="p-2 bg-gray-100 rounded-2xl flex items-center justify-between">
-              <div className="flex items-center gap-2 w-full">
+              <div className="relative w-60 flex gap-2">
+                <div
+                  className={`absolute bottom-10 left-0 z-100 bg-white shadow-2xl rounded-2xl p-2 w-fit duration-200 transition-all origin-bottom transform ease-in-out ${isMenu ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
+                >
+                  <div className="p-2 flex flex-col gap-3">
+                    <p className="flex gap-1 items-center cursor-pointer">
+                      <LuImagePlus className="text-black/70" />
+                      <span className="text-sm">Hình ảnh</span>
+                    </p>
+                    <p className="flex gap-1 items-center cursor-pointer">
+                      <RiAttachmentLine size={18} className="text-black/70" />
+                      <span className="text-sm">Files</span>
+                    </p>
+                    <p className="flex gap-1 items-center cursor-pointer">
+                      <RiHashtag size={18} className="text-black/70" />
+                      <span className="text-sm">Hashtag</span>
+                    </p>
+                    <p className="flex gap-1 items-center cursor-pointer">
+                      <MdInsertEmoticon className="text-black/70" />
+                      <span className="text-sm">Emoji</span>
+                    </p>
+                  </div>
+                </div>
                 <button
                   type="button"
                   className="p-1 rounded-full bg-white cursor-pointer"
+                  onClick={() => setIsMenu((v) => !v)}
                 >
                   <RiAddLine size={22} />
                 </button>
-
                 <input
                   value={commentContent}
                   onChange={(e) => setCommentContent(e.target.value)}
@@ -650,6 +684,7 @@ export default function CommentSheet({ onClose, post }: Props) {
                   disabled={isSubmitting}
                 />
               </div>
+
               <button
                 type="submit"
                 disabled={!commentContent.trim() || isSubmitting}
