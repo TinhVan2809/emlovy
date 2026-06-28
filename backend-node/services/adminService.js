@@ -2,8 +2,91 @@ const { query } = require("../config/database");
 const config = require("../config/env");
 const userModel = require("../models/userModel");
 
+// ─── Private helpers ──────────────────────────────────────────────────────────
+
+const _formatDate = (d) => {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const _formatMonth = (d) => {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${yyyy}-${mm}-01`;
+};
+
+/**
+ * Normalize một giá trị date từ DB driver về chuỗi "YYYY-MM-DD".
+ */
+const _parseDateKey = (date) =>
+  date instanceof Date
+    ? date.toISOString().slice(0, 10)
+    : String(date).slice(0, 10);
+
+/**
+ * Trả về cấu hình SQL và vòng lặp cho một range cụ thể.
+ */
+const _getRangeConfig = (range) => {
+  switch (range) {
+    case "7days":
+      return {
+        interval: 6,
+        isMonth: false,
+        currentFilter: `created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)`,
+        prevFilter: `created_at >= DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+                       AND created_at < DATE_SUB(CURDATE(), INTERVAL 6 DAY)`,
+      };
+    case "30days":
+      return {
+        interval: 29,
+        isMonth: false,
+        currentFilter: `created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)`,
+        prevFilter: `created_at >= DATE_SUB(CURDATE(), INTERVAL 59 DAY)
+                       AND created_at < DATE_SUB(CURDATE(), INTERVAL 29 DAY)`,
+      };
+    case "12months":
+      return {
+        interval: 11,
+        isMonth: true,
+        currentFilter: `created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 11 MONTH)`,
+        prevFilter: `created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 23 MONTH)
+                       AND created_at < DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 11 MONTH)`,
+      };
+    default:
+      throw new Error("Invalid range");
+  }
+};
+
+/**
+ * Tạo mảng kết quả đầy đủ (điền 0 cho ngày/tháng không có data).
+ */
+const _buildSeries = (map, interval, isMonth) => {
+  const now = new Date();
+  const data = [];
+
+  for (let i = interval; i >= 0; i--) {
+    let key;
+    if (isMonth) {
+      key = _formatMonth(new Date(now.getFullYear(), now.getMonth() - i, 1));
+    } else {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      key = _formatDate(d);
+    }
+    data.push({
+      label: isMonth ? key.slice(0, 7) : key, // "YYYY-MM" hoặc "YYYY-MM-DD"
+      value: map.get(key) || 0,
+    });
+  }
+
+  return data;
+};
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
 const getOverview = async () => {
-  // Run counts in parallel for performance
   const [
     totalUsers,
     verifiedUsers,
@@ -21,7 +104,6 @@ const getOverview = async () => {
       `SELECT COUNT(*) AS total FROM users WHERE DATE(created_at) = CURDATE()`,
     ),
     query(`SELECT COUNT(*) AS total FROM posts WHERE is_deleted = 0`),
-    // count distinct posts that are reels or have video media
     query(`
       SELECT COUNT(DISTINCT p.post_id) AS total
       FROM posts p
@@ -33,25 +115,18 @@ const getOverview = async () => {
     query(`SELECT COUNT(*) AS total FROM likes`),
   ]);
 
-  // totalReports may not exist in all schemas; check information_schema
   let totalReports = 0;
-
   try {
     const tableExistsRows = await query(
-      `SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = :schema AND table_name = 'reports'`,
+      `SELECT COUNT(*) AS cnt FROM information_schema.tables
+       WHERE table_schema = :schema AND table_name = 'reports'`,
       { schema: config.database.name },
     );
-
-    if (
-      tableExistsRows &&
-      tableExistsRows[0] &&
-      Number(tableExistsRows[0].cnt) > 0
-    ) {
+    if (tableExistsRows?.[0] && Number(tableExistsRows[0].cnt) > 0) {
       const reportsRows = await query(`SELECT COUNT(*) AS total FROM reports`);
       totalReports = Number(reportsRows[0]?.total || 0);
     }
-  } catch (error) {
-    // On any error while checking reports, treat as zero (non-fatal)
+  } catch {
     totalReports = 0;
   }
 
@@ -64,136 +139,17 @@ const getOverview = async () => {
     totalReels: Number(totalReelsRows[0]?.total || 0),
     totalComments: Number(totalCommentsRows[0]?.total || 0),
     totalLikes: Number(totalLikesRows[0]?.total || 0),
-    totalReports: Number(totalReports || 0),
+    totalReports,
   };
 };
 
-const _formatDate = (d) => {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-};
-
-const _formatMonth = (d) => {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  return `${yyyy}-${mm}-01`;
-};
-
-const getUserGrowth = async (range = "7days") => {
-  if (range === "7days") {
-    const prevQuery = `SELECT COUNT(*) AS total FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 13 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 6 DAY)`;
-    // last 7 days including today
-    const rows = await query(`
-      SELECT DATE(created_at) AS date, COUNT(*) AS users
-      FROM users
-      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-      GROUP BY DATE(created_at)
-      ORDER BY DATE(created_at) ASC
-    `);
-
-    const prevTotalRows = await query(prevQuery);
-    const previous_total = Number(prevTotalRows[0]?.total || 0);
-
-    const map = new Map(
-      rows.map((r) => {
-        const key =
-          r.date instanceof Date
-            ? r.date.toISOString().slice(0, 10)
-            : String(r.date).slice(0, 10);
-        return [key, Number(r.users)];
-      }),
-    );
-
-    const data = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = _formatDate(d);
-      data.push({ date: key, users: map.get(key) || 0 });
-    }
-
-    return { range, data, previous_total };
-  }
-
-  if (range === "30days") {
-    const prevQuery = `SELECT COUNT(*) AS total FROM users WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 59 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 29 DAY)`;
-    const rows = await query(`
-      SELECT DATE(created_at) AS date, COUNT(*) AS users
-      FROM users
-      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
-      GROUP BY DATE(created_at)
-      ORDER BY DATE(created_at) ASC
-    `);
-
-    const prevTotalRows = await query(prevQuery);
-    const previous_total = Number(prevTotalRows[0]?.total || 0);
-
-    const map = new Map(
-      rows.map((r) => {
-        const key =
-          r.date instanceof Date
-            ? r.date.toISOString().slice(0, 10)
-            : String(r.date).slice(0, 10);
-        return [key, Number(r.users)];
-      }),
-    );
-
-    const data = [];
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = _formatDate(d);
-      data.push({ date: key, users: map.get(key) || 0 });
-    }
-
-    return { range, data, previous_total };
-  }
-
-  if (range === "12months") {
-    const prevQuery = `SELECT COUNT(*) AS total FROM users WHERE created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 23 MONTH) AND created_at < DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 11 MONTH)`;
-
-    const rows = await query(`
-      SELECT DATE_FORMAT(created_at, '%Y-%m-01') AS date, COUNT(*) AS users
-      FROM users
-      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 11 MONTH)
-      GROUP BY YEAR(created_at), MONTH(created_at)
-      ORDER BY YEAR(created_at), MONTH(created_at) ASC
-    `);
-
-    const prevTotalRows = await query(prevQuery);
-    const previous_total = Number(prevTotalRows[0]?.total || 0);
-
-    const map = new Map(
-      rows.map((r) => {
-        const key =
-          r.date instanceof Date
-            ? r.date.toISOString().slice(0, 10)
-            : String(r.date).slice(0, 10);
-        return [key, Number(r.users)];
-      }),
-    );
-
-    const data = [];
-    const now = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = _formatMonth(d);
-      data.push({ date: key, users: map.get(key) || 0 });
-    }
-
-    return { range, data, previous_total };
-  }
-
-  throw new Error("Invalid range");
-};
-
+/**
+ * Thống kê theo type và range.
+ */
 const getStats = async (type, range = "7days") => {
   let tableName = "";
   let extraWhere = "";
 
-  // Xác định bảng và điều kiện lọc dựa trên type
   switch (type) {
     case "users":
       tableName = "users";
@@ -213,7 +169,7 @@ const getStats = async (type, range = "7days") => {
     case "likes":
       tableName = "likes";
       break;
-    case "verified_users":
+    case "verified-users":
       tableName = "users";
       extraWhere = "AND is_verified = 1";
       break;
@@ -221,110 +177,59 @@ const getStats = async (type, range = "7days") => {
       throw new Error("Invalid stat type");
   }
 
-  let sql = "";
-  let prevSql = "";
-  let interval = 0;
-  let isMonth = false;
+  const { interval, isMonth, currentFilter, prevFilter } =
+    _getRangeConfig(range);
 
-  if (range === "7days") {
-    interval = 6;
-    sql = `
-      SELECT DATE(created_at) AS date, COUNT(*) AS count
-      FROM ${tableName}
-      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) ${extraWhere}
-      GROUP BY DATE(created_at)
-      ORDER BY DATE(created_at) ASC
-    `;
-    prevSql = `
-      SELECT COUNT(*) AS total
-      FROM ${tableName}
-      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 13 DAY) 
-        AND created_at < DATE_SUB(CURDATE(), INTERVAL 6 DAY) ${extraWhere}
-    `;
-  } else if (range === "30days") {
-    interval = 29;
-    sql = `
-      SELECT DATE(created_at) AS date, COUNT(*) AS count
-      FROM ${tableName}
-      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY) ${extraWhere}
-      GROUP BY DATE(created_at)
-      ORDER BY DATE(created_at) ASC
-    `;
-    prevSql = `
-      SELECT COUNT(*) AS total
-      FROM ${tableName}
-      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 59 DAY) 
-        AND created_at < DATE_SUB(CURDATE(), INTERVAL 29 DAY) ${extraWhere}
-    `;
-  } else if (range === "12months") {
-    isMonth = true;
-    interval = 11;
-    sql = `
-      SELECT DATE_FORMAT(created_at, '%Y-%m-01') AS date, COUNT(*) AS count
-      FROM ${tableName}
-      WHERE created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 11 MONTH) ${extraWhere}
-      GROUP BY DATE_FORMAT(created_at, '%Y-%m-01')
-      ORDER BY date ASC
-    `;
-    prevSql = `
-      SELECT COUNT(*) AS total
-      FROM ${tableName}
-      WHERE created_at >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 23 MONTH) 
-        AND created_at < DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 11 MONTH) ${extraWhere}
-    `;
-  } else {
-    throw new Error("Invalid range");
-  }
+  // Expression dùng chung cho SELECT, GROUP BY, ORDER BY
+  const dateExpr = isMonth
+    ? `DATE_FORMAT(created_at, '%Y-%m-01')`
+    : `DATE(created_at)`;
+
+  const sql = `
+    SELECT ${dateExpr} AS date, COUNT(*) AS count
+    FROM ${tableName}
+    WHERE ${currentFilter} ${extraWhere}
+    GROUP BY ${dateExpr}
+    ORDER BY ${dateExpr} ASC
+  `;
+
+  const prevSql = `
+    SELECT COUNT(*) AS total
+    FROM ${tableName}
+    WHERE ${prevFilter} ${extraWhere}
+  `;
 
   const [rows, prevRows] = await Promise.all([query(sql), query(prevSql)]);
-  const previousTotal = Number(prevRows[0]?.total || 0);
 
   const map = new Map(
-    rows.map((r) => {
-      const key =
-        r.date instanceof Date
-          ? r.date.toISOString().slice(0, 10)
-          : String(r.date).slice(0, 10);
-      return [key, Number(r.count)];
-    }),
+    rows.map((r) => [_parseDateKey(r.date), Number(r.count)]),
   );
-
-  const data = [];
-  const now = new Date();
-
-  if (isMonth) {
-    for (let i = interval; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = _formatMonth(d);
-      data.push({
-        label: key.slice(0, 7), // Trả về dạng YYYY-MM cho frontend dễ hiển thị
-        value: map.get(key) || 0,
-      });
-    }
-  } else {
-    for (let i = interval; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = _formatDate(d);
-      data.push({
-        label: key,
-        value: map.get(key) || 0,
-      });
-    }
-  }
 
   return {
     type,
     range,
-    data,
-    previous_total: previousTotal,
+    data: _buildSeries(map, interval, isMonth),
+    previous_total: Number(prevRows[0]?.total || 0),
   };
 };
 
-const getTopInteractedPosts = async () => {
-  // Lấy top 5 bài viết có (likes + comments + shares) cao nhất trong tháng hiện tại
+/**
+ * Giữ lại để tương thích ngược với các caller cũ.
+ */
+const getUserGrowth = async (range = "7days") => {
+  const { range: r, data, previous_total } = await getStats("users", range);
+  return {
+    range: r,
+    previous_total,
+    data: data.map(({ label, value }) => ({ date: label, users: value })),
+  };
+};
+
+const getTopInteractedPosts = async (limit = 7, range = "7days") => {
+  const { currentFilter: dateFilterClause } = _getRangeConfig(range);
+
   const sql = `
-    SELECT 
+    SELECT
       p.post_id,
       p.content,
       p.post_type,
@@ -333,25 +238,26 @@ const getTopInteractedPosts = async () => {
       p.share_count,
       (p.like_count + p.comment_count + p.share_count) AS total_interactions,
       p.created_at,
-      first_media.media_url,
+      fm.media_url,
       u.username,
-      u.name AS user_name,
-      u.avata AS user_avatar
+      u.name    AS user_name,
+      u.avata   AS user_avatar
     FROM posts p
     JOIN users u ON p.user_id = u.user_id
-    INNER JOIN (
-        SELECT
-            post_id,
-            media_url,
-            ROW_NUMBER() OVER (PARTITION BY post_id ORDER BY sort_order ASC) as rn
-        FROM post_media
-    ) AS first_media ON first_media.post_id = p.post_id AND first_media.rn = 1
-    WHERE p.is_deleted = 0 
-      AND p.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+    LEFT JOIN (
+      SELECT
+        post_id,
+        media_url,
+        ROW_NUMBER() OVER (PARTITION BY post_id ORDER BY sort_order ASC) AS rn
+      FROM post_media
+    ) AS fm ON fm.post_id = p.post_id AND fm.rn = 1
+    WHERE p.is_deleted = 0
+      AND p.${dateFilterClause}
     ORDER BY total_interactions DESC
-    LIMIT 5
+    LIMIT :limit
   `;
-  return await query(sql);
+
+  return await query(sql, { limit: Number(limit) });
 };
 
 module.exports = {
