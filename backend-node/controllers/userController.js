@@ -1,4 +1,8 @@
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+
 const userModel = require("../models/userModel");
+const config = require("../config/env");
 const { createHttpError } = require("../utils/httpError");
 
 const getUserList = async (req, res) => {
@@ -83,9 +87,37 @@ const updateStatus = async (req, res) => {
   });
 };
 
+const resetPassword = async (req, res) => {
+  const { userId } = req.params;
+
+  // Generate a new random password (e.g., a 16-char hex string)
+  const newPassword = crypto.randomBytes(8).toString("hex");
+
+  // Hash the new password
+  const passwordHash = await bcrypt.hash(
+    newPassword,
+    config.auth.bcryptSaltRounds,
+  );
+
+  // Update in the database
+  const wasUpdated = await userModel.updatePassword(userId, passwordHash);
+
+  if (!wasUpdated) {
+    throw createHttpError(404, "User not found or password could not be updated.");
+  }
+
+  // Return the new (unhashed) password to the admin
+  res.status(200).json({
+    success: true,
+    message: "Mật khẩu đã được đặt lại thành công. Vui lòng cung cấp mật khẩu mới cho người dùng.",
+    data: { newPassword },
+  });
+};
+
 module.exports = {
   getUserList,
   getVerifiedUserCount,
   updateVerification,
   updateStatus,
+  resetPassword,
 };

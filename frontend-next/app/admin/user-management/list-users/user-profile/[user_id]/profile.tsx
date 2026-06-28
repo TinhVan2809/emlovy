@@ -19,6 +19,7 @@ import { useState } from "react";
 import ProfileCardStats from "@/components/admin/ProfileCardStats";
 import PersonalInfo from "../tab-profile/personal-info";
 import AccountStatus from "../tab-profile/account-status";
+import Security from "../tab-profile/security";
 
 const formatRelativeTime = (dateString: string) => {
   const date = new Date(dateString);
@@ -322,7 +323,7 @@ function Profile({ user, posts }: ProfileProps) {
         {/* Personal Info */}
         {tab == "personal-info" && <PersonalInfo user={user} />}
         {tab == "account-status" && <AccountStatus user={user} />}
-        {tab == "security" && <div className="">Security</div>}
+        {tab == "security" && <Security user={user}/>}
         {tab == "statistics" && <div className="">Statistics</div>}
         {tab == "moderation" && <div className="">Moderation</div>}
         {tab == "activity" && <div className="">Activity</div>}

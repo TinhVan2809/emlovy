@@ -173,6 +173,45 @@ const getUserList = async (page = 1, limit = 10, role = null) => {
   return rows.map(toPublicUser);
 };
 
+const update = async (userId, fields) => {
+  const allowedFields = ["status", "is_verified", "role"];
+  const updates = [];
+  const params = { userId };
+
+  for (const field of allowedFields) {
+    if (Object.prototype.hasOwnProperty.call(fields, field)) {
+      updates.push(`${field} = :${field}`);
+      params[field] = fields[field];
+    }
+  }
+
+  if (updates.length > 0) {
+    await execute(
+      `
+        UPDATE users
+        SET ${updates.join(", ")}
+        WHERE user_id = :userId
+      `,
+      params,
+    );
+  }
+
+  return findById(userId);
+};
+
+const updatePassword = async (userId, passwordHash) => {
+  const result = await execute(
+    `
+      UPDATE users
+      SET password = :passwordHash
+      WHERE user_id = :userId
+    `,
+    { userId, passwordHash },
+  );
+
+  return result.affectedRows > 0;
+};
+
 module.exports = {
   create,
   findById,
@@ -182,4 +221,6 @@ module.exports = {
   buildProfileSelectFields,
   getUserList,
   countUsers,
+  update,
+  updatePassword,
 };

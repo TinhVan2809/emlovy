@@ -183,7 +183,7 @@ function PostCard({ i }: PostCardProps) {
                   return (
                     <SwiperSlide
                       key={m.post_media_id}
-                      className="relative w-full min-h-75 md:min-h-100"
+                      className="relative w-full min-h-70 md:min-h-100"
                     >
                       <Image
                         src={mediaSrc}
