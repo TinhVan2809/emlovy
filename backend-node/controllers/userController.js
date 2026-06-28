@@ -46,7 +46,7 @@ const getVerifiedUserCount = async (req, res) => {
 };
 
 const updateVerification = async (req, res) => {
-  const { userId } = req.params;
+  const { user_id: userId } = req.params;
   const { isVerified } = req.body;
 
   if (isVerified === undefined) {
@@ -67,7 +67,7 @@ const updateVerification = async (req, res) => {
 };
 
 const updateStatus = async (req, res) => {
-  const { userId } = req.params;
+  const { user_id: userId } = req.params;
   const { status } = req.body;
 
   if (status === undefined) {
@@ -88,7 +88,7 @@ const updateStatus = async (req, res) => {
 };
 
 const resetPassword = async (req, res) => {
-  const { userId } = req.params;
+  const { user_id: userId } = req.params;
 
   // Generate a new random password (e.g., a 16-char hex string)
   const newPassword = crypto.randomBytes(8).toString("hex");

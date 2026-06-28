@@ -13,10 +13,26 @@ router.get("/list", userController.getUserList);
 
 // update verified
 router.put(
-  "/verification",
+  "/:user_id/verification",
   authenticate,
   authorize("admin"),
   asyncHandler(userController.updateVerification),
 );
+
+// Update user status
+router.put(
+  "/:user_id/status",
+  authenticate,
+  authorize("admin"),
+  asyncHandler(userController.updateStatus),
+);
+
+// Reset password
+router.put(
+  "/:user_id/reset-password",
+  authenticate,
+  authorize("admin"),
+  asyncHandler(userController.resetPassword)
+)
 
 module.exports = router;

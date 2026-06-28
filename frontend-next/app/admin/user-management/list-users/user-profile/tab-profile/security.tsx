@@ -70,7 +70,7 @@ export default function Security({
             <p>{successMessage}</p>
             {newPassword && (
               <div className="flex items-center gap-2 bg-green-200 p-2 rounded-lg">
-                <span className="font-mono text-green-900 flex-grow">
+                <span className="font-mono text-green-900 grow">
                   {newPassword}
                 </span>
                 <button

@@ -130,7 +130,14 @@ const verifiedStats = async (req, res) => {
 
 // GET /api/admin/stats/top-posts
 const topInteractedPosts = async (req, res) => {
-  const result = await adminService.getTopInteractedPosts();
+  const limit = parseInt(req.query.limit, 10) || 7;
+  const range = (req.query.range || "7days").toString();
+
+  if (!["7days", "30days", "12months"].includes(range)) {
+    throw createHttpError(400, "Tham số range không hợp lệ. Sử dụng 7days, 30days hoặc 12months.");
+  }
+
+  const result = await adminService.getTopInteractedPosts(limit, range);
   res.status(200).json({ success: true, data: result });
 };
 

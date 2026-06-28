@@ -12,6 +12,7 @@ import {
   RiHeartLine,
   RiChat3Line,
   RiTimer2Line,
+  RiSpam2Line
 } from "@remixicon/react";
 
 import { IPostsResponse, IUserProfileApiResponse } from "./user";
@@ -99,7 +100,8 @@ function Profile({ user, posts }: ProfileProps) {
                       Active
                     </span>
                   ) : (
-                    <span className="text-red-700 bg-red-300/20 pb-3 px-2 rounded-[25px] flex items-center gap-1 text-sm font-semibold">
+                    <span className="text-red-700 bg-red-300/20 px-2 rounded-[25px] flex items-center gap-1 text-sm font-semibold">
+                      <RiSpam2Line size={17}/>
                       Block
                     </span>
                   )}

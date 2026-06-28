@@ -17,7 +17,11 @@ import { useState } from "react";
 import Link from "next/link";
 import NavLink from "../NavLink";
 function Sidebar() {
+  // state users
   const [isUser, setIsUser] = useState(false);
+
+  // state posts
+  const [isPost, setIsPosts] = useState(false);
 
   return (
     <div className="bg-[rgba(5,4,51,1)] py-5 px-2 h-full overflow-y-auto hide-scrollbar md:min-w-55 md:fixed md:top-0 md:left-0 md:z-1000">
@@ -80,12 +84,33 @@ function Sidebar() {
             </div>
           )}
         </div>
-        <button className="flex items-center gap-2 text-sm text-white justify-between p-2">
-          <span className="flex items-center gap-2">
-            <RiImageEditLine size={20} /> Bài viết{" "}
-          </span>
-          <RiArrowDownSLine />
-        </button>
+        <div className="w-full flex flex-col gap-3">
+          <button
+            className="flex items-center gap-2 text-sm text-white justify-between p-2"
+            onClick={() => setIsPosts((v) => !v)}
+          >
+            <span className="flex items-center gap-2">
+              <RiImageEditLine size={20} /> Bài viết{" "}
+            </span>
+            <RiArrowDownSLine />
+          </button>
+          {isPost && (
+            <div className="px-8 pb-3">
+              <ul className="text-white flex flex-col gap-5 text-sm list-disc">
+                <NavLink href="/admin/posts" color="text-indigo-400">
+                  <li className="cursor-pointer duration-100 hover:text-indigo-400">
+                    Top bài viết
+                  </li>
+                </NavLink>
+                <NavLink href="#" color="text-indigo-400">
+                  <li className="cursor-pointer duration-100 hover:text-indigo-400">
+                    Bài viết bị báo cáo
+                  </li>
+                </NavLink>
+              </ul>
+            </div>
+          )}
+        </div>
         <button className="flex items-center gap-2 text-sm text-white justify-between p-2">
           <span className="flex items-center gap-2">
             <RiChat3Line size={20} /> Bình luận{" "}

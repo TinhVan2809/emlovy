@@ -1,8 +1,9 @@
 "use client";
 import port from "@/api/api";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { RiArrowDownLine, RiArrowUpLine } from "@remixicon/react";
 import { LineChart, Line, ResponsiveContainer, YAxis, Tooltip } from "recharts";
+import { useQuery } from "@tanstack/react-query";
 
 interface Props {
   endpoint: string;
@@ -36,41 +37,25 @@ function DashboardCard({
   backgroundColor,
   color,
 }: Props) {
-  const [response, setResponse] = useState<ApiResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetchStats = async (): Promise<ApiResponse> => {
+    const response = await fetch(`${port}/${endpoint}?range=${period}`, {
+      method: "GET",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error(`Lỗi tải dữ liệu: ${response.statusText}`);
+    }
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.message || "Có lỗi xảy ra từ API.");
+    }
+    return result;
+  };
 
-  useEffect(() => {
-    const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    setError(null);
-
-    const handleFetchstats = async () => {
-      try {
-        const response = await fetch(`${port}/${endpoint}?range=${period}`, {
-          method: "GET",
-          signal: controller.signal,
-          credentials: "include",
-          next: {revalidate: 60},
-        });
-        if (!response.ok) throw new Error(`ERROR HTTP ${response.status}`);
-
-        const result: ApiResponse = await response.json();
-
-        if (result.success) {
-          setResponse(result);
-        }
-      } catch (_err) {
-        if ((_err as Error).name === "AbortError") return;
-        setError(_err instanceof Error ? _err.message : String(_err));
-      } finally {
-        setLoading(false);
-      }
-    };
-    handleFetchstats();
-    return () => controller.abort();
-  }, [endpoint, period]);
+  const { data: response, isLoading: loading, error } = useQuery<ApiResponse, Error>({
+    queryKey: ["dashboard-stat", endpoint, period],
+    queryFn: fetchStats,
+  });
 
   // 1. Tính tổng giá trị của kỳ hiện tại (Tuần này)
   const currentTotal = useMemo(() => {
@@ -93,8 +78,8 @@ function DashboardCard({
     );
   if (error)
     return (
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100 text-red-500 text-sm">
-        Lỗi: {error}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100 text-red-500 text-xs flex items-center justify-center text-center h-32">
+        Lỗi: {error.message}
       </div>
     );
 
