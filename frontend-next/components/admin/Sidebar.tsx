@@ -97,7 +97,7 @@ function Sidebar() {
           {isPost && (
             <div className="px-8 pb-3">
               <ul className="text-white flex flex-col gap-5 text-sm list-disc">
-                <NavLink href="/admin/posts" color="text-indigo-400">
+                <NavLink href="/admin/posts/top-posts" color="text-indigo-400">
                   <li className="cursor-pointer duration-100 hover:text-indigo-400">
                     Top bài viết
                   </li>

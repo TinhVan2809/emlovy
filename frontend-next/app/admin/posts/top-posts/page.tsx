@@ -29,7 +29,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm text-sm">
                 <p className="font-bold text-gray-800 truncate max-w-xs">{data.content ? `"${data.content}"` : `Post #${data.post_id}`}</p>
                 <p className="text-gray-600 text-xs">bởi @{data.username}</p>
-                <p className="mt-2 text-indigo-500">{`Lượt thích: ${data.like_count}`}</p>
+                <p className="mt-2 text-red-500">{`Lượt thích: ${data.like_count}`}</p>
                 <p className="text-green-500">{`Bình luận: ${data.comment_count}`}</p>
             </div>
         );
@@ -68,7 +68,7 @@ const MediaItem = ({ post }: { post: TopPost }) => {
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 text-white text-xs">
                 <p className="font-bold line-clamp-2">{post.content || `Post #${post.post_id}`}</p>
                 <div className="flex items-center gap-3 text-sm">
-                    <span className="flex items-center gap-1"><RiHeartFill className="text-red-400"/> {post.like_count}</span>
+                    <span className="flex items-center gap-1"><RiHeartFill className="text-red-500"/> {post.like_count}</span>
                     <span className="flex items-center gap-1"><RiMessage2Fill className="text-sky-400"/> {post.comment_count}</span>
                 </div>
             </div>
@@ -150,7 +150,7 @@ function TopPosts() {
                         <YAxis />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(240, 240, 240, 0.5)' }} />
                         <Legend wrapperStyle={{fontSize: "14px", paddingTop: "20px"}}/>
-                        <Bar dataKey="like_count" name="Lượt thích" stackId="a" fill="#8884d8" barSize={30} />
+                        <Bar dataKey="like_count" name="Lượt thích" stackId="a" fill="#fb2c36" barSize={30} />
                         <Bar dataKey="comment_count" name="Bình luận" stackId="a" fill="#82ca9d" barSize={30} />
                     </BarChart>
                 </ResponsiveContainer>

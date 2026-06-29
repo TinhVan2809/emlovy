@@ -16,8 +16,6 @@ import { RiMoreLine } from "@remixicon/react";
 import {
   IUser,
   IPaginationData,
-  IUserProfileApiResponse,
-  IPost,
 } from "./user-profile/[user_id]/user";
 
 async function ListManagement({
@@ -44,7 +42,6 @@ async function ListManagement({
     page: 1,
     limit: 10,
   };
-  console.log(data);
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm border border-slate-200">
