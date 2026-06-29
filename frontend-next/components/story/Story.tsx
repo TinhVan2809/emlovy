@@ -8,7 +8,6 @@ export default async function Story() {
     },
   });
   const data = await resppnse.json();
-  console.log("storis:", data);
   return <div className=""></div>;
 }
 

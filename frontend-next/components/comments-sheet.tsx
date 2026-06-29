@@ -80,7 +80,7 @@ type User = {
 type Props = {
   onClose: React.MouseEventHandler<HTMLDivElement>;
   post: Post | null;
-  kind: string;
+  kind: "post" | "reel";
 };
 
 function CommentItem({
@@ -340,7 +340,7 @@ function CommentItem({
   );
 }
 
-export default function CommentSheet({ onClose, post }: Props) {
+export default function CommentSheet({ onClose, post, kind }: Props) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -360,8 +360,9 @@ export default function CommentSheet({ onClose, post }: Props) {
       if (!post) return;
       setIsLoading(true);
       try {
+        const apiPrefix = kind === "reel" ? "reels" : "posts";
         const response = await fetch(
-          `${port}/api/posts/${post.post_id}/comments?page=${pageNum}&limit=20`,
+          `${port}/api/${apiPrefix}/${post.post_id}/comments?page=${pageNum}&limit=20`,
           {
             credentials: "include",
           },
@@ -383,7 +384,7 @@ export default function CommentSheet({ onClose, post }: Props) {
         setIsLoading(false);
       }
     },
-    [post],
+    [post, kind],
   );
 
   useEffect(() => {
@@ -397,6 +398,8 @@ export default function CommentSheet({ onClose, post }: Props) {
 
   useEffect(() => {
     if (!socket || !post) return;
+
+    const commentEventName = kind === "reel" ? "reel:commented" : "post:commented";
 
     const handleNewComment = (data: { post_id: number; comment: Comment }) => {
       // Chỉ cập nhật nếu bình luận thuộc về bài viết đang xem
@@ -443,17 +446,17 @@ export default function CommentSheet({ onClose, post }: Props) {
       setComments((prev) => removeRecursive(prev, commentId));
     };
 
-    socket.on("post:commented", handleNewComment);
+    socket.on(commentEventName, handleNewComment);
     socket.on("comment:updated", handleUpdatedComment);
     socket.on("comment:deleted", handleDeletedComment);
 
     // Dọn dẹp listener khi component unmount hoặc khi post thay đổi
     return () => {
-      socket.off("post:commented", handleNewComment);
+      socket.off(commentEventName, handleNewComment);
       socket.off("comment:updated", handleUpdatedComment);
       socket.off("comment:deleted", handleDeletedComment);
     };
-  }, [socket, post]);
+  }, [socket, post, kind]);
 
   const handleScroll = () => {
     const container = commentsContainerRef.current;
@@ -474,9 +477,13 @@ export default function CommentSheet({ onClose, post }: Props) {
 
     setIsSubmitting(true);
 
+    const apiPrefix = kind === "reel" ? "reels" : "posts";
+    // The endpoint for creating a reel comment is singular
+    const commentPath = kind === "reel" ? "comment" : "comments";
+
     const endpoint = replyingTo
-      ? `${port}/api/posts/${post.post_id}/comments/${replyingTo.id}/replies`
-      : `${port}/api/posts/${post.post_id}/comments`;
+      ? `${port}/api/${apiPrefix}/${post.post_id}/comments/${replyingTo.id}/replies`
+      : `${port}/api/${apiPrefix}/${post.post_id}/${commentPath}`;
 
     try {
       const response = await fetch(endpoint, {
@@ -536,27 +543,42 @@ export default function CommentSheet({ onClose, post }: Props) {
       >
         <div className="w-full h-[55%] md:h-full md:w-1/2 bg-black flex items-center justify-center">
           {post.media && post.media.length > 0 && (
-            <Swiper
-              modules={[SwiperPagination]}
-              pagination={post.media.length > 1 ? { type: "fraction" } : false}
-              grabCursor
-              slidesPerView={1}
-              className="w-full h-full"
-            >
-              {post.media.map((m) => (
-                <SwiperSlide
-                  key={m.post_media_id}
-                  className="relative w-full h-full"
+            <>
+              {kind === "reel" ? (
+                <video
+                  src={`${port}${post.media[0].media_url}`}
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <Swiper
+                  modules={[SwiperPagination]}
+                  pagination={
+                    post.media.length > 1 ? { type: "fraction" } : false
+                  }
+                  grabCursor
+                  slidesPerView={1}
+                  className="w-full h-full"
                 >
-                  <Image
-                    src={`${port}${m.media_url}`}
-                    alt="post_url"
-                    fill
-                    className="object-contain"
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
+                  {post.media.map((m) => (
+                    <SwiperSlide
+                      key={m.post_media_id}
+                      className="relative w-full h-full"
+                    >
+                      <Image
+                        src={`${port}${m.media_url}`}
+                        alt="post_url"
+                        fill
+                        className="object-contain"
+                      />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              )}
+            </>
           )}
         </div>
         <div className="w-full md:w-1/2 flex flex-col flex-1">
@@ -642,7 +664,7 @@ export default function CommentSheet({ onClose, post }: Props) {
               </div>
             )}
             <div className="p-2 bg-gray-100 rounded-2xl flex items-center justify-between">
-              <div className="relative w-60 flex gap-2">
+              <div className="relative flex gap-2 w-full">
                 <div
                   className={`absolute bottom-10 left-0 z-100 bg-white shadow-2xl rounded-2xl p-2 w-fit duration-200 transition-all origin-bottom transform ease-in-out ${isMenu ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
                 >

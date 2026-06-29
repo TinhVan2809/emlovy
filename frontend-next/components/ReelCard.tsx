@@ -11,7 +11,7 @@ import { RiMoreLine } from "react-icons/ri";
 import { IoMdHeart } from "react-icons/io";
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-
+import CommentSheet from "./comments-sheet";
 type ReelItem = {
   post_id: number;
   author?: { name: string; avatar_url?: string | null };
@@ -25,25 +25,38 @@ type ReelItem = {
 function ReelCard({
   v,
   setVideoRef,
+  isMuted,
+  onToggleMute,
 }: {
   v: ReelItem;
   setVideoRef: (el: HTMLVideoElement | null) => void;
+  isMuted: boolean;
+  onToggleMute: () => void;
 }) {
   const localRef = useRef<HTMLVideoElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0); // percent 0-100
+  const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
 
   useEffect(() => {
-    // expose the video element to parent and ensure initial mute
-    setVideoRef(localRef.current);
-    if (localRef.current) {
-      localRef.current.muted = false;
-      setIsMuted(false);
-    }
-    return () => setVideoRef(null);
-  }, [setVideoRef]);
+    const vid = localRef.current;
+    if (!vid) return;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    vid.addEventListener("play", handlePlay);
+    vid.addEventListener("pause", handlePause);
+
+    // Đồng bộ trạng thái ban đầu khi component được mount
+    setIsPlaying(!vid.paused);
+
+    return () => {
+      vid.removeEventListener("play", handlePlay);
+      vid.removeEventListener("pause", handlePause);
+    };
+  }, []);
 
   const handleRef = (el: HTMLVideoElement | null) => {
     localRef.current = el;
@@ -69,10 +82,7 @@ function ReelCard({
 
   const toggleMute = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const vid = localRef.current;
-    if (!vid) return;
-    vid.muted = !vid.muted;
-    setIsMuted(vid.muted);
+    onToggleMute();
   };
 
   const onTimeUpdate = () => {
@@ -99,8 +109,30 @@ function ReelCard({
     ? `${port}${v.author?.avatar_url}`
     : "/default-avata.jpeg";
 
+  const handleToggleCommentSheet = () => {
+    setIsCommentSheetOpen((prev) => !prev);
+    // Pause video when opening comments
+    if (localRef.current && !localRef.current.paused) {
+      localRef.current.pause();
+    }
+  };
+
+  const handleCloseCommentSheet = () => {
+    setIsCommentSheetOpen(false);
+  };
+
+  // Adapt ReelItem to the Post type expected by CommentSheet
+  const postForSheet = {
+    ...v,
+    media: v.media.map((m, index) => ({
+      ...m,
+      post_media_id: v.post_id + index, // Create a unique key for the media item
+      type: "video",
+    })),
+  };
   return (
-    <div
+    <>
+      <div
       className="max-w-87.5 w-full border rounded-lg overflow-hidden bg-black shadow-lg"
       key={v.post_id}
       data-post-id={v.post_id}
@@ -114,8 +146,8 @@ function ReelCard({
             src={`${port}${v.media[0].media_url}`}
             muted={isMuted}
             playsInline
-            autoPlay
             loop
+            preload="none"
             width={1080}
             height={1920}
             onTimeUpdate={onTimeUpdate}
@@ -206,10 +238,12 @@ function ReelCard({
                 <span className="text-[10px] text-white">{v.like_count}</span>
               </div>
               <div className="flex flex-col items-center">
-                <IoChatbubbleOutline
-                  size={36}
-                  className="text-white p-1.5 rounded-full hover:bg-white/10"
-                />
+                <button onClick={handleToggleCommentSheet}>
+                  <IoChatbubbleOutline
+                    size={36}
+                    className="text-white p-1.5 rounded-full hover:bg-white/10"
+                  />
+                </button>
                 <span className="text-[10px] text-white">
                   {v.comment_count}
                 </span>
@@ -236,7 +270,15 @@ function ReelCard({
           </div>
         </div>
       </div>
-    </div>
+      {isCommentSheetOpen && (
+        <CommentSheet
+          onClose={handleCloseCommentSheet}
+          post={postForSheet as any}
+          kind="reel"
+        />
+      )}
+      </div>
+    </>
   );
 }
 

@@ -125,7 +125,7 @@ export default function PostFeed() {
           <div
             className="w-full max-w-xl animate-pulse flex flex-col gap-3"
             key={n}
-          > 
+          >
             <div className="flex w-full gap-2 items-center">
               <div className="bg-gray-200 rounded-full w-10 h-10" />
               <div className="flex flex-col gap-1">
@@ -156,15 +156,35 @@ export default function PostFeed() {
         className="h-10 w-full flex justify-center items-center"
       >
         {isFetchingNextPage && (
-          <p className="text-sm text-gray-500">Loading more posts...</p>
+          <div className="flex flex-col gap-5 md:gap-8 w-full items-center">
+            <div className="w-full max-w-xl animate-pulse flex flex-col gap-3">
+              <div className="flex w-full gap-2 items-center">
+                <div className="bg-gray-200 rounded-full w-10 h-10" />
+                <div className="flex flex-col gap-1">
+                  <div className="bg-gray-200 rounded-2xl w-40 h-3" />
+                  <div className="bg-gray-200 rounded-2xl w-20 h-2" />
+                </div>
+              </div>
+              <div className="w-full h-3 rounded-2xl bg-gray-200" />
+              <div className="w-full h-3 rounded-2xl bg-gray-200" />
+              <div className="bg-gray-200 rounded-md h-60" />
+            </div>
+          </div>
         )}
+
         {!hasNextPage && (
           <div className="flex justify-between w-full">
             <p className="text-sm opacity-70">&copy; Copyright emlovy - 2026</p>
             <div className="flex gap-3">
-              <span className="text-sm opacity-70 cursor-pointer hover:underline">APIs</span>
-              <span className="text-sm opacity-70 cursor-pointer hover:underline">Bảo mật</span>
-              <span className="text-sm opacity-70 cursor-pointer hover:underline">Chính sách và quyền riêng tư</span>
+              <span className="text-sm opacity-70 cursor-pointer hover:underline">
+                APIs
+              </span>
+              <span className="text-sm opacity-70 cursor-pointer hover:underline">
+                Bảo mật
+              </span>
+              <span className="text-sm opacity-70 cursor-pointer hover:underline">
+                Chính sách và quyền riêng tư
+              </span>
             </div>
           </div>
         )}
