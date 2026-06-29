@@ -40,19 +40,9 @@
 
    ```bash
    npm install
-   # hoặc
-   pnpm install
    ```
 
 3. Chạy ứng dụng ở chế độ phát triển:
    ```bash
    npm run dev
    ```
-
-### Build cho Production
-
-```bash
-npm run build
-npm run start
-```
-

@@ -22,22 +22,6 @@
     - Quản lý nội dung: Kiểm duyệt bài viết và các hoạt động cộng đồng.
     - Xác thực: Hệ thống cấp quyền Admin/Moderator và gán nhãn xác minh (Tick xanh).
 
-## Cấu trúc thư mục
-```text
-frontend-native/
-├── app/                # Expo Router (Tabs, Stacks, Groups)
-│   ├── (auth)/         # Luồng đăng nhập/đăng ký
-│   ├── (main)/         # Luồng chính (Feed, Reels, Profile)
-│   ├── (setting)/      # Cài đặt chi tiết người dùng
-│   └── admin/          # Giao diện dành cho quản trị viên
-├── components/         # Các UI Components tái sử dụng (ScreenShell, Buttons...)
-├── constants/          # Định nghĩa màu sắc (Theme), Font, Config
-├── assets/             # Hình ảnh, Fonts, Icons
-├── hooks/              # Custom React Hooks
-├── services/           # Logic gọi API và xử lý dữ liệu
-└── types/              # Định nghĩa Interface/Type cho TypeScript
-```
-
 ## Cài đặt & Phát triển
 
 ### Yêu cầu hệ thống (Khuyến nghị)
@@ -54,16 +38,12 @@ frontend-native/
 2. Cài đặt các thư viện phụ thuộc:
    ```bash
    npm install
-   # hoặc
-   pnpm install
    ```
 
 3. Chạy ứng dụng:
    ```bash
-   npx expo start
+   npm start
    ```
    - Quét mã QR bằng ứng dụng **Expo Go** để xem trên thiết bị thật hoặc
    - Nhấn `a` để mở trên Android Emulator.
    - Nhấn `i` để mở trên iOS Simulator.
-
-![](../frontend-native/assets/images/Screenshot_native.png)
