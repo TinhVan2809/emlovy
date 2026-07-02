@@ -207,8 +207,8 @@ function CommentItem({
   };
 
   return (
-    <div className="flex gap-3 items-start">
-      <div className="relative w-8 h-8 shrink-0">
+    <div className="flex gap-2 sm:gap-3 items-start">
+      <div className="relative w-6 sm:w-8 h-6 sm:h-8 shrink-0 mt-1">
         <Image
           src={avatarSrc}
           alt="avatar"
@@ -216,28 +216,28 @@ function CommentItem({
           className="rounded-full object-cover"
         />
       </div>
-      <div className="flex flex-col w-full">
+      <div className="flex flex-col w-full min-w-0">
         {isEditing ? (
           <form onSubmit={handleUpdate} className="w-full">
             <textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="w-full p-2 border rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               rows={2}
               autoFocus
             />
-            <div className="flex items-center gap-2 mt-2 text-xs">
+            <div className="flex items-center gap-2 mt-2 text-xs sm:text-sm">
               <button
                 type="submit"
                 disabled={isSubmittingEdit}
-                className="font-semibold text-blue-600"
+                className="font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50"
               >
                 Lưu
               </button>
               <button
                 type="button"
                 onClick={handleCancelEdit}
-                className="font-semibold"
+                className="font-semibold hover:text-gray-700 transition-colors"
               >
                 Hủy
               </button>
@@ -245,39 +245,39 @@ function CommentItem({
           </form>
         ) : (
           <>
-            <div className="bg-gray-100 rounded-xl px-3 py-2 w-fit relative group">
-              <p className="flex items-center gap-3 md:gap-5">
-                <span className="font-semibold text-sm">
+            <div className="bg-gray-100 rounded-lg sm:rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 w-fit relative group">
+              <p className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <span className="font-semibold text-xs sm:text-sm">
                   {comment.author.name}
                 </span>
-                <span className="text-[10px] text-black/50">
+                <span className="text-[9px] sm:text-[10px] text-black/50 whitespace-nowrap">
                   {new Date(comment.created_at).toLocaleDateString()}
                 </span>
               </p>
-              <p className="text-sm">{comment.content}</p>
+              <p className="text-xs sm:text-sm wrap-break-word">{comment.content}</p>
               {isOwner && (
-                <div className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <button
                     onClick={() => setIsMenuOpen((o) => !o)}
-                    className="p-1 bg-white rounded-full shadow"
+                    className="p-0.5 sm:p-1 bg-white rounded-full shadow hover:shadow-md transition-shadow"
                   >
-                    <RiMore2Fill size={14} />
+                    <RiMore2Fill size={12} className="sm:size-3.5" />
                   </button>
                   {isMenuOpen && (
-                    <div className="absolute top-full right-0 mt-1 bg-white shadow-lg rounded-md text-sm w-28 z-10">
+                    <div className="absolute top-full right-0 mt-1 bg-white shadow-lg rounded-md text-xs sm:text-sm w-24 sm:w-28 z-20">
                       <button
                         onClick={() => {
                           setIsEditing(true);
                           setIsMenuOpen(false);
                         }}
-                        className="block w-full text-left px-3 py-2 hover:bg-gray-100"
+                        className="block w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 hover:bg-gray-100 text-xs sm:text-sm"
                       >
                         Chỉnh sửa
                       </button>
                       <button
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600"
+                        className="block w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 hover:bg-gray-100 text-red-600 text-xs sm:text-sm"
                       >
                         Xóa
                       </button>
@@ -288,35 +288,35 @@ function CommentItem({
             </div>
           </>
         )}
-        <div className="flex gap-3 text-xs px-3 text-gray-500">
+        <div className="flex gap-2 sm:gap-3 text-xs sm:text-sm px-2 sm:px-3 text-gray-500 flex-wrap">
           <button
             onClick={handleToggleLike}
             disabled={isLiking}
-            className={`font-semibold ${liked ? "text-red-500" : ""}`}
+            className={`font-semibold hover:text-gray-700 transition-colors ${liked ? "text-red-500 hover:text-red-600" : ""}`}
           >
             {liked ? "Bỏ thích" : "Thích"}
           </button>
-          <button onClick={() => onReply(comment)} className="font-semibold">
+          <button onClick={() => onReply(comment)} className="font-semibold hover:text-gray-700 transition-colors">
             Phản hồi
           </button>
           {likeCount > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 ml-auto sm:ml-0">
               {liked ? (
-                <RiHeart3Fill size={14} className="text-red-500" />
+                <RiHeart3Fill size={12} className="sm:size-3.5 text-red-500" />
               ) : (
-                <RiHeart3Line size={14} />
+                <RiHeart3Line size={12} className="sm:size-3.5" />
               )}
-              <span>{likeCount}</span>
+              <span className="text-xs sm:text-sm">{likeCount}</span>
             </div>
           )}
           {comment.is_edited && !isEditing && (
-            <span className="text-gray-400">(đã chỉnh sửa)</span>
+            <span className="text-gray-400 text-xs">(đã chỉnh sửa)</span>
           )}
         </div>
         {hasReplies && (
           <button
             onClick={() => setAreRepliesVisible(!areRepliesVisible)}
-            className="w-fit text-xs font-semibold text-gray-600 mt-1 px-3 hover:underline"
+            className="w-fit text-xs sm:text-sm font-semibold text-gray-600 mt-1 px-2 sm:px-3 hover:underline transition-all"
           >
             {areRepliesVisible
               ? "Ẩn phản hồi"
@@ -324,7 +324,7 @@ function CommentItem({
           </button>
         )}
         {hasReplies && areRepliesVisible && (
-          <div className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200">
+          <div className="mt-2 space-y-2 pl-3 sm:pl-4 border-l-2 border-gray-200">
             {comment.replies.map((reply) => (
               <CommentItem
                 key={reply.id}
@@ -530,18 +530,31 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
 
   const cancelReply = () => setReplyingTo(null);
 
+  // Ngăn cuộn phía sau khi comment sheet mở
+  useEffect(() => {
+    if (post) {
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [post]);
+
   if (!post) return null;
 
   return (
     <div
-      className="w-full h-screen fixed top-0 right-0 z-10000 bg-black/50 flex justify-center items-center"
+      className="w-full h-screen fixed top-0 right-0 z-10000 bg-black/50 flex justify-center items-center p-0 sm:p-4"
       onClick={onClose}
     >
+      <div className="absolute top-0 right-0 z-100 p-4 sm:p-6 md:p-8 cursor-pointer" onClick={onClose}>
+        <span className="text-3xl sm:text-4xl text-white font-light hover:opacity-70 transition-opacity">&times;</span>
+      </div>
       <div
-        className="w-full h-full md:h-[90vh] md:max-w-7xl bg-white shadow-2xl md:rounded-lg flex flex-col md:flex-row overflow-hidden"
+        className="w-full h-full sm:h-[95vh] md:h-[90vh] lg:max-w-6xl xl:max-w-7xl bg-white shadow-2xl sm:rounded-lg flex flex-col sm:flex-row overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-full h-[55%] md:h-full md:w-1/2 bg-black flex items-center justify-center">
+        <div className="w-full h-[45%] sm:h-[50%] md:h-full lg:w-1/2 bg-black flex items-center justify-center shrink-0">
           {post.media && post.media.length > 0 && (
             <>
               {kind === "reel" ? (
@@ -581,14 +594,14 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
             </>
           )}
         </div>
-        <div className="w-full md:w-1/2 flex flex-col flex-1">
+        <div className="w-full sm:w-1/2 lg:w-full lg:flex-1 flex flex-col overflow-hidden">
           <div
             ref={commentsContainerRef}
             onScroll={handleScroll}
-            className="flex-1 p-4 overflow-y-auto space-y-4"
+            className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4"
           >
             {comments.length > 0 ? (
-              <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-2.5 sm:gap-3 md:gap-3.5">
                 {comments.map((comment) => (
                   <CommentItem
                     key={comment.id}
@@ -599,56 +612,42 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col justify-center items-center h-full">
-                <RiMessage3Line size={40} className="opacity-45" />
-                <span>Chưa có bình luận nào</span>
-                <span>Hãy trở thành người bình luận đầu tiên</span>
+              <div className="flex flex-col justify-center items-center h-full gap-2">
+                <RiMessage3Line size={32} className="opacity-45 sm:size-40" />
+                <span className="text-sm sm:text-base">Chưa có bình luận nào</span>
+                <span className="text-xs sm:text-sm text-gray-500">Hãy trở thành người bình luận đầu tiên</span>
               </div>
             )}
             {isLoading && (
-              <div className="w-full flex flex-col gap-4 items-center justify-center animate-pulse">
-                <div className="w-60 flex gap-1 flex-col">
+              <div className="w-full flex flex-col gap-3 sm:gap-4 items-center justify-center animate-pulse">
+                <div className="w-full max-w-xs sm:max-w-sm flex gap-1 flex-col">
                   <div className="flex items-center gap-1.5">
-                    <div className="bg-gray-100 rounded-full w-8 h-8"></div>
-                    <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
+                    <div className="bg-gray-100 rounded-full w-6 sm:w-8 h-6 sm:h-8"></div>
+                    <div className="bg-gray-100 w-24 sm:w-30 h-2 rounded-2xl"></div>
                   </div>
-                  <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
+                  <div className="bg-gray-100 h-12 sm:h-15 rounded-xl w-full"></div>
                 </div>
-                <div className="w-40 flex gap-1 flex-col">
+                <div className="w-full max-w-xs sm:max-w-sm flex gap-1 flex-col">
                   <div className="flex items-center gap-1.5">
-                    <div className="bg-gray-100 rounded-full w-8 h-8"></div>
-                    <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
+                    <div className="bg-gray-100 rounded-full w-6 sm:w-8 h-6 sm:h-8"></div>
+                    <div className="bg-gray-100 w-20 sm:w-30 h-2 rounded-2xl"></div>
                   </div>
-                  <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
+                  <div className="bg-gray-100 h-12 sm:h-15 rounded-xl w-full"></div>
                 </div>
-                <div className="w-50 flex gap-1 flex-col">
+                <div className="w-full max-w-xs sm:max-w-sm flex gap-1 flex-col">
                   <div className="flex items-center gap-1.5">
-                    <div className="bg-gray-100 rounded-full w-8 h-8"></div>
-                    <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
+                    <div className="bg-gray-100 rounded-full w-6 sm:w-8 h-6 sm:h-8"></div>
+                    <div className="bg-gray-100 w-28 sm:w-30 h-2 rounded-2xl"></div>
                   </div>
-                  <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
-                </div>
-                <div className="w-50 flex gap-1 flex-col">
-                  <div className="flex items-center gap-1.5">
-                    <div className="bg-gray-100 rounded-full w-8 h-8"></div>
-                    <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
-                  </div>
-                  <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
-                </div>
-                <div className="w-70 flex gap-1 flex-col">
-                  <div className="flex items-center gap-1.5">
-                    <div className="bg-gray-100 rounded-full w-8 h-8"></div>
-                    <div className="bg-gray-100 w-30 h-2 rounded-2xl"></div>
-                  </div>
-                  <div className="bg-gray-100 h-15 rounded-xl w-full"></div>
+                  <div className="bg-gray-100 h-12 sm:h-15 rounded-xl w-full"></div>
                 </div>
               </div>
             )}
           </div>
-          <form onSubmit={handleCommentSubmit} className="p-4">
+          <form onSubmit={handleCommentSubmit} className="shrink-0 p-2.5 sm:p-3 md:p-4 border-t border-gray-100 bg-white">
             {replyingTo && (
-              <div className="text-sm text-gray-500 mb-2 flex justify-between items-center">
-                <span>
+              <div className="text-xs sm:text-sm text-gray-500 mb-2 flex justify-between items-center px-2">
+                <span className="truncate">
                   Đang trả lời{" "}
                   <span className="font-semibold">
                     {replyingTo.author.name}
@@ -657,42 +656,42 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
                 <button
                   type="button"
                   onClick={cancelReply}
-                  className="text-xs font-bold"
+                  className="text-xs font-bold ml-2 whitespace-nowrap"
                 >
                   HỦY
                 </button>
               </div>
             )}
-            <div className="p-2 bg-gray-100 rounded-2xl flex items-center justify-between">
-              <div className="relative flex gap-2 w-full">
+            <div className="p-1.5 sm:p-2 bg-gray-100 rounded-full sm:rounded-2xl flex items-center justify-between gap-2 sm:gap-3">
+              <div className="relative flex gap-1.5 sm:gap-2 w-full min-w-0">
                 <div
-                  className={`absolute bottom-10 left-0 z-100 bg-white shadow-2xl rounded-2xl p-2 w-fit duration-200 transition-all origin-bottom transform ease-in-out ${isMenu ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
+                  className={`absolute bottom-full left-0 mb-2 z-50 bg-white shadow-lg rounded-lg sm:rounded-2xl p-2 w-fit duration-200 transition-all origin-bottom transform ease-in-out ${isMenu ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
                 >
-                  <div className="p-2 flex flex-col gap-3">
-                    <p className="flex gap-1 items-center cursor-pointer">
-                      <LuImagePlus className="text-black/70" />
-                      <span className="text-sm">Hình ảnh</span>
+                  <div className="p-1.5 sm:p-2 flex flex-col gap-2 sm:gap-3">
+                    <p className="flex gap-1.5 sm:gap-2 items-center cursor-pointer hover:opacity-70 transition-opacity">
+                      <LuImagePlus className="text-black/70 shrink-0" size={16} />
+                      <span className="text-xs sm:text-sm">Hình ảnh</span>
                     </p>
-                    <p className="flex gap-1 items-center cursor-pointer">
-                      <RiAttachmentLine size={18} className="text-black/70" />
-                      <span className="text-sm">Files</span>
+                    <p className="flex gap-1.5 sm:gap-2 items-center cursor-pointer hover:opacity-70 transition-opacity">
+                      <RiAttachmentLine size={16} className="text-black/70 shrink-0" />
+                      <span className="text-xs sm:text-sm">Files</span>
                     </p>
-                    <p className="flex gap-1 items-center cursor-pointer">
-                      <RiHashtag size={18} className="text-black/70" />
-                      <span className="text-sm">Hashtag</span>
+                    <p className="flex gap-1.5 sm:gap-2 items-center cursor-pointer hover:opacity-70 transition-opacity">
+                      <RiHashtag size={16} className="text-black/70 shrink-0" />
+                      <span className="text-xs sm:text-sm">Hashtag</span>
                     </p>
-                    <p className="flex gap-1 items-center cursor-pointer">
-                      <MdInsertEmoticon className="text-black/70" />
-                      <span className="text-sm">Emoji</span>
+                    <p className="flex gap-1.5 sm:gap-2 items-center cursor-pointer hover:opacity-70 transition-opacity">
+                      <MdInsertEmoticon className="text-black/70 shrink-0" size={16} />
+                      <span className="text-xs sm:text-sm">Emoji</span>
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  className="p-1 rounded-full bg-white cursor-pointer"
+                  className="p-1 sm:p-1.5 rounded-full bg-white cursor-pointer hover:bg-gray-50 transition-colors shrink-0"
                   onClick={() => setIsMenu((v) => !v)}
                 >
-                  <RiAddLine size={22} />
+                  <RiAddLine size={18} className="sm:size-5" />
                 </button>
                 <input
                   value={commentContent}
@@ -702,7 +701,7 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
                       ? `Trả lời ${replyingTo.author.name}...`
                       : "Nhập bình luận của bạn..."
                   }
-                  className="w-full outline-0 bg-transparent"
+                  className="w-full min-w-0 text-sm sm:text-base outline-0 bg-transparent placeholder-gray-400"
                   disabled={isSubmitting}
                 />
               </div>
@@ -710,9 +709,9 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
               <button
                 type="submit"
                 disabled={!commentContent.trim() || isSubmitting}
-                className="text-blue-500 disabled:text-gray-400 p-2"
+                className="text-blue-500 disabled:text-gray-400 p-1.5 sm:p-2 hover:opacity-70 disabled:hover:opacity-100 transition-opacity shrink-0"
               >
-                <RiSendInsFill size={22} />
+                <RiSendInsFill size={18} className="sm:size-5" />
               </button>
             </div>
           </form>
