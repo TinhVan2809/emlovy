@@ -3,7 +3,7 @@ import port from "@/api/api";
 import { useUser } from "@/context/useUserContext";
 import { use, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { RiSettingsLine } from "@remixicon/react";
+import { RiSettings2Line, RiQrCodeLine, RiArrowRightUpLine } from "@remixicon/react";
 import Link from "next/link";
 import {
   RiLayoutGrid2Fill,
@@ -24,8 +24,10 @@ interface Profile {
     posts: number;
     followers: number;
     following: number;
+    likes: number;
   };
   posts: number;
+  signature: string;
 }
 
 function Profile({ params }: Props) {
@@ -101,41 +103,46 @@ function Profile({ params }: Props) {
           </div>
           <div className="flex flex-col text-center">
             <span>{user?.name}</span>
-            <span className="text-sm opacity-50">@{user?.username}</span>
+            <span className="text-sm opacity-50">{user?.nickname}</span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-5 col-span-2">
-          <div className="flex items-center gap-5">
-            <span className="text-black cursor-pointer text-sm md:text-[14px]">
-              <span className="font-semibold">{myProfile?.stats?.posts}</span>{" "}
-              Bài viết
-            </span>
-            <span className="text-black cursor-pointer text-sm md:text-[14px]">
-              <span className="font-semibold">
-                {myProfile?.stats?.followers}
-              </span>{" "}
-              Người theo dõi
-            </span>
-            <span className="text-black cursor-pointer text-sm md:text-[14px]">
-              <span className="font-semibold">
-                {myProfile?.stats?.following}
-              </span>{" "}
-              Đang theo dõi
-            </span>
+
+          <div className="flex w-full flex-col gap-5 col-span-2">
+            <div className="flex items-center gap-5">
+              <div className="flex flex-col gap-1 items-center justify-center">
+                <span className="font-bold text-xl">{myProfile?.stats?.posts}</span>
+                <span className="text-sm opacity-70">Bài viết</span>
+              </div>
+              <div className="flex flex-col gap-1 items-center justify-center">
+                <span className="font-bold text-xl">{myProfile?.stats?.followers}</span>
+                <span className="text-sm opacity-70">Người theo dõi</span>
+              </div>
+              <div className="flex flex-col gap-1 items-center justify-center">
+                <span className="font-bold text-xl">{myProfile?.stats?.following}</span>
+                <span className="text-sm opacity-70">Đang theo dõi</span>
+              </div>
+              <div className="flex flex-col gap-1 items-center justify-center">
+                <span className="font-bold text-xl">{myProfile?.stats?.likes}</span>
+                <span className="text-sm opacity-70">Likes</span>
+              </div>
+            </div>
+            <div className="flex gap-3 items-center">
+              <div className="cursor-pointer border border-gray-400 rounded-md p-1">
+                <RiQrCodeLine size={20} className="opacity-70"/>
+              </div>
+              <div className="cursor-pointer border border-gray-400 rounded-md p-1" onClick={onSetting}>
+                <RiSettings2Line size={20} className="opacity-70"/>
+              </div>
+              <div className="cursor-pointer border border-gray-400 rounded-md p-1">
+                <RiArrowRightUpLine size={20} className="opacity-70"/>
+              </div>
+            </div>
+            <div className="">
+              <p>{myProfile?.signature}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={onSetting}>
-              <RiSettingsLine />
-            </button>
-            <button className="bg-gray-100 min-w-30 md:min-w-45 py-1.5 rounded-md text-sm md:text-16px">
-              Xem kho lưu trữ
-            </button>
-            <button className="bg-gray-100 min-w-30 md:min-w-45 py-1.5 rounded-md text-sm md:text-16px">
-              Chia sẻ trang cá nhân
-            </button>
-          </div>
-        </div>
+
       </div>
 
       <div className="mt-5 md:mt-15">

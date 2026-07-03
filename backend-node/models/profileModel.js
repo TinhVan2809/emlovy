@@ -3,6 +3,7 @@ const { execute, query } = require("../config/database");
 const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } = {}) => `
   u.user_id,
   u.name,
+  u.nickname,
   u.username,
   u.birthday,
   u.gender,
@@ -13,6 +14,7 @@ const buildProfileSelectFields = ({ publicPostsOnly = false, viewerId = null } =
   u.address,
   u.role,
   u.status,
+  u.signature,
   u.created_at,
   u.is_verified,
   (
@@ -64,6 +66,7 @@ const toProfile = (row) => {
   return {
     user_id: row.user_id,
     name: row.name,
+    nickname: row.nickname,
     username: row.username,
     birthday: row.birthday,
     gender: row.gender,
@@ -75,6 +78,7 @@ const toProfile = (row) => {
     address: row.address,
     role: row.role,
     status: row.status,
+    signature: row.signature,
     created_at: row.created_at,
     is_verified: row.is_verified,
     is_following: Boolean(row.is_following),

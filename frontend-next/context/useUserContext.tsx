@@ -19,6 +19,7 @@ import port from "@/api/api";
 interface User {
   user_id: string;
   name: string;
+  nickname: string;
   username: string;
   email: string;
   role: string;

@@ -4,6 +4,7 @@ const publicUserFields = `
   user_id,
   name,
   username,
+  nickname,
   birthday,
   gender,
   phone,
@@ -11,6 +12,7 @@ const publicUserFields = `
   email,
   role,
   status,
+  signature,
   created_at,
   is_verified
 `;
@@ -23,6 +25,7 @@ const toPublicUser = (user) => {
   return {
     user_id: user.user_id,
     name: user.name,
+    nickname: user.nickname,
     username: user.username,
     birthday: user.birthday,
     gender: user.gender,
@@ -32,6 +35,7 @@ const toPublicUser = (user) => {
     email: user.email,
     role: user.role,
     status: user.status,
+    signature: user.signature,
     created_at: user.created_at,
     is_verified: user.is_verified,
   };
@@ -85,21 +89,25 @@ const findExistingAccount = async ({ username, email }) => {
 const create = async ({
   name,
   username,
+  nickname,
   passwordHash,
   birthday = null,
   gender = null,
   phone = null,
   email = null,
 }) => {
+
+  const nicknameDisplay = `@${username}`;
   const result = await execute(
     `
       INSERT INTO users
-        (name, username, password, birthday, gender, phone, email)
+        (name, nickname, username, password, birthday, gender, phone, email)
       VALUES
-        (:name, :username, :passwordHash, :birthday, :gender, :phone, :email)
+        (:name, :nickname, :username, :passwordHash, :birthday, :gender, :phone, :email)
     `,
     {
       name,
+      nickname: nicknameDisplay,
       username,
       passwordHash,
       birthday,
