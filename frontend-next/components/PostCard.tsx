@@ -18,6 +18,7 @@ import {
 import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CommentSheet from "./comments-sheet";
+import EditPostModal, { type EditPostData } from "./EditPostModal";
 import { useUser } from "@/context/useUserContext";
 
 interface PostMedia {
@@ -52,11 +53,12 @@ interface PostCardProps {
 function PostCard({ i }: PostCardProps) {
   const router = useRouter();
   const user = useUser();
+  const [postData, setPostData] = useState<Post>(i);
   const [postOptionsMenu, setPostOptionsMenu] = useState<boolean>(false);
+  const [isEditingPost, setIsEditingPost] = useState(false);
+  const [editingPost, setEditingPost] = useState<EditPostData | null>(null);
 
-  const isMyPost = i.author?.user_id === user?.user?.user_id;
-
-  console.log(user?.user?.user_id, i.author?.user_id);
+  const isMyPost = postData.author?.user_id === user?.user?.user_id;
 
   // hàm mở PostOptionsMenu
   const onPostOptionsMenu = () => {
@@ -66,19 +68,19 @@ function PostCard({ i }: PostCardProps) {
   // State lưu trạng thái comment
   const [isComment, setIsComment] = useState<boolean>(false);
 
-  const avatarSrc = i.author?.avatar_url
-    ? `${port}${i.author.avatar_url}`
+  const avatarSrc = postData.author?.avatar_url
+    ? `${port}${postData.author.avatar_url}`
     : "/Profile-Default.webp";
 
-  const [liked, setLiked] = useState<boolean>(i.liked_by_me ?? false);
+  const [liked, setLiked] = useState<boolean>(postData.liked_by_me ?? false);
   const [likeCount, setLikeCount] = useState<number>(i.like_count ?? 0);
   const [isLiking, setIsLiking] = useState<boolean>(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLiked(i.liked_by_me ?? false);
-    setLikeCount(i.like_count ?? 0);
-  }, [i.liked_by_me, i.like_count]);
+    setLiked(postData.liked_by_me ?? false);
+    setLikeCount(postData.like_count ?? 0);
+  }, [postData.liked_by_me, postData.like_count]);
 
   const handleTogglePostLike = useCallback(async () => {
     if (isLiking) return;
@@ -91,7 +93,7 @@ function PostCard({ i }: PostCardProps) {
     setIsLiking(true);
 
     try {
-      const response = await fetch(`${port}/api/posts/${i.post_id}/like`, {
+      const response = await fetch(`${port}/api/posts/${postData.post_id}/like`, {
         method: nextLiked ? "POST" : "DELETE",
         credentials: "include",
       });
@@ -115,7 +117,7 @@ function PostCard({ i }: PostCardProps) {
     } finally {
       setIsLiking(false);
     }
-  }, [liked, likeCount, isLiking, i.post_id]);
+  }, [liked, likeCount, isLiking, postData.post_id]);
 
   // Mở comment
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -131,13 +133,36 @@ function PostCard({ i }: PostCardProps) {
   };
 
   useEffect(() => {
-    if (postOptionsMenu) {
+    if (postOptionsMenu || isEditingPost) {
       document.body.style.overflow = "hidden";
     }
     return () => {
       document.body.style.overflow = "";
     };
-  }, [postOptionsMenu]);
+  }, [postOptionsMenu, isEditingPost]);
+
+  const handleOpenEditPost = () => {
+    setEditingPost({
+      post_id: postData.post_id,
+      content: postData.content,
+      media: postData.media,
+    });
+    setIsEditingPost(true);
+    setPostOptionsMenu(false);
+  };
+
+  const handleSavedPost = (updatedPost: EditPostData) => {
+    setPostData((prev) => ({
+      ...prev,
+      content: updatedPost.content ?? prev.content,
+      media: (updatedPost.media ?? prev.media ?? []).map((media) => ({
+        post_media_id: media.post_media_id ?? 0,
+        media_url: media.media_url,
+        type: media.type ?? "image",
+      })),
+    }));
+    setEditingPost((prev) => (prev ? { ...prev, ...updatedPost } : prev));
+  };
 
   return (
     <>
@@ -149,7 +174,7 @@ function PostCard({ i }: PostCardProps) {
           <div className="flex justify-between items-center">
             <div
               className="flex items-center gap-3 cursor-pointer"
-              onClick={() => router.push(`/profile/${i.author?.user_id}`)}
+              onClick={() => router.push(`/profile/${postData.author?.user_id}`)}
             >
               <div className="relative w-10 h-10">
                 <Image
@@ -162,10 +187,10 @@ function PostCard({ i }: PostCardProps) {
               </div>
               <div className="flex flex-col">
                 <p className="font-semibold text-sm hover:underline">
-                  {i.author?.name || "Anonymous"}
+                  {postData.author?.name || "Anonymous"}
                 </p>
                 <p className="text-xs opacity-50">
-                  {new Date(i.created_at).toLocaleString()}
+                  {new Date(postData.created_at).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -177,21 +202,21 @@ function PostCard({ i }: PostCardProps) {
             </div>
           </div>
           <p className="text-[15px] leading-relaxed text-gray-800">
-            {i.content}
+            {postData.content}
           </p>
         </div>
         <div className="relative w-full bg-black overflow-hidden flex justify-center md:rounded-md">
-          {i.media && i.media.length > 0 && (
+          {postData.media && postData.media.length > 0 && (
             <div className="w-full flex flex-col gap-1">
               <Swiper
                 modules={[Pagination]}
-                pagination={i.media.length > 1 ? { type: "fraction" } : false}
+                pagination={postData.media.length > 1 ? { type: "fraction" } : false}
                 grabCursor
                 spaceBetween={0}
                 slidesPerView={1}
                 className="w-full bg-black/60 text-white text-xs font-medium"
               >
-                {i.media.map((m: PostMedia) => {
+                {postData.media.map((m: PostMedia) => {
                   const mediaSrc = m.media_url
                     ? `${port}${m.media_url}`
                     : "/placeholder.jpg";
@@ -234,17 +259,17 @@ function PostCard({ i }: PostCardProps) {
             </button>
             <button
               className="flex items-center gap-1.5 hover:opacity-60 transition"
-              onClick={() => onToggleComment(i)}
+              onClick={() => onToggleComment(postData)}
             >
               <RiChat3Line size={24} />
               <span className="text-sm font-medium">
-                {i.comment_count > 0 ? i.comment_count : null}
+                {postData.comment_count > 0 ? postData.comment_count : null}
               </span>
             </button>
             <button className="flex items-center gap-1.5 hover:opacity-60 transition">
               <RiSendPlaneLine size={24} />
               <span className="text-sm font-medium">
-                {i.share_count > 0 ? i.share_count : null}
+                {postData.share_count > 0 ? postData.share_count : null}
               </span>
             </button>
           </div>
@@ -266,8 +291,11 @@ function PostCard({ i }: PostCardProps) {
                 className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
                 onClick={(e) => e.stopPropagation()}
               >
-                <button className="p-4  border-b border-black/10 hover:bg-gray-50 transition">
-                  Chỉnh sửa
+                <button
+                  className="p-4 border-b border-black/10 hover:bg-gray-50 transition"
+                  onClick={handleOpenEditPost}
+                >
+                  Chỉnh sửa bài viết
                 </button>
                 <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
                   Xóa bài viết
@@ -312,6 +340,13 @@ function PostCard({ i }: PostCardProps) {
           )}
         </div>
       )}
+
+      <EditPostModal
+        open={isEditingPost}
+        post={editingPost}
+        onClose={() => setIsEditingPost(false)}
+        onSaved={handleSavedPost}
+      />
 
       {/* Mở comment */}
       {isComment && (

@@ -95,10 +95,10 @@ function Profile({ params }: Props) {
 
   return (
     <>
-      <div className=" flex flex-col md:grid md:grid-cols-3 items-center gap-5 md:gap-10 py-5 md:py-10">
-        <div className="flex flex-col justify-center items-center md:col-span-1">
+      <div className="grid md:grid-cols-3 items-center gap-5 md:gap-10 py-5 md:py-10">
+        <div className="flex flex-col justify-center items-center  md:col-span-1">
           <div className="mb-1.5">
-            <div className="relative w-20 h-20 md:w-30 md:h-30">
+            <div className="relative w-15 h-15 md:w-30 md:h-30">
               <Image
                 src={avatarSrc}
                 alt="avatar"
@@ -114,42 +114,42 @@ function Profile({ params }: Props) {
           </div>
         </div>
 
-        <div className="flex w-full flex-col gap-5 col-span-2">
-          <div className="flex items-center gap-5">
+        <div className="flex w-full flex-col gap-5 md:col-span-2">
+          <div className="flex justify-center md:justify-start items-center gap-5">
             <div className="flex flex-col gap-1 items-center justify-center">
-              <span className="font-bold text-xl">
+              <span className="font-bold text-md md:text-xl">
                 {myProfile?.stats?.posts}
               </span>
-              <span className="text-[12px] text-gray-400 uppercase font-semibold">
-                Bài viết
+              <span className="text-[10px] md:text-[12px] text-gray-400 uppercase font-semibold">
+                Posts
               </span>
             </div>
             <div className="flex flex-col gap-1 items-center justify-center">
-              <span className="font-bold text-xl">
+              <span className="font-bold text-md md:text-xl">
                 {myProfile?.stats?.followers}
               </span>
-              <span className="text-[12px] text-gray-400 uppercase font-semibold">
-                Người theo dõi
+              <span className="text-[10px] md:text-[12px] text-gray-400 uppercase font-semibold">
+                Followers
               </span>
             </div>
             <div className="flex flex-col gap-1 items-center justify-center">
-              <span className="font-bold text-xl">
+              <span className="font-bold text-md md:text-xl">
                 {myProfile?.stats?.following}
               </span>
-              <span className="text-[12px] text-gray-400 uppercase font-semibold">
-                Đang theo dõi
+              <span className="text-[10px] md:text-[12px] text-gray-400 uppercase font-semibold">
+                Following
               </span>
             </div>
             <div className="flex flex-col gap-1 items-center justify-center">
-              <span className="font-bold text-xl">
+              <span className="font-bold text-md md:text-xl">
                 {myProfile?.stats?.likes}
               </span>
-              <span className="text-[12px] text-gray-400 uppercase font-semibold">
+              <span className="text-[10px] md:text-[12px] text-gray-400 uppercase font-semibold">
                 Likes
               </span>
             </div>
           </div>
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-3 items-center justify-center md:justify-start">
             <div className="cursor-pointer border border-gray-400 rounded-md p-1">
               <RiQrCodeLine size={20} className="opacity-70" />
             </div>
@@ -163,7 +163,7 @@ function Profile({ params }: Props) {
               <RiArrowRightUpLine size={20} className="opacity-70" />
             </div>
           </div>
-          <div className="">
+          <div className="flex justify-center md:justify-start">
             <p>{myProfile?.signature}</p>
           </div>
         </div>
