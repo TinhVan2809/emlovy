@@ -3,18 +3,25 @@ import port from "@/api/api";
 import { useUser } from "@/context/useUserContext";
 import { use, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { RiSettings2Line, RiQrCodeLine, RiArrowRightUpLine } from "@remixicon/react";
+import {
+  RiSettings2Line,
+  RiQrCodeLine,
+  RiArrowRightUpLine,
+} from "@remixicon/react";
 import Link from "next/link";
 import {
   RiLayoutGrid2Fill,
   RiLayoutGrid2Line,
   RiBookmarkLine,
   RiBookmarkFill,
-  RiShieldUserLine,
-  RiShieldUserFill,
+  RiFilmFill,
+  RiFilmLine,
+  RiPriceTag3Fill,
+  RiPriceTag3Line,
 } from "@remixicon/react";
 import MyPosts, { Post } from "@/components/me/MyPosts";
 import Saved from "@/components/me/Saved";
+import MyMedia from "@/components/me/MyMedia";
 interface Props {
   params: Promise<{ user_id: string }>;
 }
@@ -107,42 +114,59 @@ function Profile({ params }: Props) {
           </div>
         </div>
 
-
-          <div className="flex w-full flex-col gap-5 col-span-2">
-            <div className="flex items-center gap-5">
-              <div className="flex flex-col gap-1 items-center justify-center">
-                <span className="font-bold text-xl">{myProfile?.stats?.posts}</span>
-                <span className="text-sm opacity-70">Bài viết</span>
-              </div>
-              <div className="flex flex-col gap-1 items-center justify-center">
-                <span className="font-bold text-xl">{myProfile?.stats?.followers}</span>
-                <span className="text-sm opacity-70">Người theo dõi</span>
-              </div>
-              <div className="flex flex-col gap-1 items-center justify-center">
-                <span className="font-bold text-xl">{myProfile?.stats?.following}</span>
-                <span className="text-sm opacity-70">Đang theo dõi</span>
-              </div>
-              <div className="flex flex-col gap-1 items-center justify-center">
-                <span className="font-bold text-xl">{myProfile?.stats?.likes}</span>
-                <span className="text-sm opacity-70">Likes</span>
-              </div>
+        <div className="flex w-full flex-col gap-5 col-span-2">
+          <div className="flex items-center gap-5">
+            <div className="flex flex-col gap-1 items-center justify-center">
+              <span className="font-bold text-xl">
+                {myProfile?.stats?.posts}
+              </span>
+              <span className="text-[12px] text-gray-400 uppercase font-semibold">
+                Bài viết
+              </span>
             </div>
-            <div className="flex gap-3 items-center">
-              <div className="cursor-pointer border border-gray-400 rounded-md p-1">
-                <RiQrCodeLine size={20} className="opacity-70"/>
-              </div>
-              <div className="cursor-pointer border border-gray-400 rounded-md p-1" onClick={onSetting}>
-                <RiSettings2Line size={20} className="opacity-70"/>
-              </div>
-              <div className="cursor-pointer border border-gray-400 rounded-md p-1">
-                <RiArrowRightUpLine size={20} className="opacity-70"/>
-              </div>
+            <div className="flex flex-col gap-1 items-center justify-center">
+              <span className="font-bold text-xl">
+                {myProfile?.stats?.followers}
+              </span>
+              <span className="text-[12px] text-gray-400 uppercase font-semibold">
+                Người theo dõi
+              </span>
             </div>
-            <div className="">
-              <p>{myProfile?.signature}</p>
+            <div className="flex flex-col gap-1 items-center justify-center">
+              <span className="font-bold text-xl">
+                {myProfile?.stats?.following}
+              </span>
+              <span className="text-[12px] text-gray-400 uppercase font-semibold">
+                Đang theo dõi
+              </span>
+            </div>
+            <div className="flex flex-col gap-1 items-center justify-center">
+              <span className="font-bold text-xl">
+                {myProfile?.stats?.likes}
+              </span>
+              <span className="text-[12px] text-gray-400 uppercase font-semibold">
+                Likes
+              </span>
             </div>
           </div>
-
+          <div className="flex gap-3 items-center">
+            <div className="cursor-pointer border border-gray-400 rounded-md p-1">
+              <RiQrCodeLine size={20} className="opacity-70" />
+            </div>
+            <div
+              className="cursor-pointer border border-gray-400 rounded-md p-1"
+              onClick={onSetting}
+            >
+              <RiSettings2Line size={20} className="opacity-70" />
+            </div>
+            <div className="cursor-pointer border border-gray-400 rounded-md p-1">
+              <RiArrowRightUpLine size={20} className="opacity-70" />
+            </div>
+          </div>
+          <div className="">
+            <p>{myProfile?.signature}</p>
+          </div>
+        </div>
       </div>
 
       <div className="mt-5 md:mt-15">
@@ -154,6 +178,13 @@ function Profile({ params }: Props) {
               <RiLayoutGrid2Line size={26} className="sm:text-sm" />
             )}
           </Link>
+          <Link href={"#"} onClick={() => setTab("media")}>
+            {tab === "media" ? (
+              <RiFilmFill size={26} className="sm:text-sm" />
+            ) : (
+              <RiFilmLine size={26} className="sm:text-sm" />
+            )}
+          </Link>
           <Link href={"#"} onClick={() => setTab("saved")}>
             {tab === "saved" ? (
               <RiBookmarkFill size={26} className="sm:text-sm" />
@@ -161,11 +192,11 @@ function Profile({ params }: Props) {
               <RiBookmarkLine size={26} className="sm:text-sm" />
             )}
           </Link>
-          <Link href={"#"} onClick={() => setTab("you")}>
-            {tab === "you" ? (
-              <RiShieldUserFill size={26} className="sm:text-sm" />
+          <Link href={"#"} onClick={() => setTab("tagged")}>
+            {tab === "tagged" ? (
+              <RiPriceTag3Fill size={26} className="sm:text-sm" />
             ) : (
-              <RiShieldUserLine size={26} className="sm:text-sm" />
+              <RiPriceTag3Line size={26} className="sm:text-sm" />
             )}
           </Link>
         </div>
@@ -174,9 +205,11 @@ function Profile({ params }: Props) {
       <div className="py-10">
         {tab === "list" && <MyPosts myPosts={myPosts} />}
 
+        {tab === "media" && <MyMedia />}
+
         {tab === "saved" && <Saved />}
 
-        {tab === "you" && <div className="">co mac ban</div>}
+        {tab === "tagged" && <div className="">co mac ban</div>}
       </div>
 
       {isSetting && (
@@ -195,7 +228,7 @@ function Profile({ params }: Props) {
               Mã QR
             </button>
             <button
-              className="p-4 border-b border-black/10 hover:bg-gray-50 transition"
+              className="p-4 border-b text-red-500 border-black/10 hover:bg-gray-50 transition"
               onClick={logout}
             >
               Đăng xuất

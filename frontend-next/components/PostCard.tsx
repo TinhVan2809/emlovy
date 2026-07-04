@@ -18,6 +18,7 @@ import {
 import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CommentSheet from "./comments-sheet";
+import { useUser } from "@/context/useUserContext";
 
 interface PostMedia {
   post_media_id: number;
@@ -50,7 +51,12 @@ interface PostCardProps {
 
 function PostCard({ i }: PostCardProps) {
   const router = useRouter();
+  const user = useUser();
   const [postOptionsMenu, setPostOptionsMenu] = useState<boolean>(false);
+
+  const isMyPost = i.author?.user_id === user?.user?.user_id;
+
+  console.log(user?.user?.user_id, i.author?.user_id);
 
   // hàm mở PostOptionsMenu
   const onPostOptionsMenu = () => {
@@ -123,6 +129,15 @@ function PostCard({ i }: PostCardProps) {
     setIsComment((v) => !v);
     setSelectedPost(null);
   };
+
+  useEffect(() => {
+    if (postOptionsMenu) {
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [postOptionsMenu]);
 
   return (
     <>
@@ -241,30 +256,60 @@ function PostCard({ i }: PostCardProps) {
 
       {/* Mở postOptionsMenu */}
       {postOptionsMenu && (
-        <div
-          className="w-full h-screen bg-black/40 fixed inset-0 z-1000 flex justify-center items-center p-4"
-          onClick={() => onPostOptionsMenu()}
-        >
-          <div
-            className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition">
-              Báo vi phạm
-            </button>
-            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-              Lưu bài viết
-            </button>
-            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-              Chia sẻ
-            </button>
-            <button
-              className="p-4 hover:bg-gray-50 transition"
+        <div className="">
+          {isMyPost ? (
+            <div
+              className="w-full h-screen bg-black/40 fixed inset-0 z-1000 flex justify-center items-center p-4"
               onClick={() => onPostOptionsMenu()}
             >
-              Hủy
-            </button>
-          </div>
+              <div
+                className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button className="p-4  border-b border-black/10 hover:bg-gray-50 transition">
+                  Chỉnh sửa
+                </button>
+                <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+                  Xóa bài viết
+                </button>
+                <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+                  Chia sẻ
+                </button>
+                <button
+                  className="p-4 hover:bg-gray-50 transition"
+                  onClick={() => onPostOptionsMenu()}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="w-full h-screen bg-black/40 fixed inset-0 z-1000 flex justify-center items-center p-4"
+              onClick={() => onPostOptionsMenu()}
+            >
+              <div
+                className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition">
+                  Báo vi phạm
+                </button>
+                <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+                  Lưu bài viết
+                </button>
+                <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+                  Chia sẻ
+                </button>
+                <button
+                  className="p-4 hover:bg-gray-50 transition"
+                  onClick={() => onPostOptionsMenu()}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
