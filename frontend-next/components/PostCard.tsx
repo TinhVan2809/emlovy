@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import CommentSheet from "./comments-sheet";
 import EditPostModal, { type EditPostData } from "./EditPostModal";
 import { useUser } from "@/context/useUserContext";
+import DeletePost from "./DeletePost";
 
 interface PostMedia {
   post_media_id: number;
@@ -58,11 +59,22 @@ function PostCard({ i }: PostCardProps) {
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editingPost, setEditingPost] = useState<EditPostData | null>(null);
 
+  // State lưu trạng thái đóng mở xác nhận xóa post
+  const [isDelete, setIsDelete] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+  // State lưu post_id
+  const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+
   const isMyPost = postData.author?.user_id === user?.user?.user_id;
 
   // hàm mở PostOptionsMenu
-  const onPostOptionsMenu = () => {
+  const onPostOptionsMenu = (postId?: number) => {
     setPostOptionsMenu((v) => !v);
+    if (typeof postId === "number") {
+      setSelectedPostId(postId);
+    } else {
+      setSelectedPostId(null);
+    }
   };
 
   // State lưu trạng thái comment
@@ -133,14 +145,15 @@ function PostCard({ i }: PostCardProps) {
   };
 
   useEffect(() => {
-    if (postOptionsMenu || isEditingPost) {
+    if (postOptionsMenu || isEditingPost || isDelete) {
       document.body.style.overflow = "hidden";
     }
     return () => {
       document.body.style.overflow = "";
     };
-  }, [postOptionsMenu, isEditingPost]);
+  }, [postOptionsMenu, isEditingPost, isDelete]);
 
+  // Mở model edit post
   const handleOpenEditPost = () => {
     setEditingPost({
       post_id: postData.post_id,
@@ -151,6 +164,8 @@ function PostCard({ i }: PostCardProps) {
     setPostOptionsMenu(false);
   };
 
+
+  // Cập nhật sau khi edit post
   const handleSavedPost = (updatedPost: EditPostData) => {
     setPostData((prev) => ({
       ...prev,
@@ -163,6 +178,28 @@ function PostCard({ i }: PostCardProps) {
     }));
     setEditingPost((prev) => (prev ? { ...prev, ...updatedPost } : prev));
   };
+
+  // Xóa post
+  const handleOpenDelete = () => {
+    setIsDelete(true);
+    setPostOptionsMenu(false);
+  };
+
+  // Đóng/Hủy xóa post
+  const handleCloseDelete = () => {
+    setSelectedPostId(null);
+    setIsDelete(false);
+  };
+
+  const handleDeletedPost = () => {
+    setIsDeleted(true);
+    setIsDelete(false);
+    setSelectedPostId(null);
+  };
+
+  if (isDeleted) {
+    return null;
+  }
 
   return (
     <>
@@ -196,7 +233,7 @@ function PostCard({ i }: PostCardProps) {
             </div>
             <div
               className="cursor-pointer duration-150 hover:bg-gray-100 p-2 rounded-full"
-              onClick={() => onPostOptionsMenu()}
+              onClick={() => onPostOptionsMenu(i.post_id)}
             >
               <RiMoreLine size={20} />
             </div>
@@ -297,8 +334,11 @@ function PostCard({ i }: PostCardProps) {
                 >
                   Chỉnh sửa bài viết
                 </button>
-                <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-                  Xóa bài viết
+                <button
+                  className="p-4 border-b text-red-500 border-black/10 hover:bg-gray-50 transition"
+                  onClick={handleOpenDelete}
+                >
+                  Gỡ bài viết
                 </button>
                 <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
                   Chia sẻ
@@ -357,6 +397,16 @@ function PostCard({ i }: PostCardProps) {
             kind={"post"}
           />
         </div>
+      )}
+
+      {/* Mở xác nhận gỡ bái viết*/}
+      {isDelete && selectedPostId !== null && (
+        <DeletePost
+          post_id={selectedPostId}
+          type="post"
+          onClose={handleCloseDelete}
+          onDeleted={handleDeletedPost}
+        />
       )}
     </>
   );
