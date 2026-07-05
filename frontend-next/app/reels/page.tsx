@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import port from "@/api/api";
 import ReelCard from "@/components/ReelCard";
 import ReelCardSkeleton from "@/components/ReelCardSkeleton";
@@ -18,24 +18,35 @@ type ReelItem = {
 export default function Reels() {
   const [videos, setVideos] = useState<ReelItem[]>([]);
   const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const observerTarget = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const [isMuted, setIsMuted] = useState(true); // Bắt đầu tắt tiếng để cho phép autoplay
+  const playbackObserver = useRef<IntersectionObserver | null>(null);
 
-  const handleToggleMute = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const isLoadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+
+  const handleToggleMute = useCallback(() => {
     setIsMuted((prev) => !prev);
-  };
+  }, []);
+
+  const setVideoRef = useCallback(
+    (postId: number, el: HTMLVideoElement | null) => {
+      videoRefs.current[postId] = el;
+    },
+    [],
+  );
 
   useEffect(() => {
-    // Đừng fetch nếu đang loading hoặc không còn dữ liệu
-    if (isLoading || (page > 1 && !hasMore)) return;
+    if (isLoadingRef.current || !hasMoreRef.current) return;
 
     const fetchReels = async () => {
+      isLoadingRef.current = true;
       setIsLoading(true);
       try {
-        const response = await fetch(`${port}/api/reels?page=${page}&limit=3`, {
+        const response = await fetch(`${port}/api/reels?page=${page}&limit=5`, {
           credentials: "include",
         });
         const data = await response.json();
@@ -50,16 +61,19 @@ export default function Reels() {
             return [...prevVideos, ...uniqueNewItems];
           });
         }
-        setHasMore(data.data.pagination.hasMore);
+
+        const moreAvailable = data.data.pagination.hasMore;
+        hasMoreRef.current = moreAvailable;
+        setHasMore(moreAvailable);
       } catch (error) {
         console.error("Error fetching reels:", error);
       } finally {
+        isLoadingRef.current = false;
         setIsLoading(false);
       }
     };
 
     fetchReels();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   // Intersection Observer cho infinite scroll
@@ -86,53 +100,64 @@ export default function Reels() {
     };
   }, [isLoading, hasMore]);
 
-  // Intersection Observer cho video playback
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Tìm video hiển thị nhiều nhất trong viewport
-        let mostVisibleEntry: IntersectionObserverEntry | null = null;
-        entries.forEach((entry) => {
-          if (
-            !mostVisibleEntry ||
-            entry.intersectionRatio > mostVisibleEntry.intersectionRatio
-          ) {
-            mostVisibleEntry = entry;
-          }
-        });
+  const ratiosMapRef = useRef<Map<HTMLVideoElement, number>>(new Map());
 
-        // Chỉ phát video hiển thị nhiều nhất và tạm dừng các video còn lại
-        entries.forEach((entry) => {
-          const videoElement = entry.target as HTMLVideoElement;
-          if (
-            entry === mostVisibleEntry &&
-            entry.intersectionRatio >= 0.6
-          ) {
-            videoElement
-              .play()
-              .catch((err) => console.error("Playback failed:", err));
-          } else {
-            videoElement.pause();
-          }
-        });
-      },
-      { threshold: 0.6 }, // Callback chỉ kích hoạt khi đúng 60% diện tích video xuất hiện trong viewport. Giá trị từ 0 (1px) đến 1 (100%).
+  useEffect(() => {
+    if (!playbackObserver.current) {
+      playbackObserver.current = new IntersectionObserver(
+        (entries) => {
+          // 1. Cập nhật ratio mới nhất cho những video vừa thay đổi
+          entries.forEach((entry) => {
+            ratiosMapRef.current.set(
+              entry.target as HTMLVideoElement,
+              entry.intersectionRatio,
+            );
+          });
+
+          // 2. Tìm video có ratio cao nhất TRONG TOÀN BỘ danh sách đang theo dõi
+          let bestVideo: HTMLVideoElement | null = null;
+          let bestRatio = 0;
+          ratiosMapRef.current.forEach((ratio, video) => {
+            if (ratio > bestRatio) {
+              bestRatio = ratio;
+              bestVideo = video;
+            }
+          });
+
+          // 3. Chỉ play video tốt nhất, pause TẤT CẢ video còn lại
+          ratiosMapRef.current.forEach((_, video) => {
+            const shouldPlay = video === bestVideo && bestRatio >= 0.6;
+            if (shouldPlay) {
+              video.play().catch((err) => {
+                if (err.name !== "NotAllowedError") {
+                  console.error("Playback failed:", err);
+                }
+              });
+            } else if (!video.paused) {
+              video.pause();
+            }
+          });
+        },
+        { threshold: [0, 0.6] }, // thêm 0 để observer bắn callback cả khi video rời khỏi viewport
+      );
+    }
+
+    const observer = playbackObserver.current;
+    observer.disconnect();
+    ratiosMapRef.current.clear(); // reset map khi danh sách video thay đổi
+
+    const videosToObserve = Object.values(videoRefs.current).filter(
+      (video): video is HTMLVideoElement => video !== null,
     );
 
-    const currentRefs = videoRefs.current;
-    const videosToObserve = Object.values(currentRefs).filter(Boolean);
-
     videosToObserve.forEach((video) => {
-      if (video) observer.observe(video);
+      observer.observe(video);
     });
 
     return () => {
-      videosToObserve.forEach((video) => {
-        if (video) observer.unobserve(video);
-      });
       observer.disconnect();
     };
-  }, [videos]);
+  }, [videos.length]);
 
   return (
     <div className="gap-8 p-4 bg-[#121212]">
@@ -145,9 +170,9 @@ export default function Reels() {
             <div className="flex flex-col gap-8">
               {videos.map((v: ReelItem) => (
                 <ReelCard
-                  v={v}
+                  item={v}
                   key={v.post_id}
-                  setVideoRef={(el) => (videoRefs.current[v.post_id] = el)}
+                  setVideoRef={setVideoRef}
                   isMuted={isMuted}
                   onToggleMute={handleToggleMute}
                 />
@@ -158,19 +183,24 @@ export default function Reels() {
           {/* Skeleton cho lần tải đầu tiên */}
           {isLoading && videos.length === 0 && (
             <div className="flex flex-col gap-8">
-              {[1, 2].map((n) => <ReelCardSkeleton key={n} />)}
+              {[1, 2].map((n) => (
+                <ReelCardSkeleton key={n} />
+              ))}
             </div>
           )}
 
           {/* Thông báo khi không có video */}
           {!isLoading && videos.length === 0 && (
-           <div className="w-screen h-screen flex justify-center items-center bg-black">
+            <div className="w-screen h-screen flex justify-center items-center bg-black">
               <p className="text-white">Chưa có video nào.</p>
-           </div>
+            </div>
           )}
 
           {/* Observer Target và Loading Indicator */}
-          <div ref={observerTarget} className="flex justify-center items-center mt-8">
+          <div
+            ref={observerTarget}
+            className="flex justify-center items-center mt-8"
+          >
             {isLoading && videos.length > 0 && <ReelCardSkeleton />}
             {!hasMore && videos.length > 0 && (
               <p className="text-gray-500">Bạn đã xem hết video.</p>

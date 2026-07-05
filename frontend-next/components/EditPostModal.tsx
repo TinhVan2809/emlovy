@@ -35,26 +35,20 @@ function EditPostModal({ open, post, onClose, onSaved }: EditPostModalProps) {
       return;
     }
 
-    const nextContent = post.content || "";
-
-    queueMicrotask(() => {
-      setContent(nextContent);
-      setSelectedFiles([]);
-      setPreviewUrls([]);
-      setError("");
-    });
-  }, [open, post?.post_id, post]);
+    setContent(post.content || "");
+    setSelectedFiles([]);
+    setPreviewUrls([]);
+    setError("");
+  }, [open, post]);
 
   useEffect(() => {
     if (!selectedFiles.length) {
+      setPreviewUrls([]); // Xóa preview nếu không còn file nào được chọn
       return;
     }
 
     const urls = selectedFiles.map((file) => URL.createObjectURL(file));
-
-    queueMicrotask(() => {
-      setPreviewUrls(urls);
-    });
+    setPreviewUrls(urls);
 
     return () => {
       urls.forEach((url) => URL.revokeObjectURL(url));
@@ -203,6 +197,8 @@ function EditPostModal({ open, post, onClose, onSaved }: EditPostModalProps) {
                     src={url}
                     className="h-40 w-full object-cover"
                     controls
+                    playsInline
+                    preload="metadata"
                     muted
                   />
                 ) : (
