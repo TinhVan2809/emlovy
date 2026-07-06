@@ -59,16 +59,20 @@ function Login() {
       });
       const data = await response.json();
 
-      if (data.success) {
-        if (data.data?.user?.role === "customer") {
-          await refreshUser();
-          await router.push("/");
+      if (data.data?.user?.status === 1) {
+        if (data.success) {
+          if (data.data?.user?.role === "customer") {
+            await refreshUser();
+            await router.push("/");
+          } else {
+            await refreshUser();
+            await router.push("/admin/dashboard");
+          }
         } else {
-          await refreshUser();
-          await router.push("/admin/dashboard");
+          alert(data.message || "Login failed");
         }
       } else {
-        alert(data.message || "Login failed");
+        alert("Tài khoản đã bị khóa.");
       }
     } catch (_err) {
       console.error("Error submit form", _err);
@@ -154,10 +158,10 @@ function Login() {
                   <button>
                     {isLoading ? (
                       <div role="status">
-                        <svg 
+                        <svg
                           aria-hidden="true"
                           className="inline w-6 h-6 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
-                          viewBox="0 0 100 101" 
+                          viewBox="0 0 100 101"
                           fill="none"
                           xmlns="http://www.w3.org/2000/svg"
                         >
