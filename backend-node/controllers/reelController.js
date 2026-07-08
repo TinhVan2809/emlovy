@@ -136,10 +136,16 @@ const createReel = async (req, res) => {
 const getReelsFeed = async (req, res) => {
   const page = Number.parseInt(req.query.page || "1", 10) || 1;
   const limit = Number.parseInt(req.query.limit || "6", 10) || 6;
+  const requestedUserId = req.query.userId
+    ? Number.parseInt(req.query.userId, 10)
+    : null;
+  const userId = Number.isInteger(requestedUserId) && requestedUserId > 0 ? requestedUserId : null;
+
   const data = await reelModel.getFeed({
     page,
     limit,
     viewerId: req.user?.user_id || null,
+    userId,
   });
 
   res.status(200).json({ success: true, data });

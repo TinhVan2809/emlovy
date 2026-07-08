@@ -40,11 +40,12 @@ const findById = async (postId, viewerId = null) => {
   return toPublicReel(post);
 };
 
-const getFeed = async ({ page = 1, limit = 6, viewerId = null } = {}) => {
+const getFeed = async ({ page = 1, limit = 6, viewerId = null, userId = null } = {}) => {
   const data = await postModel.getFeed({
     page,
     limit,
     viewerId,
+    userId,
     postType: REEL_POST_TYPE,
     requireVideo: true,
   });

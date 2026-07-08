@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 
+import { MyReelsList } from "@/components/my-reels-list";
 import { PostComposerModal } from "@/components/post-composer-modal";
 import { ScreenShell } from "@/components/screen-shell";
 import { StoryComposerModal } from "@/components/story-composer-modal";
@@ -26,7 +27,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { postApi, profileApi, resolveMediaUrl, storyApi } from "@/services/api";
 import { subscribeToPostEvents } from "@/services/post-socket";
 import { subscribeToStoryEvents } from "@/services/story-socket";
-import { SealCheckIcon } from 'phosphor-react-native'
+import { SealCheckIcon } from "phosphor-react-native";
 
 import type {
   CreatePostInput,
@@ -38,6 +39,8 @@ import type {
   UpdatePostInput,
   UpdateStoryInput,
 } from "@/types/auth";
+
+import { QrCode, SquareArrowOutUpRight } from "lucide-react-native";
 
 const PROFILE_POST_LIMIT = 15;
 
@@ -76,6 +79,9 @@ export default function ProfileScreen() {
   );
   const [editingStory, setEditingStory] = useState<StoryItem | null>(null);
   const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+
+  // State set các tab (posts, reels, tagged)
+  const [activeTab, setActiveTab] = useState("grid");
 
   const loadProfile = useCallback(async () => {
     if (!token) {
@@ -493,6 +499,7 @@ export default function ProfileScreen() {
         }
       >
         <FlatList
+          key={activeTab}
           ListEmptyComponent={
             isLoadingPosts ? (
               <ActivityIndicator
@@ -536,7 +543,11 @@ export default function ProfileScreen() {
                 {displayUser?.is_verified === 1 ? (
                   <View style={styles.nameVerified}>
                     <Text style={styles.profileName}>{displayName}</Text>
-                    <SealCheckIcon size={16} weight="fill" color={AppColors.checkmark}/>
+                    <SealCheckIcon
+                      size={16}
+                      weight="fill"
+                      color={AppColors.checkmark}
+                    />
                   </View>
                 ) : (
                   <View style={styles.nameVerified}>
@@ -549,7 +560,7 @@ export default function ProfileScreen() {
                     displayUser?.phone ||
                     "Curated moments and daily moodboards."}
                 </Text>
-                
+
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 <View style={styles.buttonRowContainer}>
@@ -568,15 +579,16 @@ export default function ProfileScreen() {
                       </Text>
                     </Pressable>
 
-                    {/* Chia sẽ trang cá nhân*/}
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.actionButton,
-                        pressed ? styles.actionButtonPressed : null,
-                      ]}
-                    >
-                      <Text style={styles.actionButtonText}>Chia sẽ</Text>
-                    </Pressable>
+                    <View style={styles.btnAcction}>
+                      {/* Chia sẽ trang cá nhân*/}
+                      <Pressable style={styles.iconBtn}>
+                        <QrCode size={27} />
+                      </Pressable>
+
+                      <Pressable style={styles.iconBtn}>
+                        <SquareArrowOutUpRight size={27} />
+                      </Pressable>
+                    </View>
                   </View>
 
                   <View style={styles.buttonRow}>
@@ -642,7 +654,8 @@ export default function ProfileScreen() {
               />
 
               <View style={styles.segmentedBar}>
-                <View
+                <Pressable
+                  onPress={() => setActiveTab("grid")}
                   style={[styles.segmentedIcon, styles.segmentedIconActive]}
                 >
                   <Ionicons
@@ -650,22 +663,30 @@ export default function ProfileScreen() {
                     name="grid-outline"
                     size={20}
                   />
-                </View>
-                <View style={styles.segmentedIcon}>
+                </Pressable>
+                <Pressable
+                  onPress={() => setActiveTab("reels")}
+                  style={styles.segmentedIcon}
+                >
                   <Ionicons
                     color={AppColors.tabInactive}
                     name="play-circle-outline"
                     size={20}
                   />
-                </View>
-                <View style={styles.segmentedIcon}>
+                </Pressable>
+                <Pressable
+                  onPress={() => setActiveTab("tagged")}
+                  style={styles.segmentedIcon}
+                >
                   <Ionicons
                     color={AppColors.tabInactive}
                     name="person-outline"
                     size={20}
                   />
-                </View>
+                </Pressable>
               </View>
+
+              {activeTab === "reels" ? <MyReelsList /> : null}
 
               {postError ? (
                 <Text style={styles.errorText}>{postError}</Text>
@@ -674,10 +695,10 @@ export default function ProfileScreen() {
           }
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.content}
-          data={posts}
+          data={activeTab === "grid" ? posts : []}
           keyExtractor={(item) => String(item.post_id)}
           numColumns={3}
-          onEndReached={handleLoadMore}
+          onEndReached={activeTab === "grid" ? handleLoadMore : undefined}
           onEndReachedThreshold={0.4}
           refreshControl={
             <RefreshControl
@@ -687,15 +708,21 @@ export default function ProfileScreen() {
               tintColor={AppColors.accent}
             />
           }
-          renderItem={({ item }) => (
-            <ProfilePostTile
-              onDelete={confirmDeletePost}
-              onEdit={openEditComposer}
-              post={item}
-            />
-          )}
+          renderItem={({ item }) => {
+            if (activeTab === "grid") {
+              return (
+                <ProfilePostTile
+                  onDelete={confirmDeletePost}
+                  onEdit={openEditComposer}
+                  post={item}
+                />
+              );
+            }
+            return null;
+          }}
           showsVerticalScrollIndicator={false}
         />
+
         <PostComposerModal
           initialPost={editingPost}
           isSubmitting={isSubmittingPost}
@@ -949,6 +976,17 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 13,
+  },
+
+  btnAcction: {
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  iconBtn: {
+    borderWidth: 1,
+    padding: 2,
+    borderRadius: 5,
   },
 
   buttonRowContainer: {

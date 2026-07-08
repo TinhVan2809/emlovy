@@ -473,8 +473,14 @@ export const postApi = {
 
 // [Reels]
 export const reelApi = {
-  async getFeed({ page = 1, limit = 6, token }: { page?: number; limit?: number; token?: string | null } = {}) {
-    const response = await request<ReelsPage | Reel[]>(`/reels?page=${page}&limit=${limit}`, {
+  async getFeed({ page = 1, limit = 6, token, userId }: { page?: number; limit?: number; token?: string | null; userId?: number | null } = {}) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+
+    if (typeof userId === 'number' && userId > 0) {
+      params.set('userId', String(userId));
+    }
+
+    const response = await request<ReelsPage | Reel[]>(`/reels?${params.toString()}`, {
       method: 'GET',
       token,
     });
