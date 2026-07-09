@@ -37,7 +37,6 @@ export default function RegisterScreen() {
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
 
-
   // 1. name => username
   const onSubmitNameEditing = () => {
     usernameRef.current?.focus();
@@ -103,7 +102,7 @@ export default function RegisterScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.select({ ios: "padding", default: undefined })}
+        behavior={Platform.select({ ios: "padding", default: "height" })}
         style={styles.keyboard}
       >
         <ScrollView

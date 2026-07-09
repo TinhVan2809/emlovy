@@ -515,7 +515,7 @@ export default function ChatScreen() {
         }
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.select({ ios: "padding", default: "height" })}
           keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
           style={styles.threadContainer}
         >
