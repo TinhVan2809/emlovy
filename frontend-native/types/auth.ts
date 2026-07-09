@@ -1,6 +1,7 @@
 export type User = {
   user_id: number;
   name: string;
+  nickname: string;
   username: string;
   birthday: string | null;
   signature: string;

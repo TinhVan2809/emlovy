@@ -225,9 +225,7 @@ export default function ProfileScreen() {
 
   const displayUser = profile || user;
   const displayName = displayUser?.name || "Emlovy User";
-  const displayHandle = displayUser?.username
-    ? `@${displayUser.username}`
-    : "@emlovy";
+  const displayHandle = displayUser?.nickname ? `${displayUser.nickname}` : "";
   const avatarUrl = resolveMediaUrl(
     displayUser?.avatar_url || displayUser?.avata,
   );
@@ -554,12 +552,20 @@ export default function ProfileScreen() {
                     <Text style={styles.profileName}>{displayName} </Text>
                   </View>
                 )}
-
-                <Text style={styles.profileBio}>
-                  {displayUser?.email ||
-                    displayUser?.phone ||
-                    "Curated moments and daily moodboards."}
-                </Text>
+                <View>
+                  {displayHandle ? (
+                    <View>
+                      <Text style={styles.nicknameText}>{displayHandle}</Text>
+                    </View>
+                  ) : null}
+                  {displayUser?.signature ? (
+                    <View>
+                      <Text style={styles.discriptionText}>
+                        {displayUser?.signature}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
 
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -582,11 +588,14 @@ export default function ProfileScreen() {
                     <View style={styles.btnAcction}>
                       {/* Chia sẽ trang cá nhân*/}
                       <Pressable style={styles.iconBtn}>
-                        <QrCode size={27} />
+                        <QrCode size={25} color={"rgba(0, 0, 0, 0.82)"} />
                       </Pressable>
 
                       <Pressable style={styles.iconBtn}>
-                        <SquareArrowOutUpRight size={27} />
+                        <SquareArrowOutUpRight
+                          size={25}
+                          color={"rgba(0, 0, 0, 0.82)"}
+                        />
                       </Pressable>
                     </View>
                   </View>
@@ -671,6 +680,16 @@ export default function ProfileScreen() {
                   <Ionicons
                     color={AppColors.tabInactive}
                     name="play-circle-outline"
+                    size={20}
+                  />
+                </Pressable>
+                <Pressable
+                  onPress={() => setActiveTab("saved")}
+                  style={styles.segmentedIcon}
+                >
+                  <Ionicons
+                    color={AppColors.tabInactive}
+                    name="bookmark-outline"
                     size={20}
                   />
                 </Pressable>
@@ -987,6 +1006,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 2,
     borderRadius: 5,
+    borderColor: "rgba(0, 0, 0, 0.20)",
   },
 
   buttonRowContainer: {
@@ -1141,6 +1161,13 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontFamily: AppFonts.heading,
     fontSize: 18,
+  },
+  nicknameText: {
+    opacity: 0.7,
+    color: AppColors.text,
+  },
+  discriptionText: {
+    color: AppColors.text,
   },
   profileStoryIconBadge: {
     alignItems: "center",

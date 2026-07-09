@@ -257,7 +257,6 @@ const PostCard = memo(function PostCard({
                 <Text style={styles.actionText}>Lưu bài viết</Text>
               </Pressable>
               <Pressable
-                onPress={handleDelete}
                 style={styles.ownerActionButton}
               >
                 <Text style={[styles.actionText, styles.deleteText]}>

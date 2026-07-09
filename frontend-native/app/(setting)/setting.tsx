@@ -9,7 +9,14 @@ export default function Setting() {
 
   return (
     <>
-      <ScreenShell title="Cài đặt">
+      <ScreenShell left={
+        <View style={styles.title}>
+          <Pressable onPress={() => router.back()}>
+            <Ionicons name="arrow-back-outline" size={22}/>
+          </Pressable>
+          <Text style={styles.titleText}>Cài đặt</Text>
+        </View>
+      }>
         <View style={styles.settingContainer}>
           <Pressable style={styles.items}>
             <Text style={styles.text}><Ionicons size={17} name="hourglass"/> Lịch sử hoạt động</Text>
@@ -52,5 +59,14 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18
+  },
+  title: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3
+  },
+  titleText: {
+    fontSize: 20
   }
+
 });

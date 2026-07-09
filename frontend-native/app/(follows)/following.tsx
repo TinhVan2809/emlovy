@@ -15,6 +15,7 @@ import { followApi, resolveMediaUrl } from "@/services/api";
 import { useAuth } from "@/contexts/auth-context";
 import type { Profile } from "@/types/auth";
 import { AppColors } from "@/constants/theme";
+import { router } from "expo-router";
 
 export default function Following() {
   const { token, user } = useAuth();
@@ -63,20 +64,22 @@ export default function Following() {
 
   return (
     <>
-      <ScreenShell title="Followers">
+      <ScreenShell left={
+        <View style={styles.title}>
+          <Pressable onPress={() => router.back()} hitSlop={10}>
+            <Ionicons name="arrow-back-outline" size={22}/>
+          </Pressable>
+          <Text style={styles.titleText}>Follwing</Text>
+        </View>
+      }>
         <View style={styles.conatiner}>
           <View style={styles.headerTitle}>
-            <Text style={styles.description}>
-              8 following. Xem những người mà bạn đã theo dõi trên emlovy mà
-              chưa theo dõi trên Thread yet.{" "}
-              <Text style={styles.seeAll}>See all</Text>
-            </Text>
           </View>
           <View style={styles.searchContainer}>
             <View style={styles.searchBox}>
               <Ionicons name="search-outline" style={{ fontSize: 20 }} />
               <TextInput
-                placeholder="Tìm kiếm người đã theo dõi...."
+                placeholder="Tìm kiếm người mà bạn đang theo dõi...."
                 style={styles.input}
               />
             </View>
@@ -129,7 +132,7 @@ export default function Following() {
 
 const styles = StyleSheet.create({
   conatiner: {
-    padding: 20,
+    paddingHorizontal: 20,
   },
   headerTitle: {},
   description: {
@@ -183,4 +186,12 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.text,
     fontSize: 12
   },
+  title: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3
+  },
+  titleText: {
+    fontSize: 20
+  }
 });

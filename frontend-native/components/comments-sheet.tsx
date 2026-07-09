@@ -485,7 +485,7 @@ export function CommentsSheet({
   const listEmpty = useMemo(
     () => (
       <Text style={styles.emptyText}>
-        Ở đây yên tĩnh quá. Hãy nêu cảm nghĩ của bạn.
+        Ở đây yên tĩnh quá. Hãy là người bình luận đầu tiên.
       </Text>
     ),
     [],
@@ -532,7 +532,7 @@ export function CommentsSheet({
       <View style={styles.overlay}>
         <Pressable onPress={onClose} style={StyleSheet.absoluteFillObject} />
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={sheetStyle}
         >
           <View style={styles.grabber} />
@@ -591,7 +591,7 @@ export function CommentsSheet({
               multiline
               onChangeText={setInput}
               placeholder={
-                replyingTo ? "Viet phan hoi..." : "Viet binh luan..."
+                replyingTo ? "Nhập phản hồi..." : "Viết bình luận..."
               }
               placeholderTextColor={AppColors.muted}
               style={styles.input}

@@ -1,7 +1,15 @@
 import { ScreenShell } from "@/components/screen-shell";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView } from "react-native";
+import { router } from "expo-router";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+} from "react-native";
 import { UserAvatar } from "@/components/user-avatar";
 import { followApi, resolveMediaUrl } from "@/services/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -31,19 +39,22 @@ export default function Followers() {
   }, [token, user?.user_id]);
 
   return (
-    <ScreenShell title="Following">
-      <View style={styles.conatiner}>
-        <View style={styles.headerTitle}>
-          <Text style={styles.description}>
-            8 followers. Xem những người đang theo dõi bạn.{" "}
-            <Text style={styles.seeAll}>See all</Text>
-          </Text>
+    <ScreenShell
+      left={
+        <View style={styles.title}>
+          <Pressable onPress={() => router.back()} hitSlop={10}>
+            <Ionicons name="arrow-back-outline" size={22} />
+          </Pressable>
+          <Text style={styles.titleText}>Follwers</Text>
         </View>
+      }
+    >
+      <View style={styles.conatiner}>
         <View style={styles.searchContainer}>
           <View style={styles.searchBox}>
             <Ionicons name="search-outline" style={{ fontSize: 20 }} />
             <TextInput
-              placeholder="Tìm kiếm người đang theo dõi...."
+              placeholder="Tìm kiếm người đã theo dõi bạn...."
               style={styles.input}
             />
           </View>
@@ -77,9 +88,8 @@ export default function Followers() {
 
 const styles = StyleSheet.create({
   conatiner: {
-    padding: 20,
+    paddingHorizontal: 20,
   },
-  headerTitle: {},
   description: {
     color: "#0000008c",
   },
@@ -126,4 +136,12 @@ const styles = StyleSheet.create({
     color: "#0000008c",
     fontSize: 13,
   },
+    title: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3
+  },
+  titleText: {
+    fontSize: 20
+  }
 });
