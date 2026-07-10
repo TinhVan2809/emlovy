@@ -247,7 +247,7 @@ const uploadAvatar = async (req, res) => {
   }
 
   const oldProfile = await profileModel.findByUserId(req.user.user_id);
-  const avatarPath = `/uploads/avatars/${req.file.filename}`;
+  const avatarPath = `uploads/avatars/${req.file.filename}`;
 
   let profile;
 

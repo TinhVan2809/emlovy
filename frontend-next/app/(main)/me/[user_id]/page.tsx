@@ -22,6 +22,7 @@ import {
 import MyPosts, { Post } from "@/components/me/MyPosts";
 import Saved from "@/components/me/Saved";
 import MyMedia from "@/components/me/MyMedia";
+import { useRouter } from "next/navigation";
 interface Props {
   params: Promise<{ user_id: string }>;
 }
@@ -39,6 +40,7 @@ interface Profile {
 
 function Profile({ params }: Props) {
   const { user, logout } = useUser();
+  const router = useRouter();
   const { user_id } = use(params);
   const [myPosts, setMyPosts] = useState<Post[]>([]);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
@@ -85,7 +87,7 @@ function Profile({ params }: Props) {
 
   // Avatar handler
   const avatarSrc = user?.avatar_url
-    ? `${port}${user.avatar_url}`
+    ? `${port}/${user?.avatar_url}`
     : "/Profile-Default.webp";
 
   // Setting Event
@@ -98,7 +100,7 @@ function Profile({ params }: Props) {
       <div className="grid md:grid-cols-3 items-center gap-5 md:gap-10 py-5 md:py-10">
         <div className="flex flex-col justify-center items-center  md:col-span-1">
           <div className="mb-1.5">
-            <div className="relative w-15 h-15 md:w-30 md:h-30">
+            <div className="relative w-25 h-25 md:w-30 md:h-30">
               <Image
                 src={avatarSrc}
                 alt="avatar"
@@ -221,7 +223,7 @@ function Profile({ params }: Props) {
             <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
               Cài đặt hệ thống
             </button>
-            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
+            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition" onClick={() => router.push("/setting")}>
               Cài đặt quyền riêng tư
             </button>
             <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">

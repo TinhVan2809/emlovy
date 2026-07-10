@@ -81,7 +81,7 @@ function PostCard({ i }: PostCardProps) {
   const [isComment, setIsComment] = useState<boolean>(false);
 
   const avatarSrc = postData.author?.avatar_url
-    ? `${port}${postData.author.avatar_url}`
+    ? `${port}/${postData.author.avatar_url}`
     : "/Profile-Default.webp";
 
   const [liked, setLiked] = useState<boolean>(postData.liked_by_me ?? false);
