@@ -1,9 +1,12 @@
 import { ScreenShell } from "@/components/screen-shell";
 import { Ionicons } from "@expo/vector-icons";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import { View, Text, TextInput, StyleSheet, Pressable } from "react-native";
 import { AppColors } from "@/constants/theme";
+import { useRouter } from "expo-router";
+import { settingRoutes } from "@/constants/routes";
 export default function MoreSetting() {
-  return (
+  const router = useRouter();
+    return (
     <ScreenShell title="Xem thêm các cài đặt">
       {/* Searching */}
       <View style={styles.searchContainer}>
@@ -18,7 +21,7 @@ export default function MoreSetting() {
         <View style={styles.blockItem}>
           <Text style={styles.discription}>Tài khoản của bạn</Text>
           <View style={styles.items}>
-            <View style={{ gap: 8 }}>
+            <Pressable style={{ gap: 8 }} onPress={() => router.push(settingRoutes.account)}>
               <View style={styles.items}>
                 <Ionicons size={24} name="person-circle-outline" />
                 <Text style={styles.content}>Trung tâm tài khoản </Text>
@@ -27,7 +30,7 @@ export default function MoreSetting() {
                 Thông tin cá nhân, mật khẩu, bảo mật, các kết nối và tùy chọn
                 quảng cáo
               </Text>
-            </View>
+            </Pressable>
           </View>
         </View>
 

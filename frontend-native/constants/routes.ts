@@ -14,6 +14,8 @@ export const Routes = {
 // Route setting
 export const settingRoutes = {
   more: '/(setting)/more-setting' as Href,
+  account: '/(setting)/account-setting' as Href,
+  password: '/(setting)/password-setting' as Href,
 };
 
 

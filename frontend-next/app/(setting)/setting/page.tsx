@@ -8,7 +8,7 @@ import { FaRegUserCircle } from "react-icons/fa";
 import port from "@/api/api";
 
 export default function Setting() {
-  const { user, isLoading } = useUser();
+  const { user } = useUser();
   const [settingTab, setSettingTab] = useState("private");
   const router = useRouter();
 
@@ -44,7 +44,7 @@ export default function Setting() {
               <p className="text-xl font-semibold mb-5">Cài đặt và quyền riêng tư</p>
               <div className="flex flex-col gap-3">
                 <p className="font-semibold">Tài khoản của bạn</p>
-                <div className="flex gap-4 cursor-pointer hover:bg-gray-200/50 p-3 rounded-md" onClick={() => setSettingTab("private")}>
+                <div className="flex gap-4 cursor-pointer hover:bg-gray-200/50 p-3 rounded-md" onClick={() => router.push("/setting/profile_setting")}>
                   <FaRegUserCircle size={22}/>
                   <p className="text-sm text-black/50 flex flex-col">
                     <span>Tài khoản của bạn</span>

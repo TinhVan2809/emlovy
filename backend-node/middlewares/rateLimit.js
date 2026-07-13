@@ -1,13 +1,10 @@
 const { createHttpError } = require("../utils/httpError");
 
-// Simple in-memory rate limiter per user for create-post action.
-// Not suitable for multi-instance deployments but fine for demo/dev.
-
 const windows = new Map();
 
 const defaultOpts = {
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // max actions per window
+  windowMs: 60 * 1000,
+  max: 5,
 };
 
 const rateLimitForCreatePost = (opts = {}) => {
