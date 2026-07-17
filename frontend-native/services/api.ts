@@ -288,6 +288,16 @@ export const authApi = {
       token,
     });
   },
+  async changePassword(
+    token: string,
+    input: { currentPassword: string; newPassword: string; confirmPassword: string },
+  ) {
+    return request<null>('/auth/change-password', {
+      method: 'PUT',
+      token,
+      body: JSON.stringify(input),
+    });
+  },
 };
 
 // [Admin]

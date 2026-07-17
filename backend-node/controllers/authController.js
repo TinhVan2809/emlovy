@@ -196,9 +196,57 @@ const logout = async (req, res) => {
   });
 };
 
+const changePassword = async (req, res) => {
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+  const userId = req.user.user_id;
+
+  // 1. Validate input từ server
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    throw createHttpError(400, "Vui lòng điền đầy đủ thông tin.");
+  }
+
+  if (newPassword.length < 8) {
+    throw createHttpError(400, "Mật khẩu mới phải có ít nhất 8 ký tự.");
+  }
+
+  if (newPassword !== confirmPassword) {
+    throw createHttpError(400, "Mật khẩu mới không khớp.");
+  }
+
+  if (currentPassword === newPassword) {
+    throw createHttpError(400, "Mật khẩu mới phải khác mật khẩu cũ.");
+  }
+
+  // 2. Lấy thông tin user bao gồm cả password hash
+  const userWithPassword = await userModel.findByLogin(req.user.username);
+  if (!userWithPassword) {
+    throw createHttpError(404, "Không tìm thấy người dùng.");
+  }
+
+  // 3. Kiểm tra mật khẩu hiện tại có đúng không
+  const isPasswordValid = await bcrypt.compare(
+    currentPassword,
+    userWithPassword.password,
+  );
+
+  if (!isPasswordValid) {
+    throw createHttpError(401, "Mật khẩu hiện tại không đúng.");
+  }
+
+  // 4. Băm mật khẩu mới và cập nhật
+  const newPasswordHash = await bcrypt.hash(newPassword, config.auth.bcryptSaltRounds);
+  await userModel.updatePassword(userId, newPasswordHash);
+
+  res.status(200).json({
+    success: true,
+    message: "Đổi mật khẩu thành công.",
+  });
+};
+
 module.exports = {
   login,
   me,
   register,
   logout,
+  changePassword,
 };

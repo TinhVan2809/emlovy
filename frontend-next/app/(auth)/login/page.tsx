@@ -72,7 +72,7 @@ function Login() {
           alert(data.message || "Login failed");
         }
       } else {
-        alert("Tài khoản đã bị khóa.");
+        alert(data.message || "Tài khoản/mật khẩu không dúng hoặc đã bị khóa.");
       }
     } catch (_err) {
       console.error("Error submit form", _err);

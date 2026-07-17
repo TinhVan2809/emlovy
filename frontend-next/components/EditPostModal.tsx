@@ -35,6 +35,7 @@ function EditPostModal({ open, post, onClose, onSaved }: EditPostModalProps) {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setContent(post.content || "");
     setSelectedFiles([]);
     setPreviewUrls([]);
@@ -43,6 +44,7 @@ function EditPostModal({ open, post, onClose, onSaved }: EditPostModalProps) {
 
   useEffect(() => {
     if (!selectedFiles.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewUrls([]); // Xóa preview nếu không còn file nào được chọn
       return;
     }

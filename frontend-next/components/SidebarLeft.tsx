@@ -21,7 +21,7 @@ function SidebarLeft() {
   const [isMenu, setIsMenu] = useState(false);
 
   const avatarSrc = user?.avatar_url
-    ? `${port}${user.avatar_url}`
+    ? `${port}/${user.avatar_url}`
     : "/Profile-Default.webp";
 
   return (
