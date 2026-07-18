@@ -48,6 +48,7 @@ import { AppColors, AppFonts } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { reelApi, resolveMediaUrl } from "@/services/api";
 import { subscribeToReelEvents } from "@/services/reel-socket";
+import { getCachedVideoUrl, preloadVideo } from "@/services/video-cache";
 import type {
   CreateReelInput,
   PostMediaInput,
@@ -130,6 +131,35 @@ export default function ReelsScreen() {
     () => reels.findIndex((r) => r.post_id === activeReelId),
     [activeReelId, reels],
   );
+
+  // Preload videos cho reels xung quanh reel đang xem
+  useEffect(() => {
+    if (activeIndex < 0 || reels.length === 0) {
+      return;
+    }
+
+    // Preload reels xung quanh (1 phía trước, 2 phía sau)
+    const preloadIndices = [
+      activeIndex - 1, // Reel phía trước
+      activeIndex + 1, // Reel tiếp theo
+      activeIndex + 2, // Reel sau đó
+    ].filter((idx) => idx >= 0 && idx < reels.length);
+
+    preloadIndices.forEach((idx) => {
+      const reel = reels[idx];
+      const videoUrl = resolveMediaUrl(
+        reel.video_url ||
+          reel.video?.media_url ||
+          reel.media.find((item) => item.type === "video")?.media_url,
+      );
+
+      if (videoUrl) {
+        preloadVideo(videoUrl).catch((error) => {
+          console.warn(`Failed to preload video at index ${idx}:`, error);
+        });
+      }
+    });
+  }, [activeIndex, reels]);
 
   const patchReel = useCallback((reelId: number, patch: Partial<Reel>) => {
     setReels((current) => {
@@ -627,6 +657,8 @@ const ReelCard = memo(
     scrollY: SharedValue<number>;
     height: number;
   }) => {
+    const [cachedVideoUrl, setCachedVideoUrl] = useState<string | null>(null);
+    
     const videoUrl = useMemo(
       () => 
        resolveMediaUrl(
@@ -641,6 +673,33 @@ const ReelCard = memo(
       () => getReelThumbnailUrl(reel),
       [reel],
     );
+
+    // Load cached video URL khi component mount hoặc shouldLoad thay đổi
+    useEffect(() => {
+      if (!videoUrl || !shouldLoad) {
+        return;
+      }
+
+      let isCancelled = false;
+
+      getCachedVideoUrl(videoUrl)
+        .then((cachedUrl) => {
+          if (!isCancelled) {
+            setCachedVideoUrl(cachedUrl);
+          }
+        })
+        .catch((error) => {
+          console.warn("Failed to get cached video:", error);
+          if (!isCancelled) {
+            // Fallback về URL gốc nếu cache fail
+            setCachedVideoUrl(videoUrl);
+          }
+        });
+
+      return () => {
+        isCancelled = true;
+      };
+    }, [videoUrl, shouldLoad]);
     
     const [showActions, setShowActions] = useState(false);
     const { authorName, authorHandle, avatarUrl, ownerCanDelete } = useMemo(
@@ -726,12 +785,12 @@ const ReelCard = memo(
       <Animated.View
         style={[styles.reelPage, reelPageHeightStyle, animatedStyle]}
       >
-        {videoUrl && shouldLoad ? (
+        {cachedVideoUrl && shouldLoad ? (
           <ReelVideo
             isActive={isActive}
             isMuted={isMuted}
             tabBarHeight={tabBarHeight}
-            uri={videoUrl!}
+            uri={cachedVideoUrl}
             thumbnailUri={thumbnailUri}
           />
         ) : (
@@ -943,10 +1002,15 @@ const ReelVideo = memo(function ReelVideo({
   const progress = useSharedValue(0);
   const containerWidth = useRef(0);
 
+  // Tạo player với proper lifecycle
   const player = useVideoPlayer(uri, (nextPlayer) => {
     nextPlayer.loop = true;
     nextPlayer.muted = isMuted;
   });
+
+  // Track player instance để cleanup
+  const playerRef = useRef(player);
+  playerRef.current = player;
 
   const progressBarStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
@@ -965,15 +1029,20 @@ const ReelVideo = memo(function ReelVideo({
 
   const handleSeek = useCallback((event: GestureResponderEvent) => {
     const touchX = event.nativeEvent.locationX;
-    if (containerWidth.current > 0 && player.duration > 0) {
+    const currentPlayer = playerRef.current;
+    if (containerWidth.current > 0 && currentPlayer && currentPlayer.duration > 0) {
       const seekPercentage = Math.max(
         0,
         Math.min(1, touchX / containerWidth.current),
       );
-      player.currentTime = seekPercentage * player.duration;
-      progress.value = seekPercentage;
+      try {
+        currentPlayer.currentTime = seekPercentage * currentPlayer.duration;
+        progress.value = seekPercentage;
+      } catch (error) {
+        console.warn("[ReelVideo] Seek failed:", error);
+      }
     }
-  }, [player, progress]);
+  }, [progress]);
 
   // Theo dõi tiến trình video
   useEffect(() => {
@@ -982,19 +1051,35 @@ const ReelVideo = memo(function ReelVideo({
       return;
     }
 
+    const currentPlayer = playerRef.current;
+    if (!currentPlayer) return;
+
     const interval = setInterval(() => {
-      if (player.duration > 0) {
-        progress.value = player.currentTime / player.duration;
+      try {
+        if (currentPlayer.duration > 0) {
+          progress.value = currentPlayer.currentTime / currentPlayer.duration;
+        }
+      } catch (error) {
+        // Player might be released, ignore error
       }
     }, 250);
 
     return () => clearInterval(interval);
-  }, [isActive, player, progress]);
+  }, [isActive, progress]);
 
+  // Update muted state
   useEffect(() => {
-    player.muted = isMuted;
-  }, [isMuted, player]);
+    const currentPlayer = playerRef.current;
+    if (currentPlayer) {
+      try {
+        currentPlayer.muted = isMuted;
+      } catch (error) {
+        console.warn("[ReelVideo] Failed to update mute state:", error);
+      }
+    }
+  }, [isMuted]);
 
+  // Reset state khi URI thay đổi
   useEffect(() => {
     setIsBuffering(false);
     setIsReadyToPlay(false);
@@ -1002,32 +1087,55 @@ const ReelVideo = memo(function ReelVideo({
     progress.value = 0;
   }, [progress, uri]);
 
+  // Listen to player status
   useEffect(() => {
-    const sub = player.addListener("statusChange", ({ status }) => {
-      const nextIsBuffering = status === "loading";
-      setIsBuffering((current) =>
-        current === nextIsBuffering ? current : nextIsBuffering,
-      );
-      if (status === "readyToPlay") {
-        setIsReadyToPlay((current) => (current ? current : true));
-      }
-    });
-    return () => sub.remove();
+    const currentPlayer = playerRef.current;
+    if (!currentPlayer) return;
+
+    try {
+      const sub = currentPlayer.addListener("statusChange", ({ status }) => {
+        const nextIsBuffering = status === "loading";
+        setIsBuffering((current) =>
+          current === nextIsBuffering ? current : nextIsBuffering,
+        );
+        if (status === "readyToPlay") {
+          setIsReadyToPlay((current) => (current ? current : true));
+        }
+      });
+      return () => {
+        try {
+          sub.remove();
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      };
+    } catch (error) {
+      console.warn("[ReelVideo] Failed to add status listener:", error);
+      return undefined;
+    }
   }, [player]);
 
+  // Control playback based on active state
   useEffect(() => {
-    if (!isActive) {
-      player.pause();
-      setIsManuallyPaused(false);
-      return;
-    }
+    const currentPlayer = playerRef.current;
+    if (!currentPlayer) return;
 
-    if (isManuallyPaused) {
-      player.pause();
-    } else {
-      player.play();
+    try {
+      if (!isActive) {
+        currentPlayer.pause();
+        setIsManuallyPaused(false);
+        return;
+      }
+
+      if (isManuallyPaused) {
+        currentPlayer.pause();
+      } else {
+        currentPlayer.play();
+      }
+    } catch (error) {
+      console.warn("[ReelVideo] Playback control failed:", error);
     }
-  }, [isActive, isManuallyPaused, player]);
+  }, [isActive, isManuallyPaused]);
 
   const handleTogglePlayback = useCallback(() => {
     if (!isActive) {
