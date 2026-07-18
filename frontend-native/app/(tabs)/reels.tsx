@@ -465,7 +465,6 @@ export default function ReelsScreen() {
           onToggleMute={handleToggleMute}
           reel={item}
           tabBarHeight={tabBarHeight}
-          thumbnailUri={getReelThumbnailUrl(item)}
         />
       );
     },
@@ -557,11 +556,11 @@ export default function ReelsScreen() {
         extraData={listExtraData}
         onScroll={onScrollHandler}
         scrollEventThrottle={16}
-        windowSize={5} // Tăng nhẹ để giữ các player đã preload trong bộ nhớ
+        windowSize={3} // Giảm từ 5 xuống 3 để tiết kiệm bộ nhớ
         initialNumToRender={1}
         maxToRenderPerBatch={1}
         updateCellsBatchingPeriod={100}
-        removeClippedSubviews={Platform.OS === "android"}
+        removeClippedSubviews={true} // Bật cho cả iOS và Android
         disableIntervalMomentum={true}
         decelerationRate="fast"
         getItemLayout={getItemLayout}
@@ -612,7 +611,6 @@ const ReelCard = memo(
     tabBarHeight,
     index,
     scrollY,
-    thumbnailUri,
     height: cardHeight,
   }: {
     currentUserId?: number | null;
@@ -628,7 +626,6 @@ const ReelCard = memo(
     index: number;
     scrollY: SharedValue<number>;
     height: number;
-    thumbnailUri?: string;
   }) => {
     const videoUrl = useMemo(
       () => 
@@ -639,6 +636,12 @@ const ReelCard = memo(
         ),
       [reel.media, reel.video?.media_url, reel.video_url],
     );
+    
+    const thumbnailUri = useMemo(
+      () => getReelThumbnailUrl(reel),
+      [reel],
+    );
+    
     const [showActions, setShowActions] = useState(false);
     const { authorName, authorHandle, avatarUrl, ownerCanDelete } = useMemo(
       () => ({
@@ -857,33 +860,65 @@ const ReelCard = memo(
   },
   (prev, next) => {
     // true = KHÔNG re-render, false = re-render
-    return (
-      prev.isActive === next.isActive &&
-      prev.shouldLoad === next.shouldLoad &&
-      prev.isMuted === next.isMuted &&
-      prev.height === next.height &&
-      prev.tabBarHeight === next.tabBarHeight &&
-      prev.index === next.index &&
-      prev.thumbnailUri === next.thumbnailUri &&
-      prev.currentUserId === next.currentUserId &&
-      prev.onDelete === next.onDelete &&
-      prev.onOpenComments === next.onOpenComments &&
-      prev.onToggleLike === next.onToggleLike &&
-      prev.onToggleMute === next.onToggleMute &&
-      // So sánh reel theo từng field quan trọng, KHÔNG so sánh cả object
-      prev.reel.post_id === next.reel.post_id &&
-      prev.reel.liked_by_me === next.reel.liked_by_me &&
-      prev.reel.like_count === next.reel.like_count &&
-      prev.reel.comment_count === next.reel.comment_count &&
-      prev.reel.content === next.reel.content &&
-      prev.reel.user_id === next.reel.user_id &&
-      prev.reel.author === next.reel.author &&
-      prev.reel.media === next.reel.media &&
-      prev.reel.video_url === next.reel.video_url &&
-      prev.reel.video?.media_url === next.reel.video?.media_url
-      // scrollY là SharedValue (ref-stable) nên không cần so sánh
-      // → không so sánh, chấp nhận dùng version mới nhất
-    );
+    if (
+      prev.isActive !== next.isActive ||
+      prev.shouldLoad !== next.shouldLoad ||
+      prev.isMuted !== next.isMuted ||
+      prev.height !== next.height ||
+      prev.tabBarHeight !== next.tabBarHeight ||
+      prev.index !== next.index ||
+      prev.currentUserId !== next.currentUserId
+    ) {
+      return false;
+    }
+
+    // So sánh reel theo từng field quan trọng
+    const prevReel = prev.reel;
+    const nextReel = next.reel;
+    
+    if (
+      prevReel.post_id !== nextReel.post_id ||
+      prevReel.liked_by_me !== nextReel.liked_by_me ||
+      prevReel.like_count !== nextReel.like_count ||
+      prevReel.comment_count !== nextReel.comment_count ||
+      prevReel.content !== nextReel.content ||
+      prevReel.user_id !== nextReel.user_id ||
+      prevReel.video_url !== nextReel.video_url
+    ) {
+      return false;
+    }
+
+    // So sánh author (shallow)
+    if (prevReel.author !== nextReel.author) {
+      if (!prevReel.author || !nextReel.author) {
+        return false;
+      }
+      if (
+        prevReel.author.name !== nextReel.author.name ||
+        prevReel.author.username !== nextReel.author.username ||
+        prevReel.author.avatar_url !== nextReel.author.avatar_url ||
+        prevReel.author.is_verified !== nextReel.author.is_verified
+      ) {
+        return false;
+      }
+    }
+
+    // So sánh video media
+    if (prevReel.video?.media_url !== nextReel.video?.media_url) {
+      return false;
+    }
+
+    // So sánh media array (chỉ video)
+    const prevVideo = prevReel.media.find((m) => m.type === "video");
+    const nextVideo = nextReel.media.find((m) => m.type === "video");
+    if (prevVideo?.media_url !== nextVideo?.media_url) {
+      return false;
+    }
+
+    // Callbacks là stable refs từ useCallback, không cần so sánh
+    // scrollY là SharedValue (ref-stable), không cần so sánh
+    
+    return true; // KHÔNG re-render
   },
 );
 
