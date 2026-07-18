@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Routes } from "@/constants/routes";
-
+import { useStatusBarStyle } from "@/hooks/useStatusBarStyle";
 import { CommentsSheet } from "@/components/comments-sheet";
 import PostCard from "@/components/post-card";
 import { PostComposerModal } from "@/components/post-composer-modal";
@@ -67,6 +67,8 @@ export default function HomeScreen() {
   const [storyError, setStoryError] = useState("");
   const [storyComposerVisible, setStoryComposerVisible] = useState(false);
   const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+
+  useStatusBarStyle("light");
 
   const loadStories = useCallback(async () => {
     if (!token) {

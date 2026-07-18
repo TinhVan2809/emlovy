@@ -2,17 +2,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useIsFocused } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useStatusBarStyle } from "@/hooks/useStatusBarStyle";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
   useAnimatedStyle,
-  interpolate,
-  Extrapolation,
   type SharedValue,
 } from "react-native-reanimated";
 import type { ComponentProps } from "react";
@@ -35,7 +40,7 @@ import {
   TextInput,
   useWindowDimensions,
   View,
-  Image as Img
+  Image as Img,
 } from "react-native";
 import {
   SafeAreaView,
@@ -115,6 +120,8 @@ export default function ReelsScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [isGlobalMuted, setIsGlobalMuted] = useState(false);
   const likingIdsRef = useRef<Set<number>>(new Set());
+
+  useStatusBarStyle("dark");
 
   // Sử dụng chiều cao đo được thực tế để tránh sai lệch Snap-to-interval
   const reelHeight = containerHeight;
@@ -240,14 +247,14 @@ export default function ReelsScreen() {
         setReels((current) => current.filter((r) => r.post_id !== post_id));
       },
       onLiked: (payload) => {
-        if (!payload || typeof payload.post_id === 'undefined') return;
+        if (!payload || typeof payload.post_id === "undefined") return;
         patchReel(payload.post_id, {
           liked_by_me: payload.liked_by_me,
           like_count: payload.like_count,
         });
       },
       onCommented: (payload) => {
-        if (!payload || typeof payload.post_id === 'undefined') return;
+        if (!payload || typeof payload.post_id === "undefined") return;
         patchReel(payload.post_id, { comment_count: payload.comment_count });
       },
     });
@@ -369,31 +376,34 @@ export default function ReelsScreen() {
     [token, loadReels],
   );
 
-  const handleCreateReel = useCallback(async (input: CreateReelInput) => {
-    if (!token) {
-      setError("Ban can dang nhap de dang reel.");
-      return;
-    }
+  const handleCreateReel = useCallback(
+    async (input: CreateReelInput) => {
+      if (!token) {
+        setError("Ban can dang nhap de dang reel.");
+        return;
+      }
 
-    setIsUploading(true);
+      setIsUploading(true);
 
-    try {
-      const response = await reelApi.create(token, input);
-      setReels((current) => mergeReels([response.data], current));
-      setActiveReelId(response.data.post_id);
-      setIsComposerVisible(false);
-      setError("");
-      loadReels(1, true);
-    } catch (uploadError) {
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : "Khong the dang reel.",
-      );
-    } finally {
-      setIsUploading(false);
-    }
-  }, [loadReels, token]);
+      try {
+        const response = await reelApi.create(token, input);
+        setReels((current) => mergeReels([response.data], current));
+        setActiveReelId(response.data.post_id);
+        setIsComposerVisible(false);
+        setError("");
+        loadReels(1, true);
+      } catch (uploadError) {
+        setError(
+          uploadError instanceof Error
+            ? uploadError.message
+            : "Khong the dang reel.",
+        );
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [loadReels, token],
+  );
 
   const handleCommentCountChange = useCallback(
     (postId: number, commentCount: number) => {
@@ -523,7 +533,10 @@ export default function ReelsScreen() {
 
   const keyExtractor = useCallback((item: Reel) => String(item.post_id), []);
   const handleOpenComposer = useCallback(() => setIsComposerVisible(true), []);
-  const handleCloseComposer = useCallback(() => setIsComposerVisible(false), []);
+  const handleCloseComposer = useCallback(
+    () => setIsComposerVisible(false),
+    [],
+  );
   const handleCloseComments = useCallback(() => setCommentReelId(null), []);
   const headerStyle = useMemo(
     () => [styles.header, { paddingTop: insets.top + 8 }],
@@ -547,8 +560,6 @@ export default function ReelsScreen() {
 
   return (
     <View onLayout={handleLayout} style={styles.screen}>
-      <StatusBar style="light" />
-
       {/* Đổ bóng gradient cố định giúp hiển thị Status Bar và Header rõ nét hơn */}
       <LinearGradient
         colors={["rgba(0,0,0,0.7)", "rgba(0,0,0,0.3)", "transparent"]}
@@ -557,10 +568,7 @@ export default function ReelsScreen() {
         style={styles.fixedTopShade}
       />
 
-      <View
-        pointerEvents="box-none"
-        style={headerStyle}
-      >
+      <View pointerEvents="box-none" style={headerStyle}>
         <Text style={styles.headerTitle}>Reels</Text>
         <Pressable
           hitSlop={10}
@@ -658,21 +666,18 @@ const ReelCard = memo(
     height: number;
   }) => {
     const [cachedVideoUrl, setCachedVideoUrl] = useState<string | null>(null);
-    
+
     const videoUrl = useMemo(
-      () => 
-       resolveMediaUrl(
+      () =>
+        resolveMediaUrl(
           reel.video_url ||
             reel.video?.media_url ||
             reel.media.find((item) => item.type === "video")?.media_url,
         ),
       [reel.media, reel.video?.media_url, reel.video_url],
     );
-    
-    const thumbnailUri = useMemo(
-      () => getReelThumbnailUrl(reel),
-      [reel],
-    );
+
+    const thumbnailUri = useMemo(() => getReelThumbnailUrl(reel), [reel]);
 
     // Load cached video URL khi component mount hoặc shouldLoad thay đổi
     useEffect(() => {
@@ -700,7 +705,7 @@ const ReelCard = memo(
         isCancelled = true;
       };
     }, [videoUrl, shouldLoad]);
-    
+
     const [showActions, setShowActions] = useState(false);
     const { authorName, authorHandle, avatarUrl, ownerCanDelete } = useMemo(
       () => ({
@@ -716,40 +721,12 @@ const ReelCard = memo(
       [reel, currentUserId],
     );
 
-    // Hiệu ứng khi vuốt lên
-    const animatedStyle = useAnimatedStyle(() => {
-      const inputRange = [
-        (index - 1) * cardHeight,
-        index * cardHeight,
-        (index + 1) * cardHeight,
-      ];
-
-      const scale = interpolate(
-        scrollY.value,
-        inputRange,
-        [0.95, 1, 0.95],
-        Extrapolation.CLAMP,
-      );
-
-      const opacity = interpolate(
-        scrollY.value,
-        inputRange,
-        [0.6, 1, 0.6],
-        Extrapolation.CLAMP,
-      );
-
-      return {
-        transform: [{ scale }],
-        opacity,
-      };
-    });
-
     const reelRef = useRef(reel);
     reelRef.current = reel; // sync trong body, luôn fresh
 
     const handleToggleLike = useCallback(
       () => onToggleLike(reelRef.current),
-      [onToggleLike], 
+      [onToggleLike],
     );
 
     const handleOpenComments = useCallback(
@@ -782,9 +759,7 @@ const ReelCard = memo(
     );
 
     return (
-      <Animated.View
-        style={[styles.reelPage, reelPageHeightStyle, animatedStyle]}
-      >
+      <Animated.View style={[styles.reelPage, reelPageHeightStyle]}>
         {cachedVideoUrl && shouldLoad ? (
           <ReelVideo
             isActive={isActive}
@@ -842,7 +817,10 @@ const ReelCard = memo(
                     {authorName}
                   </Text>
                   {reel.author?.is_verified === 1 ? (
-                  <Img source={require("../../assets/images/verifed.png")} style={styles.verifiedIcon} />
+                    <Img
+                      source={require("../../assets/images/verifed.png")}
+                      style={styles.verifiedIcon}
+                    />
                   ) : null}
                 </View>
                 <Pressable style={styles.followBox}>
@@ -876,16 +854,10 @@ const ReelCard = memo(
               >
                 <Text style={styles.actionItemText}>Lưu Reel</Text>
               </Pressable>
-              <Pressable
-                style={styles.actionItem}
-                onPress={handleCloseActions}
-              >
+              <Pressable style={styles.actionItem} onPress={handleCloseActions}>
                 <Text style={styles.actionItemText}>Sao chép liên kết</Text>
               </Pressable>
-              <Pressable
-                style={styles.actionItem}
-                onPress={handleCloseActions}
-              >
+              <Pressable style={styles.actionItem} onPress={handleCloseActions}>
                 <Text style={styles.actionItemText}>Chia sẻ</Text>
               </Pressable>
               <Pressable
@@ -899,7 +871,10 @@ const ReelCard = memo(
                 </Text>
               </Pressable>
               {ownerCanDelete ? (
-                <Pressable style={styles.actionItem} onPress={handleDeleteAction}>
+                <Pressable
+                  style={styles.actionItem}
+                  onPress={handleDeleteAction}
+                >
                   <Text style={[styles.actionItemText, styles.destructiveText]}>
                     Xóa
                   </Text>
@@ -934,7 +909,7 @@ const ReelCard = memo(
     // So sánh reel theo từng field quan trọng
     const prevReel = prev.reel;
     const nextReel = next.reel;
-    
+
     if (
       prevReel.post_id !== nextReel.post_id ||
       prevReel.liked_by_me !== nextReel.liked_by_me ||
@@ -976,7 +951,7 @@ const ReelCard = memo(
 
     // Callbacks là stable refs từ useCallback, không cần so sánh
     // scrollY là SharedValue (ref-stable), không cần so sánh
-    
+
     return true; // KHÔNG re-render
   },
 );
@@ -1027,22 +1002,29 @@ const ReelVideo = memo(function ReelVideo({
     containerWidth.current = event.nativeEvent.layout.width;
   }, []);
 
-  const handleSeek = useCallback((event: GestureResponderEvent) => {
-    const touchX = event.nativeEvent.locationX;
-    const currentPlayer = playerRef.current;
-    if (containerWidth.current > 0 && currentPlayer && currentPlayer.duration > 0) {
-      const seekPercentage = Math.max(
-        0,
-        Math.min(1, touchX / containerWidth.current),
-      );
-      try {
-        currentPlayer.currentTime = seekPercentage * currentPlayer.duration;
-        progress.value = seekPercentage;
-      } catch (error) {
-        console.warn("[ReelVideo] Seek failed:", error);
+  const handleSeek = useCallback(
+    (event: GestureResponderEvent) => {
+      const touchX = event.nativeEvent.locationX;
+      const currentPlayer = playerRef.current;
+      if (
+        containerWidth.current > 0 &&
+        currentPlayer &&
+        currentPlayer.duration > 0
+      ) {
+        const seekPercentage = Math.max(
+          0,
+          Math.min(1, touchX / containerWidth.current),
+        );
+        try {
+          currentPlayer.currentTime = seekPercentage * currentPlayer.duration;
+          progress.value = seekPercentage;
+        } catch (error) {
+          console.warn("[ReelVideo] Seek failed:", error);
+        }
       }
-    }
-  }, [progress]);
+    },
+    [progress],
+  );
 
   // Theo dõi tiến trình video
   useEffect(() => {
@@ -1060,7 +1042,7 @@ const ReelVideo = memo(function ReelVideo({
           progress.value = currentPlayer.currentTime / currentPlayer.duration;
         }
       } catch (error) {
-        // Player might be released, ignore error
+        console.error("Error: ", error);
       }
     }, 250);
 
@@ -1106,7 +1088,7 @@ const ReelVideo = memo(function ReelVideo({
         try {
           sub.remove();
         } catch (error) {
-          // Ignore cleanup errors
+          console.error("Error: ", error);
         }
       };
     } catch (error) {
@@ -1309,8 +1291,6 @@ function ReelComposerModal({
         style={styles.composerBackdrop}
       >
         <SafeAreaView edges={["top"]} style={styles.composerSheet}>
-          <StatusBar style="dark" />
-        
           <View style={styles.composerHeader}>
             <Pressable
               disabled={isSubmitting}
