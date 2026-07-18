@@ -1166,6 +1166,8 @@ function ReelComposerModal({
         style={styles.composerBackdrop}
       >
         <SafeAreaView edges={["top"]} style={styles.composerSheet}>
+          <StatusBar style="dark" />
+        
           <View style={styles.composerHeader}>
             <Pressable
               disabled={isSubmitting}
