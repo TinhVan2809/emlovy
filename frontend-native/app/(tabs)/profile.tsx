@@ -24,6 +24,7 @@ import { Routes, followRoutes, postRoutes } from "@/constants/routes";
 import { profileHighlights } from "@/constants/mock-content";
 import { AppColors, AppFonts } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useComposer } from "@/hooks/useComposer";
 import { postApi, profileApi, resolveMediaUrl, storyApi } from "@/services/api";
 import { subscribeToPostEvents } from "@/services/post-socket";
 import { subscribeToStoryEvents } from "@/services/story-socket";
@@ -67,18 +68,12 @@ export default function ProfileScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [composerVisible, setComposerVisible] = useState(false);
-  const [composerMode, setComposerMode] = useState<"create" | "edit">("create");
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [isSubmittingPost, setIsSubmittingPost] = useState(false);
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [storyError, setStoryError] = useState("");
-  const [storyComposerVisible, setStoryComposerVisible] = useState(false);
-  const [storyComposerMode, setStoryComposerMode] = useState<"create" | "edit">(
-    "create",
-  );
-  const [editingStory, setEditingStory] = useState<StoryItem | null>(null);
-  const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+
+  // Use composer hooks for Post and Story
+  const postComposer = useComposer<Post>();
+  const storyComposer = useComposer<StoryItem>();
 
   // State set các tab (posts, reels, tagged)
   const [activeTab, setActiveTab] = useState("grid");
@@ -236,24 +231,15 @@ export default function ProfileScreen() {
   ];
 
   const openCreateComposer = () => {
-    setComposerMode("create");
-    setEditingPost(null);
-    setComposerVisible(true);
+    postComposer.openCreate();
   };
 
   const openEditComposer = (post: Post) => {
-    setComposerMode("edit");
-    setEditingPost(post);
-    setComposerVisible(true);
+    postComposer.openEdit(post);
   };
 
   const closeComposer = () => {
-    if (isSubmittingPost) {
-      return;
-    }
-
-    setComposerVisible(false);
-    setEditingPost(null);
+    postComposer.close();
   };
 
   const handleRefresh = () => {
@@ -274,13 +260,13 @@ export default function ProfileScreen() {
       return;
     }
 
-    setIsSubmittingPost(true);
+    postComposer.setIsSubmitting(true);
 
     try {
-      if (composerMode === "edit" && editingPost) {
+      if (postComposer.mode === "edit" && postComposer.editingItem) {
         const response = await postApi.update(
           token,
-          editingPost.post_id,
+          postComposer.editingItem.post_id,
           input as UpdatePostInput,
         );
         setPosts((current) =>
@@ -300,8 +286,7 @@ export default function ProfileScreen() {
         setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: (p.stats.posts || 0) + 1 } } : null);
       }
 
-      setComposerVisible(false);
-      setEditingPost(null);
+      postComposer.close();
       setPostError("");
     } catch (submitError) {
       setPostError(
@@ -310,7 +295,7 @@ export default function ProfileScreen() {
           : "Lưu bài viết không thành công.",
       );
     } finally {
-      setIsSubmittingPost(false);
+      postComposer.setIsSubmitting(false);
     }
   };
 
@@ -350,24 +335,15 @@ export default function ProfileScreen() {
   };
 
   const openCreateStoryComposer = () => {
-    setStoryComposerMode("create");
-    setEditingStory(null);
-    setStoryComposerVisible(true);
+    storyComposer.openCreate();
   };
 
   const openEditStoryComposer = (story: StoryItem) => {
-    setStoryComposerMode("edit");
-    setEditingStory(story);
-    setStoryComposerVisible(true);
+    storyComposer.openEdit(story);
   };
 
   const closeStoryComposer = () => {
-    if (isSubmittingStory) {
-      return;
-    }
-
-    setStoryComposerVisible(false);
-    setEditingStory(null);
+    storyComposer.close();
   };
 
   const handleSubmitStory = async (
@@ -378,13 +354,13 @@ export default function ProfileScreen() {
       return;
     }
 
-    setIsSubmittingStory(true);
+    storyComposer.setIsSubmitting(true);
 
     try {
-      if (storyComposerMode === "edit" && editingStory) {
+      if (storyComposer.mode === "edit" && storyComposer.editingItem) {
         const response = await storyApi.update(
           token,
-          editingStory.story_id,
+          storyComposer.editingItem.story_id,
           input as UpdateStoryInput,
         );
         setStories((current) =>
@@ -401,8 +377,7 @@ export default function ProfileScreen() {
       }
 
       setStoryError("");
-      setStoryComposerVisible(false);
-      setEditingStory(null);
+      storyComposer.close();
     } catch (submitError) {
       setStoryError(
         submitError instanceof Error
@@ -410,7 +385,7 @@ export default function ProfileScreen() {
           : "Không thể lưu story.",
       );
     } finally {
-      setIsSubmittingStory(false);
+      storyComposer.setIsSubmitting(false);
     }
   };
 
@@ -728,21 +703,21 @@ export default function ProfileScreen() {
         />
 
         <PostComposerModal
-          initialPost={editingPost}
-          isSubmitting={isSubmittingPost}
-          mode={composerMode}
+          initialPost={postComposer.editingItem}
+          isSubmitting={postComposer.isSubmitting}
+          mode={postComposer.mode}
           onClose={closeComposer}
           onSubmit={handleSubmitPost}
-          visible={composerVisible}
+          visible={postComposer.isVisible}
         />
 
         <StoryComposerModal
-          initialStory={editingStory}
-          isSubmitting={isSubmittingStory}
-          mode={storyComposerMode}
+          initialStory={storyComposer.editingItem}
+          isSubmitting={storyComposer.isSubmitting}
+          mode={storyComposer.mode}
           onClose={closeStoryComposer}
           onSubmit={handleSubmitStory}
-          visible={storyComposerVisible}
+          visible={storyComposer.isVisible}
         />
       </ScreenShell>
     </>
