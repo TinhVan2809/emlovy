@@ -1,5 +1,6 @@
 # Emlovy
 
+![Static Badge](https://img.shields.io/badge/React-%2361DAFB?style=for-the-badge&logo=React&logoColor=%2361DAFB&labelColor=%23000)
 ![Static Badge](https://img.shields.io/badge/Next.Js-%23000?style=for-the-badge&logo=next.js)
 ![Static Badge](https://img.shields.io/badge/node-%235FA04E?style=for-the-badge&logo=node.js&labelColor=black)
 
