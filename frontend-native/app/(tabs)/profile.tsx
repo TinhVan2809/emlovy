@@ -83,87 +83,69 @@ export default function ProfileScreen() {
   // State set các tab (posts, reels, tagged)
   const [activeTab, setActiveTab] = useState("grid");
 
-  const loadProfile = useCallback(async () => {
-    if (!token) {
+  const loadData = useCallback(async (options: { isRefresh?: boolean } = {}) => {
+    if (!token) return;
+
+    if (options.isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoadingPosts(true);
+    }
+
+    const [profileResult, postsResult, storiesResult] = await Promise.allSettled([
+      profileApi.getMe(token),
+      postApi.getMyPosts(token, { limit: PROFILE_POST_LIMIT, page: 1 }),
+      storyApi.getMine(token),
+    ]);
+
+    if (profileResult.status === 'fulfilled') {
+      setProfile(profileResult.value.data.profile);
+      setError('');
+    } else {
+      setError(profileResult.reason instanceof Error ? profileResult.reason.message : "Không thể tải profile.");
+    }
+
+    if (postsResult.status === 'fulfilled') {
+      setPagination(postsResult.value.data.pagination);
+      setPosts(postsResult.value.data.items);
+      setPostError('');
+    } else {
+      setPostError(postsResult.reason instanceof Error ? postsResult.reason.message : "Không thể tải bài viết.");
+    }
+
+    if (storiesResult.status === 'fulfilled') {
+      setStories(storiesResult.value.data.stories);
+      setStoryError('');
+    } else {
+      setStoryError(storiesResult.reason instanceof Error ? storiesResult.reason.message : "Không thể tải stories.");
+    }
+
+    setIsRefreshing(false);
+    setIsLoadingPosts(false);
+  }, [token]);
+
+  const loadMorePosts = useCallback(async () => {
+    if (!token || !pagination?.hasMore || isLoadingMore || isLoadingPosts) {
       return;
     }
 
+    setIsLoadingMore(true);
     try {
-      const response = await profileApi.getMe(token);
-      setProfile(response.data.profile);
-      setError("");
+      const response = await postApi.getMyPosts(token, { limit: PROFILE_POST_LIMIT, page: pagination.page + 1 });
+      setPagination(response.data.pagination);
+      setPosts((current) => mergePosts(current, response.data.items));
+      setPostError('');
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không thể tải profile.",
-      );
+      setPostError(loadError instanceof Error ? loadError.message : "Không thể tải thêm bài viết.");
+    } finally {
+      setIsLoadingMore(false);
     }
-  }, [token]);
-
-  const loadMyPosts = useCallback(
-    async (page = 1, replace = true) => {
-      if (!token) {
-        return;
-      }
-
-      if (replace) {
-        setIsLoadingPosts(true);
-      } else {
-        setIsLoadingMore(true);
-      }
-
-      try {
-        const response = await postApi.getMyPosts(token, {
-          limit: PROFILE_POST_LIMIT,
-          page,
-        });
-        setPagination(response.data.pagination);
-        setPosts((current) =>
-          replace
-            ? response.data.items
-            : mergePosts(current, response.data.items),
-        );
-        setPostError("");
-      } catch (loadError) {
-        setPostError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Không thể tải bài viết.",
-        );
-      } finally {
-        setIsLoadingPosts(false);
-        setIsLoadingMore(false);
-        setIsRefreshing(false);
-      }
-    },
-    [token],
-  );
-
-  const loadMyStories = useCallback(async () => {
-    if (!token) {
-      return;
-    }
-
-    try {
-      const response = await storyApi.getMine(token);
-      setStories(response.data.stories);
-      setStoryError("");
-    } catch (loadError) {
-      setStoryError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không thể tải stories.",
-      );
-    }
-  }, [token]);
+  }, [token, pagination, isLoadingMore, isLoadingPosts]);
 
   useFocusEffect(
     useCallback(() => {
-      loadProfile();
-      loadMyPosts(1, true);
-      loadMyStories();
-    }, [loadMyPosts, loadMyStories, loadProfile]),
+      loadData();
+    }, [loadData]),
   );
 
   useEffect(() => {
@@ -184,13 +166,13 @@ export default function ProfileScreen() {
 
           return [post, ...current];
         });
-        loadProfile();
+        setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: (p.stats.posts || 0) + 1 } } : null);
       },
       onDeleted: ({ post_id }) => {
         setPosts((current) =>
           current.filter((post) => post.post_id !== post_id),
         );
-        loadProfile();
+        setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: Math.max(0, (p.stats.posts || 0) - 1) } } : null);
       },
       onUpdated: (post) => {
         if (Number(post.user_id) !== Number(user.user_id)) {
@@ -202,26 +184,32 @@ export default function ProfileScreen() {
         );
       },
     });
-  }, [loadProfile, user?.user_id]);
+  }, [user?.user_id]);
 
   useEffect(() => {
     if (!user?.user_id) {
       return undefined;
     }
 
-    const reloadOwnStories = (story?: StoryItem | { user_id?: number }) => {
-      if (!story || Number(story.user_id) === Number(user.user_id)) {
-        loadMyStories();
-      }
-    };
-
     return subscribeToStoryEvents({
-      onCreated: reloadOwnStories,
-      onDeleted: reloadOwnStories,
-      onExpired: () => loadMyStories(),
-      onUpdated: reloadOwnStories,
+      onCreated: (story) => {
+        if (Number(story.user_id) === Number(user.user_id)) {
+          setStories((current) => [story, ...current]);
+        }
+      },
+      onDeleted: ({ story_id, user_id }) => {
+        if (Number(user_id) === Number(user.user_id)) {
+          setStories((current) => current.filter((s) => s.story_id !== story_id));
+        }
+      },
+      onExpired: () => loadData({ isRefresh: true }),
+      onUpdated: (story) => {
+        if (Number(story.user_id) === Number(user.user_id)) {
+          setStories((current) => current.map((s) => (s.story_id === story.story_id ? story : s)));
+        }
+      },
     });
-  }, [loadMyStories, user?.user_id]);
+  }, [user?.user_id, loadData]);
 
   const displayUser = profile || user;
   const displayName = displayUser?.name || "Emlovy User";
@@ -269,18 +257,15 @@ export default function ProfileScreen() {
   };
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    loadProfile();
-    loadMyStories();
-    loadMyPosts(1, true);
+    loadData({ isRefresh: true });
   };
 
   const handleLoadMore = () => {
     if (!pagination?.hasMore || isLoadingMore || isLoadingPosts) {
       return;
     }
-
-    loadMyPosts(pagination.page + 1, false);
+    
+    loadMorePosts();
   };
 
   const handleSubmitPost = async (input: CreatePostInput | UpdatePostInput) => {
@@ -312,7 +297,7 @@ export default function ProfileScreen() {
 
           return [response.data, ...current];
         });
-        loadProfile();
+        setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: (p.stats.posts || 0) + 1 } } : null);
       }
 
       setComposerVisible(false);
@@ -353,7 +338,7 @@ export default function ProfileScreen() {
 
     try {
       await postApi.delete(token, post.post_id);
-      loadProfile();
+      setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: Math.max(0, (p.stats.posts || 0) - 1) } } : null);
     } catch (deleteError) {
       setPosts(previousPosts);
       setPostError(
@@ -422,7 +407,7 @@ export default function ProfileScreen() {
       setStoryError(
         submitError instanceof Error
           ? submitError.message
-          : "Khong the luu story.",
+          : "Không thể lưu story.",
       );
     } finally {
       setIsSubmittingStory(false);
@@ -463,7 +448,7 @@ export default function ProfileScreen() {
       setStoryError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Xóa story thành công.",
+          : "Xóa story không thành công.",
       );
     }
   };
