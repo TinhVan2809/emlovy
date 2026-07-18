@@ -24,6 +24,7 @@ import { Routes, followRoutes, postRoutes } from "@/constants/routes";
 import { profileHighlights } from "@/constants/mock-content";
 import { AppColors, AppFonts } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useComposer } from "@/hooks/useComposer";
 import { postApi, profileApi, resolveMediaUrl, storyApi } from "@/services/api";
 import { subscribeToPostEvents } from "@/services/post-socket";
 import { subscribeToStoryEvents } from "@/services/story-socket";
@@ -67,103 +68,79 @@ export default function ProfileScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [composerVisible, setComposerVisible] = useState(false);
-  const [composerMode, setComposerMode] = useState<"create" | "edit">("create");
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [isSubmittingPost, setIsSubmittingPost] = useState(false);
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [storyError, setStoryError] = useState("");
-  const [storyComposerVisible, setStoryComposerVisible] = useState(false);
-  const [storyComposerMode, setStoryComposerMode] = useState<"create" | "edit">(
-    "create",
-  );
-  const [editingStory, setEditingStory] = useState<StoryItem | null>(null);
-  const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+
+  // Use composer hooks for Post and Story
+  const postComposer = useComposer<Post>();
+  const storyComposer = useComposer<StoryItem>();
 
   // State set các tab (posts, reels, tagged)
   const [activeTab, setActiveTab] = useState("grid");
 
-  const loadProfile = useCallback(async () => {
-    if (!token) {
+  const loadData = useCallback(async (options: { isRefresh?: boolean } = {}) => {
+    if (!token) return;
+
+    if (options.isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoadingPosts(true);
+    }
+
+    const [profileResult, postsResult, storiesResult] = await Promise.allSettled([
+      profileApi.getMe(token),
+      postApi.getMyPosts(token, { limit: PROFILE_POST_LIMIT, page: 1 }),
+      storyApi.getMine(token),
+    ]);
+
+    if (profileResult.status === 'fulfilled') {
+      setProfile(profileResult.value.data.profile);
+      setError('');
+    } else {
+      setError(profileResult.reason instanceof Error ? profileResult.reason.message : "Không thể tải profile.");
+    }
+
+    if (postsResult.status === 'fulfilled') {
+      setPagination(postsResult.value.data.pagination);
+      setPosts(postsResult.value.data.items);
+      setPostError('');
+    } else {
+      setPostError(postsResult.reason instanceof Error ? postsResult.reason.message : "Không thể tải bài viết.");
+    }
+
+    if (storiesResult.status === 'fulfilled') {
+      setStories(storiesResult.value.data.stories);
+      setStoryError('');
+    } else {
+      setStoryError(storiesResult.reason instanceof Error ? storiesResult.reason.message : "Không thể tải stories.");
+    }
+
+    setIsRefreshing(false);
+    setIsLoadingPosts(false);
+  }, [token]);
+
+  const loadMorePosts = useCallback(async () => {
+    if (!token || !pagination?.hasMore || isLoadingMore || isLoadingPosts) {
       return;
     }
 
+    setIsLoadingMore(true);
     try {
-      const response = await profileApi.getMe(token);
-      setProfile(response.data.profile);
-      setError("");
+      const response = await postApi.getMyPosts(token, { limit: PROFILE_POST_LIMIT, page: pagination.page + 1 });
+      setPagination(response.data.pagination);
+      setPosts((current) => mergePosts(current, response.data.items));
+      setPostError('');
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không thể tải profile.",
-      );
+      setPostError(loadError instanceof Error ? loadError.message : "Không thể tải thêm bài viết.");
+    } finally {
+      setIsLoadingMore(false);
     }
-  }, [token]);
-
-  const loadMyPosts = useCallback(
-    async (page = 1, replace = true) => {
-      if (!token) {
-        return;
-      }
-
-      if (replace) {
-        setIsLoadingPosts(true);
-      } else {
-        setIsLoadingMore(true);
-      }
-
-      try {
-        const response = await postApi.getMyPosts(token, {
-          limit: PROFILE_POST_LIMIT,
-          page,
-        });
-        setPagination(response.data.pagination);
-        setPosts((current) =>
-          replace
-            ? response.data.items
-            : mergePosts(current, response.data.items),
-        );
-        setPostError("");
-      } catch (loadError) {
-        setPostError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Không thể tải bài viết.",
-        );
-      } finally {
-        setIsLoadingPosts(false);
-        setIsLoadingMore(false);
-        setIsRefreshing(false);
-      }
-    },
-    [token],
-  );
-
-  const loadMyStories = useCallback(async () => {
-    if (!token) {
-      return;
-    }
-
-    try {
-      const response = await storyApi.getMine(token);
-      setStories(response.data.stories);
-      setStoryError("");
-    } catch (loadError) {
-      setStoryError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không thể tải stories.",
-      );
-    }
-  }, [token]);
+  }, [token, pagination, isLoadingMore, isLoadingPosts]);
 
   useFocusEffect(
     useCallback(() => {
-      loadProfile();
-      loadMyPosts(1, true);
-      loadMyStories();
-    }, [loadMyPosts, loadMyStories, loadProfile]),
+      loadData();
+    }, [loadData]),
   );
 
   useEffect(() => {
@@ -184,13 +161,13 @@ export default function ProfileScreen() {
 
           return [post, ...current];
         });
-        loadProfile();
+        setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: (p.stats.posts || 0) + 1 } } : null);
       },
       onDeleted: ({ post_id }) => {
         setPosts((current) =>
           current.filter((post) => post.post_id !== post_id),
         );
-        loadProfile();
+        setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: Math.max(0, (p.stats.posts || 0) - 1) } } : null);
       },
       onUpdated: (post) => {
         if (Number(post.user_id) !== Number(user.user_id)) {
@@ -202,26 +179,32 @@ export default function ProfileScreen() {
         );
       },
     });
-  }, [loadProfile, user?.user_id]);
+  }, [user?.user_id]);
 
   useEffect(() => {
     if (!user?.user_id) {
       return undefined;
     }
 
-    const reloadOwnStories = (story?: StoryItem | { user_id?: number }) => {
-      if (!story || Number(story.user_id) === Number(user.user_id)) {
-        loadMyStories();
-      }
-    };
-
     return subscribeToStoryEvents({
-      onCreated: reloadOwnStories,
-      onDeleted: reloadOwnStories,
-      onExpired: () => loadMyStories(),
-      onUpdated: reloadOwnStories,
+      onCreated: (story) => {
+        if (Number(story.user_id) === Number(user.user_id)) {
+          setStories((current) => [story, ...current]);
+        }
+      },
+      onDeleted: ({ story_id, user_id }) => {
+        if (Number(user_id) === Number(user.user_id)) {
+          setStories((current) => current.filter((s) => s.story_id !== story_id));
+        }
+      },
+      onExpired: () => loadData({ isRefresh: true }),
+      onUpdated: (story) => {
+        if (Number(story.user_id) === Number(user.user_id)) {
+          setStories((current) => current.map((s) => (s.story_id === story.story_id ? story : s)));
+        }
+      },
     });
-  }, [loadMyStories, user?.user_id]);
+  }, [user?.user_id, loadData]);
 
   const displayUser = profile || user;
   const displayName = displayUser?.name || "Emlovy User";
@@ -248,39 +231,27 @@ export default function ProfileScreen() {
   ];
 
   const openCreateComposer = () => {
-    setComposerMode("create");
-    setEditingPost(null);
-    setComposerVisible(true);
+    postComposer.openCreate();
   };
 
   const openEditComposer = (post: Post) => {
-    setComposerMode("edit");
-    setEditingPost(post);
-    setComposerVisible(true);
+    postComposer.openEdit(post);
   };
 
   const closeComposer = () => {
-    if (isSubmittingPost) {
-      return;
-    }
-
-    setComposerVisible(false);
-    setEditingPost(null);
+    postComposer.close();
   };
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    loadProfile();
-    loadMyStories();
-    loadMyPosts(1, true);
+    loadData({ isRefresh: true });
   };
 
   const handleLoadMore = () => {
     if (!pagination?.hasMore || isLoadingMore || isLoadingPosts) {
       return;
     }
-
-    loadMyPosts(pagination.page + 1, false);
+    
+    loadMorePosts();
   };
 
   const handleSubmitPost = async (input: CreatePostInput | UpdatePostInput) => {
@@ -289,13 +260,13 @@ export default function ProfileScreen() {
       return;
     }
 
-    setIsSubmittingPost(true);
+    postComposer.setIsSubmitting(true);
 
     try {
-      if (composerMode === "edit" && editingPost) {
+      if (postComposer.mode === "edit" && postComposer.editingItem) {
         const response = await postApi.update(
           token,
-          editingPost.post_id,
+          postComposer.editingItem.post_id,
           input as UpdatePostInput,
         );
         setPosts((current) =>
@@ -312,11 +283,10 @@ export default function ProfileScreen() {
 
           return [response.data, ...current];
         });
-        loadProfile();
+        setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: (p.stats.posts || 0) + 1 } } : null);
       }
 
-      setComposerVisible(false);
-      setEditingPost(null);
+      postComposer.close();
       setPostError("");
     } catch (submitError) {
       setPostError(
@@ -325,7 +295,7 @@ export default function ProfileScreen() {
           : "Lưu bài viết không thành công.",
       );
     } finally {
-      setIsSubmittingPost(false);
+      postComposer.setIsSubmitting(false);
     }
   };
 
@@ -353,7 +323,7 @@ export default function ProfileScreen() {
 
     try {
       await postApi.delete(token, post.post_id);
-      loadProfile();
+      setProfile((p) => p ? { ...p, stats: { ...p.stats, posts: Math.max(0, (p.stats.posts || 0) - 1) } } : null);
     } catch (deleteError) {
       setPosts(previousPosts);
       setPostError(
@@ -365,24 +335,15 @@ export default function ProfileScreen() {
   };
 
   const openCreateStoryComposer = () => {
-    setStoryComposerMode("create");
-    setEditingStory(null);
-    setStoryComposerVisible(true);
+    storyComposer.openCreate();
   };
 
   const openEditStoryComposer = (story: StoryItem) => {
-    setStoryComposerMode("edit");
-    setEditingStory(story);
-    setStoryComposerVisible(true);
+    storyComposer.openEdit(story);
   };
 
   const closeStoryComposer = () => {
-    if (isSubmittingStory) {
-      return;
-    }
-
-    setStoryComposerVisible(false);
-    setEditingStory(null);
+    storyComposer.close();
   };
 
   const handleSubmitStory = async (
@@ -393,13 +354,13 @@ export default function ProfileScreen() {
       return;
     }
 
-    setIsSubmittingStory(true);
+    storyComposer.setIsSubmitting(true);
 
     try {
-      if (storyComposerMode === "edit" && editingStory) {
+      if (storyComposer.mode === "edit" && storyComposer.editingItem) {
         const response = await storyApi.update(
           token,
-          editingStory.story_id,
+          storyComposer.editingItem.story_id,
           input as UpdateStoryInput,
         );
         setStories((current) =>
@@ -416,16 +377,15 @@ export default function ProfileScreen() {
       }
 
       setStoryError("");
-      setStoryComposerVisible(false);
-      setEditingStory(null);
+      storyComposer.close();
     } catch (submitError) {
       setStoryError(
         submitError instanceof Error
           ? submitError.message
-          : "Khong the luu story.",
+          : "Không thể lưu story.",
       );
     } finally {
-      setIsSubmittingStory(false);
+      storyComposer.setIsSubmitting(false);
     }
   };
 
@@ -463,7 +423,7 @@ export default function ProfileScreen() {
       setStoryError(
         deleteError instanceof Error
           ? deleteError.message
-          : "Xóa story thành công.",
+          : "Xóa story không thành công.",
       );
     }
   };
@@ -743,21 +703,21 @@ export default function ProfileScreen() {
         />
 
         <PostComposerModal
-          initialPost={editingPost}
-          isSubmitting={isSubmittingPost}
-          mode={composerMode}
+          initialPost={postComposer.editingItem}
+          isSubmitting={postComposer.isSubmitting}
+          mode={postComposer.mode}
           onClose={closeComposer}
           onSubmit={handleSubmitPost}
-          visible={composerVisible}
+          visible={postComposer.isVisible}
         />
 
         <StoryComposerModal
-          initialStory={editingStory}
-          isSubmitting={isSubmittingStory}
-          mode={storyComposerMode}
+          initialStory={storyComposer.editingItem}
+          isSubmitting={storyComposer.isSubmitting}
+          mode={storyComposer.mode}
           onClose={closeStoryComposer}
           onSubmit={handleSubmitStory}
-          visible={storyComposerVisible}
+          visible={storyComposer.isVisible}
         />
       </ScreenShell>
     </>

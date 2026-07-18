@@ -48,6 +48,7 @@ import { AppColors, AppFonts } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { reelApi, resolveMediaUrl } from "@/services/api";
 import { subscribeToReelEvents } from "@/services/reel-socket";
+import { getCachedVideoUrl, preloadVideo } from "@/services/video-cache";
 import type {
   CreateReelInput,
   PostMediaInput,
@@ -130,6 +131,35 @@ export default function ReelsScreen() {
     () => reels.findIndex((r) => r.post_id === activeReelId),
     [activeReelId, reels],
   );
+
+  // Preload videos cho reels xung quanh reel đang xem
+  useEffect(() => {
+    if (activeIndex < 0 || reels.length === 0) {
+      return;
+    }
+
+    // Preload reels xung quanh (1 phía trước, 2 phía sau)
+    const preloadIndices = [
+      activeIndex - 1, // Reel phía trước
+      activeIndex + 1, // Reel tiếp theo
+      activeIndex + 2, // Reel sau đó
+    ].filter((idx) => idx >= 0 && idx < reels.length);
+
+    preloadIndices.forEach((idx) => {
+      const reel = reels[idx];
+      const videoUrl = resolveMediaUrl(
+        reel.video_url ||
+          reel.video?.media_url ||
+          reel.media.find((item) => item.type === "video")?.media_url,
+      );
+
+      if (videoUrl) {
+        preloadVideo(videoUrl).catch((error) => {
+          console.warn(`Failed to preload video at index ${idx}:`, error);
+        });
+      }
+    });
+  }, [activeIndex, reels]);
 
   const patchReel = useCallback((reelId: number, patch: Partial<Reel>) => {
     setReels((current) => {
@@ -465,7 +495,6 @@ export default function ReelsScreen() {
           onToggleMute={handleToggleMute}
           reel={item}
           tabBarHeight={tabBarHeight}
-          thumbnailUri={getReelThumbnailUrl(item)}
         />
       );
     },
@@ -557,11 +586,11 @@ export default function ReelsScreen() {
         extraData={listExtraData}
         onScroll={onScrollHandler}
         scrollEventThrottle={16}
-        windowSize={5} // Tăng nhẹ để giữ các player đã preload trong bộ nhớ
+        windowSize={3} // Giảm từ 5 xuống 3 để tiết kiệm bộ nhớ
         initialNumToRender={1}
         maxToRenderPerBatch={1}
         updateCellsBatchingPeriod={100}
-        removeClippedSubviews={Platform.OS === "android"}
+        removeClippedSubviews={true} // Bật cho cả iOS và Android
         disableIntervalMomentum={true}
         decelerationRate="fast"
         getItemLayout={getItemLayout}
@@ -612,7 +641,6 @@ const ReelCard = memo(
     tabBarHeight,
     index,
     scrollY,
-    thumbnailUri,
     height: cardHeight,
   }: {
     currentUserId?: number | null;
@@ -628,8 +656,9 @@ const ReelCard = memo(
     index: number;
     scrollY: SharedValue<number>;
     height: number;
-    thumbnailUri?: string;
   }) => {
+    const [cachedVideoUrl, setCachedVideoUrl] = useState<string | null>(null);
+    
     const videoUrl = useMemo(
       () => 
        resolveMediaUrl(
@@ -639,6 +668,39 @@ const ReelCard = memo(
         ),
       [reel.media, reel.video?.media_url, reel.video_url],
     );
+    
+    const thumbnailUri = useMemo(
+      () => getReelThumbnailUrl(reel),
+      [reel],
+    );
+
+    // Load cached video URL khi component mount hoặc shouldLoad thay đổi
+    useEffect(() => {
+      if (!videoUrl || !shouldLoad) {
+        return;
+      }
+
+      let isCancelled = false;
+
+      getCachedVideoUrl(videoUrl)
+        .then((cachedUrl) => {
+          if (!isCancelled) {
+            setCachedVideoUrl(cachedUrl);
+          }
+        })
+        .catch((error) => {
+          console.warn("Failed to get cached video:", error);
+          if (!isCancelled) {
+            // Fallback về URL gốc nếu cache fail
+            setCachedVideoUrl(videoUrl);
+          }
+        });
+
+      return () => {
+        isCancelled = true;
+      };
+    }, [videoUrl, shouldLoad]);
+    
     const [showActions, setShowActions] = useState(false);
     const { authorName, authorHandle, avatarUrl, ownerCanDelete } = useMemo(
       () => ({
@@ -723,12 +785,12 @@ const ReelCard = memo(
       <Animated.View
         style={[styles.reelPage, reelPageHeightStyle, animatedStyle]}
       >
-        {videoUrl && shouldLoad ? (
+        {cachedVideoUrl && shouldLoad ? (
           <ReelVideo
             isActive={isActive}
             isMuted={isMuted}
             tabBarHeight={tabBarHeight}
-            uri={videoUrl!}
+            uri={cachedVideoUrl}
             thumbnailUri={thumbnailUri}
           />
         ) : (
@@ -857,33 +919,65 @@ const ReelCard = memo(
   },
   (prev, next) => {
     // true = KHÔNG re-render, false = re-render
-    return (
-      prev.isActive === next.isActive &&
-      prev.shouldLoad === next.shouldLoad &&
-      prev.isMuted === next.isMuted &&
-      prev.height === next.height &&
-      prev.tabBarHeight === next.tabBarHeight &&
-      prev.index === next.index &&
-      prev.thumbnailUri === next.thumbnailUri &&
-      prev.currentUserId === next.currentUserId &&
-      prev.onDelete === next.onDelete &&
-      prev.onOpenComments === next.onOpenComments &&
-      prev.onToggleLike === next.onToggleLike &&
-      prev.onToggleMute === next.onToggleMute &&
-      // So sánh reel theo từng field quan trọng, KHÔNG so sánh cả object
-      prev.reel.post_id === next.reel.post_id &&
-      prev.reel.liked_by_me === next.reel.liked_by_me &&
-      prev.reel.like_count === next.reel.like_count &&
-      prev.reel.comment_count === next.reel.comment_count &&
-      prev.reel.content === next.reel.content &&
-      prev.reel.user_id === next.reel.user_id &&
-      prev.reel.author === next.reel.author &&
-      prev.reel.media === next.reel.media &&
-      prev.reel.video_url === next.reel.video_url &&
-      prev.reel.video?.media_url === next.reel.video?.media_url
-      // scrollY là SharedValue (ref-stable) nên không cần so sánh
-      // → không so sánh, chấp nhận dùng version mới nhất
-    );
+    if (
+      prev.isActive !== next.isActive ||
+      prev.shouldLoad !== next.shouldLoad ||
+      prev.isMuted !== next.isMuted ||
+      prev.height !== next.height ||
+      prev.tabBarHeight !== next.tabBarHeight ||
+      prev.index !== next.index ||
+      prev.currentUserId !== next.currentUserId
+    ) {
+      return false;
+    }
+
+    // So sánh reel theo từng field quan trọng
+    const prevReel = prev.reel;
+    const nextReel = next.reel;
+    
+    if (
+      prevReel.post_id !== nextReel.post_id ||
+      prevReel.liked_by_me !== nextReel.liked_by_me ||
+      prevReel.like_count !== nextReel.like_count ||
+      prevReel.comment_count !== nextReel.comment_count ||
+      prevReel.content !== nextReel.content ||
+      prevReel.user_id !== nextReel.user_id ||
+      prevReel.video_url !== nextReel.video_url
+    ) {
+      return false;
+    }
+
+    // So sánh author (shallow)
+    if (prevReel.author !== nextReel.author) {
+      if (!prevReel.author || !nextReel.author) {
+        return false;
+      }
+      if (
+        prevReel.author.name !== nextReel.author.name ||
+        prevReel.author.username !== nextReel.author.username ||
+        prevReel.author.avatar_url !== nextReel.author.avatar_url ||
+        prevReel.author.is_verified !== nextReel.author.is_verified
+      ) {
+        return false;
+      }
+    }
+
+    // So sánh video media
+    if (prevReel.video?.media_url !== nextReel.video?.media_url) {
+      return false;
+    }
+
+    // So sánh media array (chỉ video)
+    const prevVideo = prevReel.media.find((m) => m.type === "video");
+    const nextVideo = nextReel.media.find((m) => m.type === "video");
+    if (prevVideo?.media_url !== nextVideo?.media_url) {
+      return false;
+    }
+
+    // Callbacks là stable refs từ useCallback, không cần so sánh
+    // scrollY là SharedValue (ref-stable), không cần so sánh
+    
+    return true; // KHÔNG re-render
   },
 );
 
@@ -908,10 +1002,15 @@ const ReelVideo = memo(function ReelVideo({
   const progress = useSharedValue(0);
   const containerWidth = useRef(0);
 
+  // Tạo player với proper lifecycle
   const player = useVideoPlayer(uri, (nextPlayer) => {
     nextPlayer.loop = true;
     nextPlayer.muted = isMuted;
   });
+
+  // Track player instance để cleanup
+  const playerRef = useRef(player);
+  playerRef.current = player;
 
   const progressBarStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
@@ -930,15 +1029,20 @@ const ReelVideo = memo(function ReelVideo({
 
   const handleSeek = useCallback((event: GestureResponderEvent) => {
     const touchX = event.nativeEvent.locationX;
-    if (containerWidth.current > 0 && player.duration > 0) {
+    const currentPlayer = playerRef.current;
+    if (containerWidth.current > 0 && currentPlayer && currentPlayer.duration > 0) {
       const seekPercentage = Math.max(
         0,
         Math.min(1, touchX / containerWidth.current),
       );
-      player.currentTime = seekPercentage * player.duration;
-      progress.value = seekPercentage;
+      try {
+        currentPlayer.currentTime = seekPercentage * currentPlayer.duration;
+        progress.value = seekPercentage;
+      } catch (error) {
+        console.warn("[ReelVideo] Seek failed:", error);
+      }
     }
-  }, [player, progress]);
+  }, [progress]);
 
   // Theo dõi tiến trình video
   useEffect(() => {
@@ -947,19 +1051,35 @@ const ReelVideo = memo(function ReelVideo({
       return;
     }
 
+    const currentPlayer = playerRef.current;
+    if (!currentPlayer) return;
+
     const interval = setInterval(() => {
-      if (player.duration > 0) {
-        progress.value = player.currentTime / player.duration;
+      try {
+        if (currentPlayer.duration > 0) {
+          progress.value = currentPlayer.currentTime / currentPlayer.duration;
+        }
+      } catch (error) {
+        // Player might be released, ignore error
       }
     }, 250);
 
     return () => clearInterval(interval);
-  }, [isActive, player, progress]);
+  }, [isActive, progress]);
 
+  // Update muted state
   useEffect(() => {
-    player.muted = isMuted;
-  }, [isMuted, player]);
+    const currentPlayer = playerRef.current;
+    if (currentPlayer) {
+      try {
+        currentPlayer.muted = isMuted;
+      } catch (error) {
+        console.warn("[ReelVideo] Failed to update mute state:", error);
+      }
+    }
+  }, [isMuted]);
 
+  // Reset state khi URI thay đổi
   useEffect(() => {
     setIsBuffering(false);
     setIsReadyToPlay(false);
@@ -967,32 +1087,55 @@ const ReelVideo = memo(function ReelVideo({
     progress.value = 0;
   }, [progress, uri]);
 
+  // Listen to player status
   useEffect(() => {
-    const sub = player.addListener("statusChange", ({ status }) => {
-      const nextIsBuffering = status === "loading";
-      setIsBuffering((current) =>
-        current === nextIsBuffering ? current : nextIsBuffering,
-      );
-      if (status === "readyToPlay") {
-        setIsReadyToPlay((current) => (current ? current : true));
-      }
-    });
-    return () => sub.remove();
+    const currentPlayer = playerRef.current;
+    if (!currentPlayer) return;
+
+    try {
+      const sub = currentPlayer.addListener("statusChange", ({ status }) => {
+        const nextIsBuffering = status === "loading";
+        setIsBuffering((current) =>
+          current === nextIsBuffering ? current : nextIsBuffering,
+        );
+        if (status === "readyToPlay") {
+          setIsReadyToPlay((current) => (current ? current : true));
+        }
+      });
+      return () => {
+        try {
+          sub.remove();
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      };
+    } catch (error) {
+      console.warn("[ReelVideo] Failed to add status listener:", error);
+      return undefined;
+    }
   }, [player]);
 
+  // Control playback based on active state
   useEffect(() => {
-    if (!isActive) {
-      player.pause();
-      setIsManuallyPaused(false);
-      return;
-    }
+    const currentPlayer = playerRef.current;
+    if (!currentPlayer) return;
 
-    if (isManuallyPaused) {
-      player.pause();
-    } else {
-      player.play();
+    try {
+      if (!isActive) {
+        currentPlayer.pause();
+        setIsManuallyPaused(false);
+        return;
+      }
+
+      if (isManuallyPaused) {
+        currentPlayer.pause();
+      } else {
+        currentPlayer.play();
+      }
+    } catch (error) {
+      console.warn("[ReelVideo] Playback control failed:", error);
     }
-  }, [isActive, isManuallyPaused, player]);
+  }, [isActive, isManuallyPaused]);
 
   const handleTogglePlayback = useCallback(() => {
     if (!isActive) {
@@ -1166,6 +1309,8 @@ function ReelComposerModal({
         style={styles.composerBackdrop}
       >
         <SafeAreaView edges={["top"]} style={styles.composerSheet}>
+          <StatusBar style="dark" />
+        
           <View style={styles.composerHeader}>
             <Pressable
               disabled={isSubmitting}

@@ -5,7 +5,7 @@ export default function ReelsLayout({
 }>) {
   return (
     <div className="">
-      {children}
+      <main>{children}</main>
     </div>
   );
 }
