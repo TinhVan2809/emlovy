@@ -12,8 +12,8 @@ import {
   Pressable,
 } from "react-native";
 import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { Routes } from "@/constants/routes";
-import { useStatusBarStyle } from "@/hooks/useStatusBarStyle";
 import { CommentsSheet } from "@/components/comments-sheet";
 import PostCard from "@/components/post-card";
 import { PostComposerModal } from "@/components/post-composer-modal";
@@ -67,8 +67,6 @@ export default function HomeScreen() {
   const [storyError, setStoryError] = useState("");
   const [storyComposerVisible, setStoryComposerVisible] = useState(false);
   const [isSubmittingStory, setIsSubmittingStory] = useState(false);
-
-  useStatusBarStyle("light");
 
   const loadStories = useCallback(async () => {
     if (!token) {
@@ -504,7 +502,9 @@ export default function HomeScreen() {
   );
 
   return (
-    <ScreenShell
+    <>
+      <StatusBar style="light" />
+      <ScreenShell
       titleNode={<Text style={styles.brand}>emlovy</Text>}
       right={
         <View style={styles.headerActions}>
@@ -567,6 +567,7 @@ export default function HomeScreen() {
         visible={storyComposerVisible}
       />
     </ScreenShell>
+    </>
   );
 }
 
