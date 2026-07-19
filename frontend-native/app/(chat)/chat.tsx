@@ -20,6 +20,7 @@ import { ScreenShell } from "@/components/screen-shell";
 import { UserAvatar } from "@/components/user-avatar";
 import { AppColors, AppFonts } from "@/constants/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useUnreadMessages } from "@/contexts/unread-messages-context";
 import { chatApi, resolveMediaUrl } from "@/services/api";
 import { chatRoute } from "@/constants/routes";
 import {
@@ -142,6 +143,7 @@ const getPreviewText = (conversation: ChatConversation) => {
 
 export default function ChatScreen() {
   const { token, user } = useAuth();
+  const { refreshUnreadCount } = useUnreadMessages();
   const params = useLocalSearchParams();
   const rawUserId = Array.isArray(params.userId)
     ? params.userId[0]
@@ -258,13 +260,20 @@ export default function ChatScreen() {
       setMessages([]);
       setMessagePagination(null);
       loadMessages(conversation.conversation_id, 1, true);
+      // Refresh unread count after opening a conversation
+      refreshUnreadCount();
     },
-    [loadMessages],
+    [loadMessages, refreshUnreadCount],
   );
 
   useEffect(() => {
     loadConversations(1, true);
   }, [loadConversations]);
+
+  // Refresh unread count when chat screen is opened
+  useEffect(() => {
+    refreshUnreadCount();
+  }, [refreshUnreadCount]);
 
   useEffect(() => {
     if (
