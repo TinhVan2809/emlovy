@@ -987,6 +987,7 @@ const ReelVideo = memo(function ReelVideo({
   playerRef.current = player;
 
   // Event-driven progress update - native đẩy dữ liệu về thay vì JS phải poll
+  useEventListener(player, "timeUpdate", ({ currentTime }) => {
   useEventListener(player, "timeUpdate", ({ currentTime }: { currentTime: number }) => {
     if (!isActive || player.duration <= 0) return;
     progress.value = currentTime / player.duration;

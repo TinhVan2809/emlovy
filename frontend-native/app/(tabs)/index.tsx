@@ -14,6 +14,8 @@ import {
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Routes } from "@/constants/routes";
+import { useUnreadMessages } from "@/contexts/unread-messages-context";
+import { ChatNotificationBadge } from "@/components/chat-notification-badge";
 import { CommentsSheet } from "@/components/comments-sheet";
 import PostCard from "@/components/post-card";
 import { PostComposerModal } from "@/components/post-composer-modal";
@@ -53,6 +55,7 @@ const mergePosts = (current: Post[], incoming: Post[]) => {
 
 export default function HomeScreen() {
   const { token, user } = useAuth();
+  const { unreadCount } = useUnreadMessages();
   const [posts, setPosts] = useState<Post[]>([]);
   const [pagination, setPagination] = useState<PostsPagination | null>(null);
   const [error, setError] = useState("");
@@ -516,7 +519,7 @@ export default function HomeScreen() {
                 name="paper-plane-outline"
                 size={24}
               />
-              <View style={styles.badge} />
+              <ChatNotificationBadge count={unreadCount} size="medium" />
             </View>
           </Pressable>
         </View>
@@ -669,17 +672,6 @@ const FeedHeader = memo(function FeedHeader({
 FeedHeader.displayName = "FeedHeader";
 
 const styles = StyleSheet.create({
-  badge: {
-    backgroundColor: AppColors.accent,
-    borderColor: AppColors.surface,
-    borderRadius: 5,
-    borderWidth: 2,
-    height: 10,
-    position: "absolute",
-    right: -2,
-    top: -1,
-    width: 10,
-  },
   brand: {
     color: AppColors.text,
     fontFamily: AppFonts.brand,

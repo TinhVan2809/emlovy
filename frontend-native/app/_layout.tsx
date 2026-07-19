@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { AuthProvider } from "@/contexts/auth-context";
+import { UnreadMessagesProvider } from "@/contexts/unread-messages-context";
 import { AppColors } from "@/constants/theme";
 
 const navigationTheme = {
@@ -23,17 +24,19 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={navigationTheme}>
       <AuthProvider>
-        <Stack
-          screenOptions={{
-            contentStyle: { backgroundColor: AppColors.background },
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-        <StatusBar style="dark" />
+        <UnreadMessagesProvider>
+          <Stack
+            screenOptions={{
+              contentStyle: { backgroundColor: AppColors.background },
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+          <StatusBar style="dark" />
+        </UnreadMessagesProvider>
       </AuthProvider>
     </ThemeProvider>
   );
