@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Routes } from "@/constants/routes";
-import { useStatusBarStyle } from "@/hooks/useStatusBarStyle";
 import { useUnreadMessages } from "@/contexts/unread-messages-context";
 import { ChatNotificationBadge } from "@/components/chat-notification-badge";
 import { CommentsSheet } from "@/components/comments-sheet";
@@ -70,8 +69,6 @@ export default function HomeScreen() {
   const [storyError, setStoryError] = useState("");
   const [storyComposerVisible, setStoryComposerVisible] = useState(false);
   const [isSubmittingStory, setIsSubmittingStory] = useState(false);
-
-  useStatusBarStyle("light");
 
   const loadStories = useCallback(async () => {
     if (!token) {

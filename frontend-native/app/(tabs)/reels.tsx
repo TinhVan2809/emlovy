@@ -14,7 +14,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useStatusBarStyle } from "@/hooks/useStatusBarStyle";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -121,8 +120,6 @@ export default function ReelsScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [isGlobalMuted, setIsGlobalMuted] = useState(false);
   const likingIdsRef = useRef<Set<number>>(new Set());
-
-  useStatusBarStyle("dark");
 
   // Sử dụng chiều cao đo được thực tế để tránh sai lệch Snap-to-interval
   const reelHeight = containerHeight;
