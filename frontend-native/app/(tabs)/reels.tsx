@@ -3,6 +3,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useIsFocused } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { useVideoPlayer, VideoView } from "expo-video";
+import { useEventListener } from "expo";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React, {
@@ -594,7 +595,7 @@ export default function ReelsScreen() {
         extraData={listExtraData}
         onScroll={onScrollHandler}
         scrollEventThrottle={16}
-        windowSize={3} // Giảm từ 5 xuống 3 để tiết kiệm bộ nhớ
+        windowSize={3}
         initialNumToRender={1}
         maxToRenderPerBatch={1}
         updateCellsBatchingPeriod={100}
@@ -718,7 +719,7 @@ const ReelCard = memo(
         ),
         ownerCanDelete: Number(currentUserId) === Number(reel.user_id),
       }),
-      [reel, currentUserId],
+      [reel.author, reel.user_id, currentUserId],
     );
 
     const reelRef = useRef(reel);
@@ -977,15 +978,22 @@ const ReelVideo = memo(function ReelVideo({
   const progress = useSharedValue(0);
   const containerWidth = useRef(0);
 
-  // Tạo player với proper lifecycle
+  // Tạo player với proper lifecycle và event-driven progress tracking
   const player = useVideoPlayer(uri, (nextPlayer) => {
     nextPlayer.loop = true;
     nextPlayer.muted = isMuted;
+    nextPlayer.timeUpdateEventInterval = 0.25; // 250ms interval, giữ nguyên tần suất hiện tại
   });
 
   // Track player instance để cleanup
   const playerRef = useRef(player);
   playerRef.current = player;
+
+  // Event-driven progress update - native đẩy dữ liệu về thay vì JS phải poll
+  useEventListener(player, "timeUpdate", ({ currentTime }) => {
+    if (!isActive || player.duration <= 0) return;
+    progress.value = currentTime / player.duration;
+  });
 
   const progressBarStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
@@ -1025,29 +1033,6 @@ const ReelVideo = memo(function ReelVideo({
     },
     [progress],
   );
-
-  // Theo dõi tiến trình video
-  useEffect(() => {
-    if (!isActive) {
-      progress.value = 0;
-      return;
-    }
-
-    const currentPlayer = playerRef.current;
-    if (!currentPlayer) return;
-
-    const interval = setInterval(() => {
-      try {
-        if (currentPlayer.duration > 0) {
-          progress.value = currentPlayer.currentTime / currentPlayer.duration;
-        }
-      } catch (error) {
-        console.error("Error: ", error);
-      }
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, [isActive, progress]);
 
   // Update muted state
   useEffect(() => {
