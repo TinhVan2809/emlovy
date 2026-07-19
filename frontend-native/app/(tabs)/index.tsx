@@ -12,6 +12,7 @@ import {
   Pressable,
 } from "react-native";
 import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { Routes } from "@/constants/routes";
 import { useUnreadMessages } from "@/contexts/unread-messages-context";
 import { ChatNotificationBadge } from "@/components/chat-notification-badge";
@@ -504,7 +505,9 @@ export default function HomeScreen() {
   );
 
   return (
-    <ScreenShell
+    <>
+      <StatusBar style="light" />
+      <ScreenShell
       titleNode={<Text style={styles.brand}>emlovy</Text>}
       right={
         <View style={styles.headerActions}>
@@ -567,6 +570,7 @@ export default function HomeScreen() {
         visible={storyComposerVisible}
       />
     </ScreenShell>
+    </>
   );
 }
 

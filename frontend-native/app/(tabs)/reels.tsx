@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useIsFocused } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
+import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEventListener } from "expo";
 import { Image } from "expo-image";
@@ -558,6 +559,8 @@ export default function ReelsScreen() {
 
   return (
     <View onLayout={handleLayout} style={styles.screen}>
+      <StatusBar style="light" />
+
       {/* Đổ bóng gradient cố định giúp hiển thị Status Bar và Header rõ nét hơn */}
       <LinearGradient
         colors={["rgba(0,0,0,0.7)", "rgba(0,0,0,0.3)", "transparent"]}
@@ -947,9 +950,6 @@ const ReelCard = memo(
       return false;
     }
 
-    // Callbacks là stable refs từ useCallback, không cần so sánh
-    // scrollY là SharedValue (ref-stable), không cần so sánh
-
     return true; // KHÔNG re-render
   },
 );
@@ -988,6 +988,7 @@ const ReelVideo = memo(function ReelVideo({
 
   // Event-driven progress update - native đẩy dữ liệu về thay vì JS phải poll
   useEventListener(player, "timeUpdate", ({ currentTime }) => {
+  useEventListener(player, "timeUpdate", ({ currentTime }: { currentTime: number }) => {
     if (!isActive || player.duration <= 0) return;
     progress.value = currentTime / player.duration;
   });
