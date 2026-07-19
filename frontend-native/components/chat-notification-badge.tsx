@@ -18,7 +18,10 @@ export function ChatNotificationBadge({
   count, 
   size = 'medium' 
 }: ChatNotificationBadgeProps) {
+  console.log('[ChatNotificationBadge] Rendering with count:', count, 'size:', size);
+  
   if (count <= 0) {
+    console.log('[ChatNotificationBadge] Count is 0 or negative, returning null');
     return null;
   }
 
@@ -34,18 +37,16 @@ export function ChatNotificationBadge({
     large: styles.badgeTextLarge,
   };
 
-  // Hiển thị số nếu <= 9, nếu > 9 chỉ hiển thị dấu chấm đơn giản
-  const displayCount = count <= 99;
+  // Hiển thị số nếu <= 99, nếu > 99 => Hiển thị "99+"
+  const displayText = count <= 99 ? String(count) : "99+";
+  
+  console.log('[ChatNotificationBadge] Will display:', displayText);
 
   return (
     <View style={[styles.badge, sizeStyles[size]]}>
-      {displayCount ? (
-        <Text style={[styles.badgeText, textSizeStyles[size]]}>
-          {count}
-        </Text>
-      ) : <Text style={[styles.badgeText, textSizeStyles[size]]}>
-          99+
-        </Text>}
+      <Text style={[styles.badgeText, textSizeStyles[size]]}>
+        {displayText}
+      </Text>
     </View>
   );
 }

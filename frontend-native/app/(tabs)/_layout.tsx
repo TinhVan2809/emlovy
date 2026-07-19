@@ -6,6 +6,8 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Routes } from '@/constants/routes';
 import { AppColors } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
+import { useUnreadMessages } from '@/contexts/unread-messages-context';
+import { ChatNotificationBadge } from '@/components/chat-notification-badge';
 
 const TAB_ICONS = {
   activity: { active: 'heart', inactive: 'heart-outline' },
@@ -15,13 +17,22 @@ const TAB_ICONS = {
   search: { active: 'search', inactive: 'search-outline' },
 } as const;
 
-function renderIcon(routeName: keyof typeof TAB_ICONS, focused: boolean, color: string) {
+function renderIcon(routeName: keyof typeof TAB_ICONS, focused: boolean, color: string, badge?: number) {
   const iconName = focused ? TAB_ICONS[routeName].active : TAB_ICONS[routeName].inactive;
-  return <Ionicons color={color} name={iconName} size={26} />;
+  
+  return (
+    <View style={{ position: 'relative' }}>
+      <Ionicons color={color} name={iconName} size={26} />
+      {badge !== undefined && badge > 0 && (
+        <ChatNotificationBadge count={badge} size="small" />
+      )}
+    </View>
+  );
 }
 
 export default function TabLayout() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { unreadCount } = useUnreadMessages();
 
   if (isLoading) {
     return (
@@ -77,7 +88,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="activity"
         options={{
-          tabBarIcon: ({ color, focused }) => renderIcon('activity', focused, color),
+          tabBarIcon: ({ color, focused }) => renderIcon('activity', focused, color, unreadCount),
         }}
       />
       <Tabs.Screen
