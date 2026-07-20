@@ -17,42 +17,29 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
   const [unreadCount, setUnreadCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  console.log('[UnreadMessages] Context state:', { 
-    unreadCount, 
-    hasToken: !!token, 
-    hasUser: !!user,
-    authLoading,
-    isRefreshing
-  });
-
   // Lấy số tin nhắn chưa đọc từ API
   const refreshUnreadCount = useCallback(async () => {
     // Wait for auth to finish loading
     if (authLoading) {
-      console.log('[UnreadMessages] Auth still loading, skipping refresh');
       return;
     }
 
     if (!token) {
-      console.log('[UnreadMessages] No token, setting count to 0');
       setUnreadCount(0);
       return;
     }
 
     if (isRefreshing) {
-      console.log('[UnreadMessages] Already refreshing, skipping');
       return;
     }
 
     try {
       setIsRefreshing(true);
-      console.log('[UnreadMessages] Fetching unread count from API...');
       const response = await chatApi.getConversations(token, { limit: 100, page: 1 });
       const total = response.data.items.reduce(
         (sum, conversation) => sum + (conversation.unread_count || 0),
         0
       );
-      console.log('[UnreadMessages] Unread count from API:', total);
       setUnreadCount(total);
     } catch (error) {
       console.error('[UnreadMessages] Failed to fetch unread count:', error);
@@ -80,7 +67,6 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
   useEffect(() => {
     // Chỉ fetch khi auth đã load xong và có token
     if (!authLoading && token) {
-      console.log('[UnreadMessages] Auth ready, fetching unread count');
       refreshUnreadCount();
     } else if (!authLoading && !token) {
       console.log('[UnreadMessages] Auth ready but no token, resetting count');

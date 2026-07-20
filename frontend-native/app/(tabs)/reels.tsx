@@ -93,7 +93,7 @@ const formatCount = (value: number) => {
 const getReelThumbnailUrl = (reel: Reel) =>
   resolveMediaUrl(
     (reel as any).thumbnail_url ||
-      reel.media.find((item) => item.type === "image")?.media_url,
+    reel.media.find((item) => item.type === "image")?.media_url,
   ) ?? undefined;
 
 export default function ReelsScreen() {
@@ -105,19 +105,23 @@ export default function ReelsScreen() {
   const { token, user } = useAuth();
   const [reels, setReels] = useState<Reel[]>([]);
   const scrollY = useSharedValue(0);
+
+  const lastScrollY = useSharedValue(0);
+  const scrollDirection = useSharedValue<"down" | "up" | "idle">("idle");
+
   const onScrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       const currentY = event.contentOffset.y;
       scrollY.value = currentY;
-      
-      // Detect scroll direction
-      const diff = currentY - lastScrollY.current;
-      if (Math.abs(diff) > 50) { // Threshold để ignore minor scrolls
-        scrollDirection.current = diff > 0 ? 'down' : 'up';
+
+      const diff = currentY - lastScrollY.value;
+      if (Math.abs(diff) > 50) {
+        scrollDirection.value = diff > 0 ? "down" : "up";
       }
-      lastScrollY.current = currentY;
+      lastScrollY.value = currentY;
     },
   });
+
   const [pagination, setPagination] = useState<PostsPagination | null>(null);
   const [activeReelId, setActiveReelId] = useState<number | null>(null);
   const [commentReelId, setCommentReelId] = useState<number | null>(null);
@@ -129,10 +133,6 @@ export default function ReelsScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [isGlobalMuted, setIsGlobalMuted] = useState(false);
   const likingIdsRef = useRef<Set<number>>(new Set());
-  
-  // Track scroll direction để preload thông minh
-  const lastScrollY = useRef(0);
-  const scrollDirection = useRef<'down' | 'up' | 'idle'>('idle');
 
   // Sử dụng chiều cao đo được thực tế để tránh sai lệch Snap-to-interval
   const reelHeight = containerHeight;
@@ -157,27 +157,27 @@ export default function ReelsScreen() {
     }
 
     const preloadIndices: number[] = [];
-    const direction = scrollDirection.current;
 
     // Luôn preload 2 reel tiếp theo (hướng xuống - primary direction)
     preloadIndices.push(activeIndex + 1, activeIndex + 2);
 
     // Chỉ preload phía trước (index-1) nếu đang scroll ngược lên
-    if (direction === 'up') {
+    // Đọc .value ở đây được, vì effect chạy trên JS thread
+    if (scrollDirection.value === "up") {
       preloadIndices.push(activeIndex - 1);
     }
 
     // Filter valid indices
     const validIndices = preloadIndices.filter(
-      (idx) => idx >= 0 && idx < reels.length
+      (idx) => idx >= 0 && idx < reels.length,
     );
 
     validIndices.forEach((idx) => {
       const reel = reels[idx];
       const videoUrl = resolveMediaUrl(
         reel.video_url ||
-          reel.video?.media_url ||
-          reel.media.find((item) => item.type === "video")?.media_url,
+        reel.video?.media_url ||
+        reel.media.find((item) => item.type === "video")?.media_url,
       );
 
       if (videoUrl) {
@@ -186,7 +186,7 @@ export default function ReelsScreen() {
         });
       }
     });
-  }, [activeIndex, reels]);
+  }, [activeIndex, reels, scrollDirection.value]);
 
   const patchReel = useCallback((reelId: number, patch: Partial<Reel>) => {
     setReels((current) => {
@@ -507,11 +507,12 @@ export default function ReelsScreen() {
       // - Load reel hiện tại (index)
       // - Load 2 reel tiếp theo (index+1, index+2) - primary direction
       // - Load 1 reel phía trước (index-1) CHỈ KHI scroll up
-      const direction = scrollDirection.current;
+      const direction = scrollDirection.value;
       const shouldLoad =
         index === activeIndexRef.current ||
-        (index >= activeIndexRef.current + 1 && index <= activeIndexRef.current + 2) ||
-        (direction === 'up' && index === activeIndexRef.current - 1);
+        (index >= activeIndexRef.current + 1 &&
+          index <= activeIndexRef.current + 2) ||
+        (direction === "up" && index === activeIndexRef.current - 1);
 
       return (
         <ReelCard
@@ -528,6 +529,7 @@ export default function ReelsScreen() {
           onToggleMute={handleToggleMute}
           reel={item}
           tabBarHeight={tabBarHeight}
+          scrollDirection={scrollDirection}
         />
       );
     },
@@ -541,6 +543,7 @@ export default function ReelsScreen() {
       handleToggleLike,
       handleOpenComments,
       handleToggleMute,
+      scrollDirection,
     ],
   );
 
@@ -672,6 +675,7 @@ const ReelCard = memo(
     onToggleMute,
     reel,
     tabBarHeight,
+    scrollDirection,
     index,
     scrollY,
     height: cardHeight,
@@ -689,6 +693,7 @@ const ReelCard = memo(
     index: number;
     scrollY: SharedValue<number>;
     height: number;
+    scrollDirection: SharedValue<"down" | "up" | "idle">;
   }) => {
     const [cachedVideoUrl, setCachedVideoUrl] = useState<string | null>(null);
 
@@ -696,8 +701,8 @@ const ReelCard = memo(
       () =>
         resolveMediaUrl(
           reel.video_url ||
-            reel.video?.media_url ||
-            reel.media.find((item) => item.type === "video")?.media_url,
+          reel.video?.media_url ||
+          reel.media.find((item) => item.type === "video")?.media_url,
         ),
       [reel.media, reel.video?.media_url, reel.video_url],
     );
@@ -792,6 +797,7 @@ const ReelCard = memo(
             tabBarHeight={tabBarHeight}
             uri={cachedVideoUrl}
             thumbnailUri={thumbnailUri}
+            scrollDirection={scrollDirection}
           />
         ) : (
           <View style={styles.videoFallback}>
@@ -986,12 +992,14 @@ const ReelVideo = memo(function ReelVideo({
   isMuted,
   tabBarHeight,
   thumbnailUri,
+  scrollDirection,
 }: {
   isActive: boolean;
   uri: string;
   isMuted: boolean;
   tabBarHeight: number;
   thumbnailUri?: string;
+  scrollDirection: SharedValue<"down" | "up" | "idle">;
 }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -1000,29 +1008,36 @@ const ReelVideo = memo(function ReelVideo({
   const containerWidth = useRef(0);
 
   // Tạo player với proper lifecycle và giới hạn buffer
-  const player = useVideoPlayer(uri, (nextPlayer) => {
-    nextPlayer.loop = true;
-    nextPlayer.muted = isMuted;
-    
-    // Giới hạn buffer để tiết kiệm băng thông
-    // Chỉ buffer 5 giây phía trước - đủ mượt cho Reels format
-    nextPlayer.bufferOptions = {
-      preferredForwardBufferDuration: 5, // 5 giây - iOS & Android
-    };
-    
-    // Event-driven progress tracking (thay vì polling)
-    nextPlayer.timeUpdateEventInterval = 0.25; // 250ms interval
-  });
+ const player = useVideoPlayer(uri, (nextPlayer) => {
+  nextPlayer.loop = true;
+  nextPlayer.muted = isMuted;
+  nextPlayer.timeUpdateEventInterval = 0.25;
+  nextPlayer.bufferOptions = {
+    preferredForwardBufferDuration: 5, // giá trị mặc định, effect bên dưới sẽ chỉnh lại
+  };
+});
+
+// Effect chạy sau khi render đã commit, không phải trong lúc render
+useEffect(() => {
+  const isTowardsThisVideo = scrollDirection.value !== 'up';
+  player.bufferOptions = {
+    preferredForwardBufferDuration: isTowardsThisVideo ? 5 : 2,
+  };
+}, [player, scrollDirection]);
 
   // Track player instance để cleanup
   const playerRef = useRef(player);
   playerRef.current = player;
 
   // Event-driven progress update - native đẩy dữ liệu về thay vì JS phải poll
-  useEventListener(player, "timeUpdate", ({ currentTime }: { currentTime: number }) => {
-    if (!isActive || player.duration <= 0) return;
-    progress.value = currentTime / player.duration;
-  });
+  useEventListener(
+    player,
+    "timeUpdate",
+    ({ currentTime }: { currentTime: number }) => {
+      if (!isActive || player.duration <= 0) return;
+      progress.value = currentTime / player.duration;
+    },
+  );
 
   const progressBarStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
@@ -1530,8 +1545,8 @@ const styles = StyleSheet.create({
   },
   composerSheet: {
     backgroundColor: AppColors.surface,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     maxHeight: "94%",
     overflow: "hidden",
   },
