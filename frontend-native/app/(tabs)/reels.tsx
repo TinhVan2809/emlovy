@@ -107,7 +107,15 @@ export default function ReelsScreen() {
   const scrollY = useSharedValue(0);
   const onScrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
+      const currentY = event.contentOffset.y;
+      scrollY.value = currentY;
+      
+      // Detect scroll direction
+      const diff = currentY - lastScrollY.current;
+      if (Math.abs(diff) > 50) { // Threshold để ignore minor scrolls
+        scrollDirection.current = diff > 0 ? 'down' : 'up';
+      }
+      lastScrollY.current = currentY;
     },
   });
   const [pagination, setPagination] = useState<PostsPagination | null>(null);
@@ -121,6 +129,10 @@ export default function ReelsScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [isGlobalMuted, setIsGlobalMuted] = useState(false);
   const likingIdsRef = useRef<Set<number>>(new Set());
+  
+  // Track scroll direction để preload thông minh
+  const lastScrollY = useRef(0);
+  const scrollDirection = useRef<'down' | 'up' | 'idle'>('idle');
 
   // Sử dụng chiều cao đo được thực tế để tránh sai lệch Snap-to-interval
   const reelHeight = containerHeight;
@@ -138,20 +150,29 @@ export default function ReelsScreen() {
     [activeReelId, reels],
   );
 
-  // Preload videos cho reels xung quanh reel đang xem
+  // Preload videos với chiến lược thông minh theo hướng scroll
   useEffect(() => {
     if (activeIndex < 0 || reels.length === 0) {
       return;
     }
 
-    // Preload reels xung quanh (1 phía trước, 2 phía sau)
-    const preloadIndices = [
-      activeIndex - 1, // Reel phía trước
-      activeIndex + 1, // Reel tiếp theo
-      activeIndex + 2, // Reel sau đó
-    ].filter((idx) => idx >= 0 && idx < reels.length);
+    const preloadIndices: number[] = [];
+    const direction = scrollDirection.current;
 
-    preloadIndices.forEach((idx) => {
+    // Luôn preload 2 reel tiếp theo (hướng xuống - primary direction)
+    preloadIndices.push(activeIndex + 1, activeIndex + 2);
+
+    // Chỉ preload phía trước (index-1) nếu đang scroll ngược lên
+    if (direction === 'up') {
+      preloadIndices.push(activeIndex - 1);
+    }
+
+    // Filter valid indices
+    const validIndices = preloadIndices.filter(
+      (idx) => idx >= 0 && idx < reels.length
+    );
+
+    validIndices.forEach((idx) => {
       const reel = reels[idx];
       const videoUrl = resolveMediaUrl(
         reel.video_url ||
@@ -482,12 +503,15 @@ export default function ReelsScreen() {
 
   const renderReel = useCallback(
     ({ item, index }: { item: Reel; index: number }) => {
-      // Tối ưu Preloading:
-      // Load reel hiện tại, 1 reel phía trước (để vuốt ngược lại mượt)
-      // và 2 reel tiếp theo (để vuốt xuống không phải chờ).
+      // Tối ưu Preloading theo hướng scroll:
+      // - Load reel hiện tại (index)
+      // - Load 2 reel tiếp theo (index+1, index+2) - primary direction
+      // - Load 1 reel phía trước (index-1) CHỈ KHI scroll up
+      const direction = scrollDirection.current;
       const shouldLoad =
-        index >= activeIndexRef.current - 1 &&
-        index <= activeIndexRef.current + 2;
+        index === activeIndexRef.current ||
+        (index >= activeIndexRef.current + 1 && index <= activeIndexRef.current + 2) ||
+        (direction === 'up' && index === activeIndexRef.current - 1);
 
       return (
         <ReelCard
@@ -975,11 +999,19 @@ const ReelVideo = memo(function ReelVideo({
   const progress = useSharedValue(0);
   const containerWidth = useRef(0);
 
-  // Tạo player với proper lifecycle và event-driven progress tracking
+  // Tạo player với proper lifecycle và giới hạn buffer
   const player = useVideoPlayer(uri, (nextPlayer) => {
     nextPlayer.loop = true;
     nextPlayer.muted = isMuted;
-    nextPlayer.timeUpdateEventInterval = 0.25; // 250ms interval, giữ nguyên tần suất hiện tại
+    
+    // Giới hạn buffer để tiết kiệm băng thông
+    // Chỉ buffer 5 giây phía trước - đủ mượt cho Reels format
+    nextPlayer.bufferOptions = {
+      preferredForwardBufferDuration: 5, // 5 giây - iOS & Android
+    };
+    
+    // Event-driven progress tracking (thay vì polling)
+    nextPlayer.timeUpdateEventInterval = 0.25; // 250ms interval
   });
 
   // Track player instance để cleanup

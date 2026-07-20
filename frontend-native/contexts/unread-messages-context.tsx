@@ -86,7 +86,7 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
       console.log('[UnreadMessages] Auth ready but no token, resetting count');
       setUnreadCount(0);
     }
-  }, [token, authLoading]);
+  }, [token, authLoading, refreshUnreadCount]);
 
   // Lắng nghe socket events để cập nhật realtime
   useEffect(() => {
