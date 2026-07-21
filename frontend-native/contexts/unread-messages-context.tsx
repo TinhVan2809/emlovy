@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { subscribeToChatEvents } from '@/services/chat-socket';
 import { useAuth } from '@/contexts/auth-context';
 import { chatApi } from '@/services/api';
@@ -15,26 +15,22 @@ const UnreadMessagesContext = createContext<UnreadMessagesContextType | null>(nu
 export function UnreadMessagesProvider({ children }: { children: React.ReactNode }) {
   const { token, user, isLoading: authLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Lấy số tin nhắn chưa đọc từ API
+  const isRefreshingRef = useRef(false);
+
   const refreshUnreadCount = useCallback(async () => {
-    // Wait for auth to finish loading
-    if (authLoading) {
-      return;
-    }
+    if (authLoading) return;
 
     if (!token) {
       setUnreadCount(0);
       return;
     }
 
-    if (isRefreshing) {
-      return;
-    }
+    if (isRefreshingRef.current) return;
 
     try {
-      setIsRefreshing(true);
+      isRefreshingRef.current = true;
       const response = await chatApi.getConversations(token, { limit: 100, page: 1 });
       const total = response.data.items.reduce(
         (sum, conversation) => sum + (conversation.unread_count || 0),
@@ -44,9 +40,9 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
     } catch (error) {
       console.error('[UnreadMessages] Failed to fetch unread count:', error);
     } finally {
-      setIsRefreshing(false);
+      isRefreshingRef.current = false;
     }
-  }, [token, authLoading, isRefreshing]);
+  }, [token, authLoading]);
 
   // Tăng số lượng tin nhắn chưa đọc
   const incrementUnreadCount = useCallback(() => {
@@ -76,31 +72,31 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
 
   // Lắng nghe socket events để cập nhật realtime
   useEffect(() => {
-    if (!token || !user) {
+    const userId = user?.user_id;
+    if (!token || !userId) {
       console.log('[UnreadMessages] Socket listener not active - missing token or user');
       return undefined;
     }
 
-    console.log('[UnreadMessages] Subscribing to chat events for user:', user.user_id);
+    console.log('[UnreadMessages] Subscribing to chat events for user:', userId);
 
     return subscribeToChatEvents(token, {
       onReceiveMessage: ({ message }) => {
+        const isFromOther = Number(message.sender_id) !== Number(userId);
         console.log('[UnreadMessages] Received message event:', {
           senderId: message.sender_id,
-          currentUserId: user.user_id,
-          isFromOther: Number(message.sender_id) !== Number(user.user_id)
+          currentUserId: userId,
+          isFromOther,
         });
-        
-        // Chỉ tăng unread count nếu tin nhắn không phải từ người dùng hiện tại
-        if (Number(message.sender_id) !== Number(user.user_id)) {
-          console.log('[UnreadMessages] Message from other user, incrementing count');
+
+        if (isFromOther) {
           incrementUnreadCount();
         } else {
           console.log('[UnreadMessages] Message from self, ignoring');
         }
       },
     });
-  }, [token, user, incrementUnreadCount]);
+  }, [token, user?.user_id, incrementUnreadCount]);
 
   return (
     <UnreadMessagesContext.Provider
@@ -118,10 +114,10 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
 
 export function useUnreadMessages() {
   const context = useContext(UnreadMessagesContext);
-  
+
   if (!context) {
     throw new Error('useUnreadMessages must be used within UnreadMessagesProvider');
   }
-  
+
   return context;
 }

@@ -16,9 +16,11 @@ import React, {
   useState,
 } from "react";
 import Animated, {
-  useSharedValue,
+  runOnJS,
+  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
+  useSharedValue,
   type SharedValue,
 } from "react-native-reanimated";
 import type { ComponentProps } from "react";
@@ -65,6 +67,13 @@ import type {
 const REELS_LIMIT = 6;
 const REFRESH_CONTROL_COLORS = [AppColors.accent];
 const VIDEO_FULLSCREEN_OPTIONS = { enable: true };
+const REEL_MOUNT_WINDOW_BEHIND = 1;
+const REEL_MOUNT_WINDOW_AHEAD = 2;
+const HEAVY_FORWARD_BUFFER_SECONDS = 5;
+const LIGHT_FORWARD_BUFFER_SECONDS = 2;
+
+type ScrollDirection = "down" | "up" | "idle";
+type ReelBufferMode = "heavy" | "light";
 
 const mergeReels = (current: Reel[], incoming: Reel[]) => {
   const seen = new Set<number>();
@@ -96,6 +105,13 @@ const getReelThumbnailUrl = (reel: Reel) =>
     reel.media.find((item) => item.type === "image")?.media_url,
   ) ?? undefined;
 
+const getReelVideoUrl = (reel: Reel) =>
+  resolveMediaUrl(
+    reel.video_url ||
+      reel.video?.media_url ||
+      reel.media.find((item) => item.type === "video")?.media_url,
+  );
+
 export default function ReelsScreen() {
   const { height: windowHeight } = useWindowDimensions();
   const [containerHeight, setContainerHeight] = useState(windowHeight);
@@ -107,7 +123,19 @@ export default function ReelsScreen() {
   const scrollY = useSharedValue(0);
 
   const lastScrollY = useSharedValue(0);
-  const scrollDirection = useSharedValue<"down" | "up" | "idle">("idle");
+  const scrollDirection = useSharedValue<ScrollDirection>("idle");
+  const [scrollDirectionState, setScrollDirectionState] =
+    useState<ScrollDirection>("idle");
+
+  useAnimatedReaction(
+    () => scrollDirection.value,
+    (nextDirection, previousDirection) => {
+      if (nextDirection !== previousDirection) {
+        runOnJS(setScrollDirectionState)(nextDirection);
+      }
+    },
+    [],
+  );
 
   const onScrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -150,43 +178,31 @@ export default function ReelsScreen() {
     [activeReelId, reels],
   );
 
-  // Preload videos với chiến lược thông minh theo hướng scroll
+  // Giữ preload window cố định để video lân cận không bị mount/unmount theo hướng scroll.
   useEffect(() => {
     if (activeIndex < 0 || reels.length === 0) {
       return;
     }
 
-    const preloadIndices: number[] = [];
+    for (
+      let idx = activeIndex - REEL_MOUNT_WINDOW_BEHIND;
+      idx <= activeIndex + REEL_MOUNT_WINDOW_AHEAD;
+      idx += 1
+    ) {
+      if (idx < 0 || idx >= reels.length) {
+        continue;
+      }
 
-    // Luôn preload 2 reel tiếp theo (hướng xuống - primary direction)
-    preloadIndices.push(activeIndex + 1, activeIndex + 2);
-
-    // Chỉ preload phía trước (index-1) nếu đang scroll ngược lên
-    // Đọc .value ở đây được, vì effect chạy trên JS thread
-    if (scrollDirection.value === "up") {
-      preloadIndices.push(activeIndex - 1);
-    }
-
-    // Filter valid indices
-    const validIndices = preloadIndices.filter(
-      (idx) => idx >= 0 && idx < reels.length,
-    );
-
-    validIndices.forEach((idx) => {
       const reel = reels[idx];
-      const videoUrl = resolveMediaUrl(
-        reel.video_url ||
-        reel.video?.media_url ||
-        reel.media.find((item) => item.type === "video")?.media_url,
-      );
+      const videoUrl = getReelVideoUrl(reel);
 
       if (videoUrl) {
         preloadVideo(videoUrl).catch((error) => {
           console.warn(`Failed to preload video at index ${idx}:`, error);
         });
       }
-    });
-  }, [activeIndex, reels, scrollDirection.value]);
+    }
+  }, [activeIndex, reels]);
 
   const patchReel = useCallback((reelId: number, patch: Partial<Reel>) => {
     setReels((current) => {
@@ -432,18 +448,6 @@ export default function ReelsScreen() {
     [patchReel],
   );
 
-  // Mang activeIndex ra ngoài deps của useCallback tránh re-render toàn bộ list
-  const activeIndexRef = useRef(activeIndex);
-  activeIndexRef.current = activeIndex;
-
-  const activeReelIdRef = useRef(activeReelId);
-  // Đồng bộ ref ngay trong body để renderReel luôn thấy giá trị mới nhất khi FlatList gọi renderItem
-  activeReelIdRef.current = activeReelId;
-
-  const isMutedRef = useRef(isGlobalMuted);
-  // isGlobalMuted vẫn là state để trigger re-render, nhưng ta dùng ref để renderReel không bị tạo lại
-  isMutedRef.current = isGlobalMuted;
-
   // Tách ListEmptyComponent và ListFooterComponent ra ngoài bằng useMemo tránh tạo object mới sau mỗi lần render
   const listEmpty = useMemo(
     () =>
@@ -476,10 +480,39 @@ export default function ReelsScreen() {
     [isLoadingMore],
   );
 
+  const getBufferMode = useCallback(
+    (index: number): ReelBufferMode => {
+      const distanceFromActive = index - activeIndex;
+
+      if (distanceFromActive === 0) {
+        return "heavy";
+      }
+
+      if (scrollDirectionState === "up") {
+        return distanceFromActive === -1 ? "heavy" : "light";
+      }
+
+      return distanceFromActive > 0 ? "heavy" : "light";
+    },
+    [activeIndex, scrollDirectionState],
+  );
+
   // extraData giúp FlatList biết khi nào cần yêu cầu renderReel tính toán lại prop cho các item
   const listExtraData = useMemo(
-    () => ({ activeReelId, isGlobalMuted }),
-    [activeReelId, isGlobalMuted],
+    () => ({
+      activeIndex,
+      activeReelId,
+      isFocused,
+      isGlobalMuted,
+      scrollDirectionState,
+    }),
+    [
+      activeIndex,
+      activeReelId,
+      isFocused,
+      isGlobalMuted,
+      scrollDirectionState,
+    ],
   );
 
   const getItemLayout = useCallback(
@@ -503,16 +536,11 @@ export default function ReelsScreen() {
 
   const renderReel = useCallback(
     ({ item, index }: { item: Reel; index: number }) => {
-      // Tối ưu Preloading theo hướng scroll:
-      // - Load reel hiện tại (index)
-      // - Load 2 reel tiếp theo (index+1, index+2) - primary direction
-      // - Load 1 reel phía trước (index-1) CHỈ KHI scroll up
-      const direction = scrollDirection.value;
-      const shouldLoad =
-        index === activeIndexRef.current ||
-        (index >= activeIndexRef.current + 1 &&
-          index <= activeIndexRef.current + 2) ||
-        (direction === "up" && index === activeIndexRef.current - 1);
+      const shouldMountVideo =
+        activeIndex >= 0 &&
+        index >= activeIndex - REEL_MOUNT_WINDOW_BEHIND &&
+        index <= activeIndex + REEL_MOUNT_WINDOW_AHEAD;
+      const bufferMode = shouldMountVideo ? getBufferMode(index) : "light";
 
       return (
         <ReelCard
@@ -520,21 +548,25 @@ export default function ReelsScreen() {
           height={reelHeight}
           index={index}
           scrollY={scrollY}
-          isActive={isFocused && activeReelIdRef.current === item.post_id}
-          shouldLoad={shouldLoad}
+          isActive={isFocused && activeReelId === item.post_id}
+          shouldMountVideo={shouldMountVideo}
+          bufferMode={bufferMode}
           onDelete={handleDelete}
           onOpenComments={handleOpenComments}
           onToggleLike={handleToggleLike}
-          isMuted={isMutedRef.current}
+          isMuted={isGlobalMuted}
           onToggleMute={handleToggleMute}
           reel={item}
           tabBarHeight={tabBarHeight}
-          scrollDirection={scrollDirection}
         />
       );
     },
     [
+      activeIndex,
+      activeReelId,
+      getBufferMode,
       isFocused,
+      isGlobalMuted,
       reelHeight,
       tabBarHeight,
       user?.user_id,
@@ -543,7 +575,6 @@ export default function ReelsScreen() {
       handleToggleLike,
       handleOpenComments,
       handleToggleMute,
-      scrollDirection,
     ],
   );
 
@@ -622,10 +653,10 @@ export default function ReelsScreen() {
         extraData={listExtraData}
         onScroll={onScrollHandler}
         scrollEventThrottle={16}
-        windowSize={3}
-        initialNumToRender={1}
-        maxToRenderPerBatch={1}
-        updateCellsBatchingPeriod={100}
+        windowSize={5}
+        initialNumToRender={3}
+        maxToRenderPerBatch={4}
+        updateCellsBatchingPeriod={80}
         removeClippedSubviews={true} // Bật cho cả iOS và Android
         disableIntervalMomentum={true}
         decelerationRate="fast"
@@ -666,8 +697,9 @@ export default function ReelsScreen() {
 const ReelCard = memo(
   ({
     currentUserId,
+    bufferMode,
     isActive,
-    shouldLoad,
+    shouldMountVideo,
     onDelete,
     onOpenComments,
     onToggleLike,
@@ -675,14 +707,14 @@ const ReelCard = memo(
     onToggleMute,
     reel,
     tabBarHeight,
-    scrollDirection,
     index,
     scrollY,
     height: cardHeight,
   }: {
     currentUserId?: number | null;
+    bufferMode: ReelBufferMode;
     isActive: boolean;
-    shouldLoad: boolean;
+    shouldMountVideo: boolean;
     onDelete: (reel: Reel) => void;
     onOpenComments: (reel: Reel) => void;
     onToggleLike: (reel: Reel) => void;
@@ -693,25 +725,16 @@ const ReelCard = memo(
     index: number;
     scrollY: SharedValue<number>;
     height: number;
-    scrollDirection: SharedValue<"down" | "up" | "idle">;
   }) => {
     const [cachedVideoUrl, setCachedVideoUrl] = useState<string | null>(null);
 
-    const videoUrl = useMemo(
-      () =>
-        resolveMediaUrl(
-          reel.video_url ||
-          reel.video?.media_url ||
-          reel.media.find((item) => item.type === "video")?.media_url,
-        ),
-      [reel.media, reel.video?.media_url, reel.video_url],
-    );
+    const videoUrl = useMemo(() => getReelVideoUrl(reel), [reel]);
 
     const thumbnailUri = useMemo(() => getReelThumbnailUrl(reel), [reel]);
 
-    // Load cached video URL khi component mount hoặc shouldLoad thay đổi
+    // Load cached video URL khi component mount hoặc shouldMountVideo thay đổi
     useEffect(() => {
-      if (!videoUrl || !shouldLoad) {
+      if (!videoUrl || !shouldMountVideo) {
         return;
       }
 
@@ -734,7 +757,7 @@ const ReelCard = memo(
       return () => {
         isCancelled = true;
       };
-    }, [videoUrl, shouldLoad]);
+    }, [videoUrl, shouldMountVideo]);
 
     const [showActions, setShowActions] = useState(false);
     const { authorName, authorHandle, avatarUrl, ownerCanDelete } = useMemo(
@@ -790,14 +813,14 @@ const ReelCard = memo(
 
     return (
       <Animated.View style={[styles.reelPage, reelPageHeightStyle]}>
-        {cachedVideoUrl && shouldLoad ? (
+        {cachedVideoUrl && shouldMountVideo ? (
           <ReelVideo
+            bufferMode={bufferMode}
             isActive={isActive}
             isMuted={isMuted}
             tabBarHeight={tabBarHeight}
             uri={cachedVideoUrl}
             thumbnailUri={thumbnailUri}
-            scrollDirection={scrollDirection}
           />
         ) : (
           <View style={styles.videoFallback}>
@@ -927,7 +950,8 @@ const ReelCard = memo(
     // true = KHÔNG re-render, false = re-render
     if (
       prev.isActive !== next.isActive ||
-      prev.shouldLoad !== next.shouldLoad ||
+      prev.shouldMountVideo !== next.shouldMountVideo ||
+      prev.bufferMode !== next.bufferMode ||
       prev.isMuted !== next.isMuted ||
       prev.height !== next.height ||
       prev.tabBarHeight !== next.tabBarHeight ||
@@ -987,43 +1011,46 @@ const ReelCard = memo(
 ReelCard.displayName = "ReelCard";
 
 const ReelVideo = memo(function ReelVideo({
+  bufferMode,
   isActive,
   uri,
   isMuted,
   tabBarHeight,
   thumbnailUri,
-  scrollDirection,
 }: {
+  bufferMode: ReelBufferMode;
   isActive: boolean;
   uri: string;
   isMuted: boolean;
   tabBarHeight: number;
   thumbnailUri?: string;
-  scrollDirection: SharedValue<"down" | "up" | "idle">;
 }) {
   const [isManuallyPaused, setIsManuallyPaused] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [isReadyToPlay, setIsReadyToPlay] = useState(false);
   const progress = useSharedValue(0);
   const containerWidth = useRef(0);
+  const preferredForwardBufferDuration =
+    bufferMode === "heavy"
+      ? HEAVY_FORWARD_BUFFER_SECONDS
+      : LIGHT_FORWARD_BUFFER_SECONDS;
 
   // Tạo player với proper lifecycle và giới hạn buffer
- const player = useVideoPlayer(uri, (nextPlayer) => {
-  nextPlayer.loop = true;
-  nextPlayer.muted = isMuted;
-  nextPlayer.timeUpdateEventInterval = 0.25;
-  nextPlayer.bufferOptions = {
-    preferredForwardBufferDuration: 5, // giá trị mặc định, effect bên dưới sẽ chỉnh lại
-  };
-});
+  const player = useVideoPlayer(uri, (nextPlayer) => {
+    nextPlayer.loop = true;
+    nextPlayer.muted = isMuted;
+    nextPlayer.timeUpdateEventInterval = 0.25;
+    nextPlayer.bufferOptions = {
+      preferredForwardBufferDuration,
+    };
+  });
 
-// Effect chạy sau khi render đã commit, không phải trong lúc render
-useEffect(() => {
-  const isTowardsThisVideo = scrollDirection.value !== 'up';
-  player.bufferOptions = {
-    preferredForwardBufferDuration: isTowardsThisVideo ? 5 : 2,
-  };
-}, [player, scrollDirection]);
+  // Update committed player options from JS props, not by reading a shared value.
+  useEffect(() => {
+    player.bufferOptions = {
+      preferredForwardBufferDuration,
+    };
+  }, [player, preferredForwardBufferDuration]);
 
   // Track player instance để cleanup
   const playerRef = useRef(player);
