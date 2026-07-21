@@ -108,8 +108,8 @@ const getReelThumbnailUrl = (reel: Reel) =>
 const getReelVideoUrl = (reel: Reel) =>
   resolveMediaUrl(
     reel.video_url ||
-      reel.video?.media_url ||
-      reel.media.find((item) => item.type === "video")?.media_url,
+    reel.video?.media_url ||
+    reel.media.find((item) => item.type === "video")?.media_url,
   );
 
 export default function ReelsScreen() {
@@ -841,6 +841,11 @@ const ReelCard = memo(
           />
           <RailButton
             icon="chatbubble-outline"
+            label={formatCount(reel.comment_count)}
+            onPress={handleOpenComments}
+          />
+          <RailButton
+            icon="bookmark-outline"
             label={formatCount(reel.comment_count)}
             onPress={handleOpenComments}
           />

@@ -506,70 +506,70 @@ export default function HomeScreen() {
 
   return (
     <>
-      <StatusBar style="light" />
       <ScreenShell
-      titleNode={<Text style={styles.brand}>emlovy</Text>}
-      right={
-        <View style={styles.headerActions}>
-          <Ionicons color={AppColors.text} name="heart-outline" size={24} />
-          <Pressable hitSlop={8} onPress={() => router.push(Routes.chat)}>
-            <View>
-              <Ionicons
-                color={AppColors.text}
-                name="paper-plane-outline"
-                size={24}
-              />
-              <ChatNotificationBadge count={unreadCount} size="medium" />
-            </View>
-          </Pressable>
-        </View>
-      }
-    >
-      <FlatList
-        ListEmptyComponent={listEmpty}
-        ListFooterComponent={listFooter}
-        ListHeaderComponent={listHeader}
-        contentContainerStyle={styles.content}
-        data={posts}
-        extraData={listExtraData}
-        initialNumToRender={4}
-        keyExtractor={keyExtractor}
-        maxToRenderPerBatch={4}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.55}
-        refreshControl={refreshControl}
-        renderItem={renderPostItem}
-        removeClippedSubviews={Platform.OS === "android"}
-        showsVerticalScrollIndicator={false}
-        updateCellsBatchingPeriod={60}
-        windowSize={7}
-      />
+        titleNode={<Text style={styles.brand}>emlovy</Text>}
+        right={
+          <View style={styles.headerActions}>
+            <Ionicons color={AppColors.text} name="heart-outline" size={24} />
+            <Pressable hitSlop={8} onPress={() => router.push(Routes.chat)}>
+              <View>
+                <Ionicons
+                  color={AppColors.text}
+                  name="paper-plane-outline"
+                  size={24}
+                />
+                <ChatNotificationBadge count={unreadCount} size="medium" />
+              </View>
+            </Pressable>
+          </View>
+        }
+      >
+        <StatusBar style="dark" />
+        <FlatList
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
+          ListHeaderComponent={listHeader}
+          contentContainerStyle={styles.content}
+          data={posts}
+          extraData={listExtraData}
+          initialNumToRender={4}
+          keyExtractor={keyExtractor}
+          maxToRenderPerBatch={4}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.55}
+          refreshControl={refreshControl}
+          renderItem={renderPostItem}
+          removeClippedSubviews={Platform.OS === "android"}
+          showsVerticalScrollIndicator={false}
+          updateCellsBatchingPeriod={60}
+          windowSize={7}
+        />
 
-      <PostComposerModal
-        initialPost={editingPost}
-        isSubmitting={isSubmittingEdit}
-        mode="edit"
-        onClose={handleCloseEdit}
-        onSubmit={(input) => handleSubmitEdit(input as UpdatePostInput)}
-        visible={Boolean(editingPost)}
-      />
+        <PostComposerModal
+          initialPost={editingPost}
+          isSubmitting={isSubmittingEdit}
+          mode="edit"
+          onClose={handleCloseEdit}
+          onSubmit={(input) => handleSubmitEdit(input as UpdatePostInput)}
+          visible={Boolean(editingPost)}
+        />
 
-      <CommentsSheet
-        onClose={handleCloseComments}
-        onPostCommentCountChange={handlePostCommentCountChange}
-        post={selectedCommentPost}
-        token={token}
-        visible={Boolean(selectedCommentPost)}
-      />
+        <CommentsSheet
+          onClose={handleCloseComments}
+          onPostCommentCountChange={handlePostCommentCountChange}
+          post={selectedCommentPost}
+          token={token}
+          visible={Boolean(selectedCommentPost)}
+        />
 
-      <StoryComposerModal
-        isSubmitting={isSubmittingStory}
-        mode="create"
-        onClose={() => setStoryComposerVisible(false)}
-        onSubmit={(input) => handleSubmitStory(input as CreateStoryInput)}
-        visible={storyComposerVisible}
-      />
-    </ScreenShell>
+        <StoryComposerModal
+          isSubmitting={isSubmittingStory}
+          mode="create"
+          onClose={() => setStoryComposerVisible(false)}
+          onSubmit={(input) => handleSubmitStory(input as CreateStoryInput)}
+          visible={storyComposerVisible}
+        />
+      </ScreenShell>
     </>
   );
 }
