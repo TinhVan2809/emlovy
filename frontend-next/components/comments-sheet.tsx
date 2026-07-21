@@ -93,7 +93,7 @@ function CommentItem({
   currentUser: User | null;
 }) {
   const avatarSrc = comment.author?.avatar_url
-    ? `${port}${comment.author.avatar_url}`
+    ? `${port}/${comment.author.avatar_url}`
     : "/Profile-Default.webp";
 
   const [liked, setLiked] = useState(comment.liked_by_me);

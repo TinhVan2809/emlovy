@@ -24,7 +24,7 @@ export default function AppSetting() {
           <div className="flex flex-col gap-7">
             <p className="font-bold">Cài đặt tài khoản</p>
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3 cursor-pointer px-4 py-2 rounded-xl hover:bg-[#f2f2f2]">
+              <div className="flex items-center gap-3 cursor-pointer px-4 py-2 rounded-xl hover:bg-[#f2f2f2]" onClick={() => router.push("profile_setting/password_setting")}>
                 <RiShieldLine />
                 <span>Mật khẩu và bảo mật</span>
               </div>
