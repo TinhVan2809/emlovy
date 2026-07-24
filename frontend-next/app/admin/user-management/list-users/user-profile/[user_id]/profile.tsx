@@ -57,7 +57,7 @@ function Profile({ user, posts }: ProfileProps) {
   const [tab, setTab] = useState("overview");
 
   const avatarSrc = user?.data?.profile?.avata
-    ? `${port}${user?.data?.profile?.avata}`
+    ? `${port}/${user?.data?.profile?.avata}`
     : "/Profile-Default.webp";
 
   return (

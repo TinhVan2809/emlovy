@@ -42,6 +42,8 @@ export default function Setting() {
           <div className="col-span-3 p-3">
             <div className="">
               <p className="text-xl font-semibold mb-5">Cài đặt và quyền riêng tư</p>
+
+                {/* Tài khoản của bạn */}
               <div className="flex flex-col gap-3">
                 <p className="font-semibold">Tài khoản của bạn</p>
                 <div className="flex gap-4 cursor-pointer hover:bg-gray-200/50 p-3 rounded-md" onClick={() => router.push("/setting/profile_setting")}>
@@ -49,6 +51,18 @@ export default function Setting() {
                   <p className="text-sm text-black/50 flex flex-col">
                     <span>Tài khoản của bạn</span>
                     <span>Thông tin cá nhân, mật khẩu và quyền riêng tư</span>
+                  </p>
+                </div>
+              </div>
+
+               {/* Thông báo */}
+              <div className="flex flex-col gap-3">
+                <p className="font-semibold">Thông báo</p>
+                <div className="flex gap-4 cursor-pointer hover:bg-gray-200/50 p-3 rounded-md" onClick={() => setSettingTab("notification")}>
+                  <FaRegUserCircle size={22}/>
+                  <p className="text-sm text-black/50 flex flex-col">
+                    <span>Thông báo</span>
+                    <span>Thông báo về bài viết, tin nhắn, hệ thống,...</span>
                   </p>
                 </div>
               </div>
@@ -61,6 +75,14 @@ export default function Setting() {
               <div className="">
                 <div className="relative md:w-15 md:h-15">
                     <Image src={avatarSrc} alt="avatar" fill className="rounded-full"/>
+                </div>
+              </div>
+            )}
+
+            {settingTab == "notification" && (
+              <div className="">
+                <div className="relative md:w-15 md:h-15">
+                    <p>Trang cai dat thong bao</p>
                 </div>
               </div>
             )}

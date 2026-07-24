@@ -128,8 +128,8 @@ function SearchUsers() {
                         key={user.user_id}
                       >
                         <div className="relative w-10 h-10">
-                             <Image
-                            src={user.avata ? `${port}${user.avata}` : "/Profile-Default.webp"}
+                          <Image
+                            src={user.avata ? `${port}/${user.avata}` : "/Profile-Default.webp"}
                             fill
                             priority
                             alt="avatar"

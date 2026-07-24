@@ -115,7 +115,7 @@ function ReelCard({
   };
 
   const videoSrc = v.author?.avatar_url
-    ? `${port}${v.author?.avatar_url}`
+    ? `${port}/${v.author?.avatar_url}`
     : "/default-avata.jpeg";
 
   const handleToggleCommentSheet = () => {

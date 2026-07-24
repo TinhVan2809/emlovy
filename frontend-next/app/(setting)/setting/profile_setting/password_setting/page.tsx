@@ -1,5 +1,5 @@
-
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import port from "@/api/api";
@@ -24,7 +24,7 @@ export default function PasswordSetting() {
         setSuccessMessage(""); // Clear success message on input change
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.SubmitEvent) => {
         e.preventDefault();
         setError("");
         setSuccessMessage("");
@@ -34,8 +34,8 @@ export default function PasswordSetting() {
             return;
         }
 
-        if (formData.newPassword.length < 6) {
-            setError("Mật khẩu mới phải có ít nhất 6 ký tự.");
+        if (formData.newPassword.length < 8) {
+            setError("Mật khẩu mới phải có ít nhất 8 ký tự.");
             return;
         }
 
@@ -97,7 +97,7 @@ export default function PasswordSetting() {
                 </div>
                 <div className="col-span-5 p-5">
                     {tab === "changePassword" && (
-                        <div className="bg-white p-6 rounded-xl shadow-sm">
+                        <div className="bg-white p-6 rounded-xl">
                             <h2 className="text-xl font-bold mb-4">Đổi mật khẩu</h2>
                             {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
                             {successMessage && (
@@ -110,7 +110,7 @@ export default function PasswordSetting() {
                                     placeholder="Mật khẩu hiện tại"
                                     value={formData.currentPassword}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full p-3 border-b border-black/10 outline-0"
                                     required
                                 />
                                 <input
@@ -119,7 +119,7 @@ export default function PasswordSetting() {
                                     placeholder="Mật khẩu mới"
                                     value={formData.newPassword}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full p-3 border-b border-black/10 outline-0"
                                     required
                                 />
                                 <input
@@ -128,12 +128,12 @@ export default function PasswordSetting() {
                                     placeholder="Xác nhận mật khẩu mới"
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full p-3 border-b border-black/10 outline-0"
                                     required
                                 />
                                 <button
                                     type="submit"
-                                    className="bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                                    className="text-white p-3 rounded-lg font- bg-zinc-700 transition-colors"
                                 >
                                     Đổi mật khẩu
                                 </button>

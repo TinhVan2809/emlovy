@@ -160,11 +160,8 @@ export default function Reels() {
   }, [videos.length]);
 
   return (
-    <div className="gap-8 p-4 bg-[#121212]">
+    <div className="gap-8 p-4">
       <div className="flex justify-center">
-        <div className="fixed top-0 left-0 z-100 p-4">
-          <span className="text-white text-2xl">Reels</span>
-        </div>
         <div className="">
           {videos.length > 0 && (
             <div className="flex flex-col gap-8">
