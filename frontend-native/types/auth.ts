@@ -50,6 +50,7 @@ export type RegisterInput = {
 export type UpdateProfileInput = {
   name?: string;
   username?: string;
+  nickname?: string | null;
   birthday?: string | null;
   gender?: '0' | '1' | '2' | null;
   phone?: string | null;

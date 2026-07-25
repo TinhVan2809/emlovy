@@ -108,12 +108,13 @@ const findByUserId = async (userId, options = {}) => {
 const findDuplicateIdentity = async ({ userId, username, email }) => {
   const rows = await query(
     `
-      SELECT user_id, username, email
+      SELECT user_id, username, nickname, email
       FROM users
       WHERE user_id <> :userId
         AND (
           (:username IS NOT NULL AND username = :username)
           OR (:email IS NOT NULL AND email = :email)
+          OR (:nickname IS NOT NULL AND nickname = :nickname)
         )
       LIMIT 1
     `,
@@ -121,6 +122,7 @@ const findDuplicateIdentity = async ({ userId, username, email }) => {
       userId,
       username: username || null,
       email: email || null,
+      nickname: nickname || null,
     },
   );
 
@@ -128,7 +130,7 @@ const findDuplicateIdentity = async ({ userId, username, email }) => {
 };
 
 const updateByUserId = async (userId, fields) => {
-  const allowedFields = ["name", "username", "birthday", "gender", "phone", "email", "address"];
+  const allowedFields = ["name", "username", "nickname", "birthday", "gender", "phone", "email", "address"];
   const updates = [];
   const params = { userId };
 

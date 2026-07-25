@@ -31,11 +31,12 @@ export default function EditProfileScreen() {
   const { token, updateUser, user } = useAuth();
   const [name, setName] = useState(user?.name || '');
   const [username, setUsername] = useState(user?.username || '');
+  const [nickname, setNickname] = useState(user?.nickname || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [birthday, setBirthday] = useState(user?.birthday?.slice(0, 10) || '');
   const [gender, setGender] = useState<'0' | '1' | '2' | null>(user?.gender || null);
-  const [avatarPreview, setAvatarPreview] = useState(resolveMediaUrl(user?.avatar_url || user?.avata));
+  const [avatarPreview, setAvatarPreview] = useState(resolveMediaUrl(user?.avatar_url || user?.avatar_url));
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -109,6 +110,7 @@ export default function EditProfileScreen() {
       email: email.trim() || null,
       gender,
       name: name.trim(),
+      nickname: nickname.trim() || null,
       phone: phone.trim() || null,
       username: username.trim(),
     };
@@ -173,6 +175,12 @@ export default function EditProfileScreen() {
               label="Username"
               onChangeText={setUsername}
               value={username}
+            />
+            <FormField
+              autoCapitalize="none"
+              label="Nickname"
+              onChangeText={setNickname}
+              value={nickname}
             />
             <FormField
               autoCapitalize="none"
