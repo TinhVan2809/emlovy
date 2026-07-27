@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { UserAvatar } from '@/components/user-avatar';
@@ -27,6 +28,33 @@ const genderOptions = [
   { label: 'Không tiết lộ', value: '2' },
 ] as const;
 
+/**
+ * Hàm kiểm tra dữ liệu đầu vào của form chỉnh sửa profile.
+ * @returns Một chuỗi thông báo lỗi nếu không hợp lệ, hoặc `null` nếu hợp lệ.
+ */
+const validateProfileInput = (input: {
+  name: string;
+  username: string;
+  email: string;
+}): string | null => {
+  const { name, username, email } = input;
+
+  // Các mẫu Regex tương tự backend để đảm bảo tính nhất quán
+  const usernamePattern = /^[a-zA-Z0-9_]{3,30}$/;
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (name.trim().length < 2) {
+    return 'Họ tên phải có ít nhất 2 ký tự.';
+  }
+  if (!usernamePattern.test(username.trim())) {
+    return 'Username phải có 3-30 ký tự, chỉ gồm chữ, số hoặc dấu gạch dưới.';
+  }
+  if (email.trim() && !emailPattern.test(email.trim())) {
+    return 'Định dạng email không hợp lệ.';
+  }
+  return null; // Không có lỗi
+};
+
 export default function EditProfileScreen() {
   const { token, updateUser, user } = useAuth();
   const [name, setName] = useState(user?.name || '');
@@ -35,11 +63,26 @@ export default function EditProfileScreen() {
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [birthday, setBirthday] = useState(user?.birthday?.slice(0, 10) || '');
+  const [dateForPicker, setDateForPicker] = useState(() =>
+    user?.birthday ? new Date(user.birthday) : new Date(),
+  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [gender, setGender] = useState<'0' | '1' | '2' | null>(user?.gender || null);
   const [avatarPreview, setAvatarPreview] = useState(resolveMediaUrl(user?.avatar_url || user?.avatar_url));
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (event.type === 'set' && selectedDate) {
+      setDateForPicker(selectedDate);
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      setBirthday(`${year}-${month}-${day}`);
+    }
+  };
 
   const canSave = name.trim().length > 0 && username.trim().length > 0 && !isSaving;
 
@@ -105,6 +148,14 @@ export default function EditProfileScreen() {
       return;
     }
 
+    // 1. Thực hiện validation trước khi gửi
+    const validationError = validateProfileInput({ name, username, email });
+    if (validationError) {
+      setError(validationError);
+      return; // Dừng lại nếu có lỗi
+    }
+
+    // 2. Tạo payload nếu validation thành công
     const payload: UpdateProfileInput = {
       birthday: birthday.trim() || null,
       email: email.trim() || null,
@@ -172,14 +223,16 @@ export default function EditProfileScreen() {
             <FormField label="Họ tên" onChangeText={setName} value={name} />
             <FormField
               autoCapitalize="none"
-              label="Username"
+              label="username"
               onChangeText={setUsername}
+              placeholder="Nguyễn Minh Anh"
               value={username}
             />
             <FormField
               autoCapitalize="none"
               label="Nickname"
               onChangeText={setNickname}
+              placeholder="@nickname"
               value={nickname}
             />
             <FormField
@@ -187,20 +240,40 @@ export default function EditProfileScreen() {
               keyboardType="email-address"
               label="Email"
               onChangeText={setEmail}
+              placeholder="adc@gmail.com"
               value={email}
             />
             <FormField
               keyboardType="phone-pad"
               label="Số điện thoại"
               onChangeText={setPhone}
+              placeholder="+84 123 456 789"
               value={phone}
             />
-            <FormField
-              label="Ngày sinh"
-              onChangeText={setBirthday}
-              placeholder="YYYY-MM-DD"
-              value={birthday}
-            />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Ngày sinh</Text>
+              <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateInput}>
+                <Text style={birthday ? styles.dateInputText : styles.dateInputPlaceholder}>
+                  {birthday
+                    ? new Date(birthday).toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })
+                    : 'DD-MM-YYYY'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={dateForPicker}
+                mode="date"
+                display="default"
+                onChange={onDateChange}
+                maximumDate={new Date()}
+              />
+            )}
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Giới tính</Text>
@@ -310,6 +383,25 @@ const styles = StyleSheet.create({
     gap: 20,
     padding: 18,
     paddingBottom: 34,
+  },
+  dateInput: {
+    backgroundColor: AppColors.surfaceMuted,
+    borderColor: AppColors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 52,
+    paddingHorizontal: 14,
+  },
+  dateInputText: {
+    color: AppColors.text,
+    fontFamily: AppFonts.body,
+    fontSize: 15,
+  },
+  dateInputPlaceholder: {
+    color: AppColors.tabInactive,
+    fontFamily: AppFonts.body,
+    fontSize: 15,
   },
   disabledText: {
     opacity: 0.45,

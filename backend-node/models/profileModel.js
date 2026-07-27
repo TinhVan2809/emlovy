@@ -105,7 +105,7 @@ const findByUserId = async (userId, options = {}) => {
   return toProfile(rows[0]);
 };
 
-const findDuplicateIdentity = async ({ userId, username, email }) => {
+const findDuplicateIdentity = async ({ userId, username, nickname, email }) => {
   const rows = await query(
     `
       SELECT user_id, username, nickname, email
