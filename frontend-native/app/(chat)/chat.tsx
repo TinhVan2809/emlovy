@@ -59,10 +59,10 @@ const upsertConversation = (
   );
   const next = exists
     ? current.map((conversation) =>
-        conversation.conversation_id === incoming.conversation_id
-          ? incoming
-          : conversation,
-      )
+      conversation.conversation_id === incoming.conversation_id
+        ? incoming
+        : conversation,
+    )
     : [incoming, ...current];
 
   return sortConversations(next);
@@ -466,11 +466,11 @@ export default function ChatScreen() {
         );
         setSelectedConversation((current) =>
           current?.conversation_id ===
-          payload.data!.conversation.conversation_id
+            payload.data!.conversation.conversation_id
             ? touchConversationWithMessage(
-                payload.data!.conversation,
-                payload.data!.message,
-              )
+              payload.data!.conversation,
+              payload.data!.message,
+            )
             : current,
         );
         setConversations((current) =>
@@ -525,11 +525,12 @@ export default function ChatScreen() {
       >
         <KeyboardAvoidingView
           behavior={Platform.select({ ios: 'padding', default: undefined })}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+          // keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
           style={styles.threadContainer}
         >
           <FlatList
             ref={messageListRef}
+            style={{ flex: 1 }}
             ListEmptyComponent={
               isLoadingMessages ? (
                 <ActivityIndicator
