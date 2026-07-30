@@ -544,14 +544,14 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
 
   return (
     <div
-      className="w-full h-screen fixed top-0 right-0 z-10000 bg-black/50 flex justify-center items-center p-0 sm:p-4"
+      className="w-full h-dvh fixed inset-0 z-10000 bg-black/50 flex justify-center items-center p-0 sm:p-4"
       onClick={onClose}
     >
       <div className="absolute top-0 right-0 z-100 p-4 sm:p-6 md:p-8 cursor-pointer" onClick={onClose}>
         <span className="text-3xl sm:text-4xl text-white font-light hover:opacity-70 transition-opacity">&times;</span>
       </div>
       <div
-        className="w-full h-full sm:h-[95vh] md:h-[90vh] lg:max-w-6xl xl:max-w-7xl bg-white shadow-2xl sm:rounded-lg flex flex-col sm:flex-row overflow-hidden"
+        className="w-full h-full sm:h-[95dvh] md:h-[90dvh] lg:max-w-6xl xl:max-w-7xl bg-white shadow-2xl sm:rounded-lg flex flex-col sm:flex-row overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-full h-[45%] sm:h-[50%] md:h-full lg:w-1/2 bg-black flex items-center justify-center shrink-0">
@@ -594,11 +594,11 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
             </>
           )}
         </div>
-        <div className="w-full sm:w-1/2 lg:w-full lg:flex-1 flex flex-col overflow-hidden">
+        <div className="w-full flex-1 min-h-0 sm:w-1/2 lg:w-full lg:flex-1 flex flex-col overflow-hidden">
           <div
             ref={commentsContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4"
+            className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4"
           >
             {comments.length > 0 ? (
               <div className="flex flex-col gap-2.5 sm:gap-3 md:gap-3.5">
@@ -644,7 +644,7 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
               </div>
             )}
           </div>
-          <form onSubmit={handleCommentSubmit} className="shrink-0 p-2.5 sm:p-3 md:p-4 border-t border-gray-100 bg-white">
+          <form onSubmit={handleCommentSubmit} className="shrink-0 px-2.5 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] sm:px-3 sm:pt-3 sm:pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:px-4 md:pt-4 md:pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-gray-100 bg-white">
             {replyingTo && (
               <div className="text-xs sm:text-sm text-gray-500 mb-2 flex justify-between items-center px-2">
                 <span className="truncate">
