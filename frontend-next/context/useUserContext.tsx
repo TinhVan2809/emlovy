@@ -25,6 +25,8 @@ interface User {
   role: string;
   avatar?: string;
   avatar_url?: string;
+  gender?: number;
+  birthday?: string;
 }
 
 interface UserContextType {
@@ -105,6 +107,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Khi app khởi động → kiểm tra session từ server
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchMe();
   }, [fetchMe]);
 
