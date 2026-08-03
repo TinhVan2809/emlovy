@@ -102,14 +102,14 @@ const formatCount = (value: number) => {
 const getReelThumbnailUrl = (reel: Reel) =>
   resolveMediaUrl(
     (reel as any).thumbnail_url ||
-    reel.media.find((item) => item.type === "image")?.media_url,
+      reel.media.find((item) => item.type === "image")?.media_url,
   ) ?? undefined;
 
 const getReelVideoUrl = (reel: Reel) =>
   resolveMediaUrl(
     reel.video_url ||
-    reel.video?.media_url ||
-    reel.media.find((item) => item.type === "video")?.media_url,
+      reel.video?.media_url ||
+      reel.media.find((item) => item.type === "video")?.media_url,
   );
 
 export default function ReelsScreen() {
@@ -198,7 +198,7 @@ export default function ReelsScreen() {
 
       if (videoUrl) {
         preloadVideo(videoUrl).catch((error) => {
-          console.warn(`Failed to preload video at index ${idx}:`, error);
+          console.log(`Failed to preload video at index ${idx}:`, error);
         });
       }
     }
@@ -506,13 +506,7 @@ export default function ReelsScreen() {
       isGlobalMuted,
       scrollDirectionState,
     }),
-    [
-      activeIndex,
-      activeReelId,
-      isFocused,
-      isGlobalMuted,
-      scrollDirectionState,
-    ],
+    [activeIndex, activeReelId, isFocused, isGlobalMuted, scrollDirectionState],
   );
 
   const getItemLayout = useCallback(
@@ -747,7 +741,7 @@ const ReelCard = memo(
           }
         })
         .catch((error) => {
-          console.warn("Failed to get cached video:", error);
+          console.log("Failed to get cached video:", error);
           if (!isCancelled) {
             // Fallback về URL gốc nếu cache fail
             setCachedVideoUrl(videoUrl);
@@ -1008,8 +1002,7 @@ const ReelCard = memo(
     if (prevVideo?.media_url !== nextVideo?.media_url) {
       return false;
     }
-
-    return true; // KHÔNG re-render
+    return true;
   },
 );
 

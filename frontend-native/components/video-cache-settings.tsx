@@ -19,7 +19,7 @@ interface CacheStats {
   totalSizeMB: number;
   fileCount: number;
   oldestFileDate: Date;
-  mostAccessedVideos: Array<{ url: string; accessCount: number }>;
+  mostAccessedVideos: { url: string; accessCount: number }[];
 }
 
 export function VideoCacheSettings() {
@@ -61,6 +61,7 @@ export function VideoCacheSettings() {
                 "Lỗi",
                 "Không thể xóa cache. Vui lòng thử lại sau.",
               );
+              console.log(error);
             } finally {
               setIsClearing(false);
             }
