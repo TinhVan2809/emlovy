@@ -35,9 +35,26 @@ const PostImage = memo(({
   width, 
   maxHeight, 
   onPress, 
-  backgroundColor 
-}: { uri: string; width: number; maxHeight: number; onPress: () => void; backgroundColor?: string }) => {
-  const [displayHeight, setDisplayHeight] = useState<number>(width);
+  backgroundColor,
+  aspectRatio, // ← Thêm prop aspectRatio từ parent
+}: { 
+  uri: string; 
+  width: number; 
+  maxHeight: number; 
+  onPress: () => void; 
+  backgroundColor?: string;
+  aspectRatio?: number; // width / height
+}) => {
+  // Tính height ngay từ đầu dựa trên aspectRatio nếu có
+  const calculatedHeight = useMemo(() => {
+    if (aspectRatio && aspectRatio > 0) {
+      const targetHeight = width / aspectRatio;
+      return Math.min(targetHeight, maxHeight);
+    }
+    return width; // Fallback: square placeholder
+  }, [aspectRatio, width, maxHeight]);
+
+  const [displayHeight, setDisplayHeight] = useState<number>(calculatedHeight);
 
   return (
     <Pressable
@@ -54,12 +71,19 @@ const PostImage = memo(({
         contentFit="contain"
         source={{ uri }}
         onLoad={(e) => {
-          const { width: w, height: h } = e.source;
-          if (w && h) {
-            const ratio = w / h;
-            // Tính toán chiều cao mục tiêu dựa trên chiều rộng màn hình
-            const targetHeight = width / ratio;
-            setDisplayHeight(Math.min(targetHeight, maxHeight));
+          // Chỉ update nếu chưa có aspectRatio hoặc khác biệt đáng kể
+          if (!aspectRatio) {
+            const { width: w, height: h } = e.source;
+            if (w && h) {
+              const ratio = w / h;
+              const targetHeight = width / ratio;
+              const newHeight = Math.min(targetHeight, maxHeight);
+              
+              // Chỉ update nếu khác biệt > 5px để tránh jank nhỏ
+              if (Math.abs(newHeight - displayHeight) > 5) {
+                setDisplayHeight(newHeight);
+              }
+            }
           }
         }}
         style={{ width: "100%", height: "100%" }}

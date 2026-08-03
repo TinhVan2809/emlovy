@@ -450,21 +450,14 @@ export default function HomeScreen() {
   const listHeader = useMemo(
     () => (
       <FeedHeader
-        count={pagination?.total || posts.length}
+        count={pagination?.total || 0}
         error={error}
         onCreateStory={handleOpenStoryComposer}
         storyError={storyError}
         storyGroups={storyGroups}
       />
     ),
-    [
-      error,
-      handleOpenStoryComposer,
-      pagination?.total,
-      posts.length,
-      storyError,
-      storyGroups,
-    ],
+    [error, handleOpenStoryComposer, pagination?.total, storyError, storyGroups],
   );
 
   const listEmpty = useMemo(
@@ -532,17 +525,17 @@ export default function HomeScreen() {
           contentContainerStyle={styles.content}
           data={posts}
           extraData={listExtraData}
-          initialNumToRender={4}
+          initialNumToRender={3}
           keyExtractor={keyExtractor}
-          maxToRenderPerBatch={4}
+          maxToRenderPerBatch={3}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.55}
           refreshControl={refreshControl}
           renderItem={renderPostItem}
           removeClippedSubviews={Platform.OS === "android"}
           showsVerticalScrollIndicator={false}
-          updateCellsBatchingPeriod={60}
-          windowSize={7}
+          updateCellsBatchingPeriod={100}
+          windowSize={5}
         />
 
         <PostComposerModal
@@ -621,24 +614,10 @@ const FeedHeader = memo(function FeedHeader({
   storyError: string;
   storyGroups: StoryGroup[];
 }) {
-  return (
-    <View style={styles.headerContent}>
-      <View style={styles.storySection}>
-        <StoryTray
-          fallbackStories={fallbackStories}
-          groups={storyGroups}
-          onCreateStory={onCreateStory}
-        />
-        {storyError ? (
-          <Text style={styles.storyErrorText}>{storyError}</Text>
-        ) : null}
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.filterRow}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
+  // Memoize filter row để không re-render khi header re-render
+  const filterRow = useMemo(
+    () => (
+      <View style={styles.filterRow}>
         {FEED_FILTERS.map((filter, index) => (
           <View
             key={filter}
@@ -657,7 +636,25 @@ const FeedHeader = memo(function FeedHeader({
             </Text>
           </View>
         ))}
-      </ScrollView>
+      </View>
+    ),
+    [], // Chỉ render 1 lần vì filter là static
+  );
+
+  return (
+    <View style={styles.headerContent}>
+      <View style={styles.storySection}>
+        <StoryTray
+          fallbackStories={fallbackStories}
+          groups={storyGroups}
+          onCreateStory={onCreateStory}
+        />
+        {storyError ? (
+          <Text style={styles.storyErrorText}>{storyError}</Text>
+        ) : null}
+      </View>
+
+      {filterRow}
 
       <View style={styles.feedHeader}>
         <Text style={styles.feedTitle}>New today</Text>
@@ -666,6 +663,15 @@ const FeedHeader = memo(function FeedHeader({
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
+  );
+}, (prev, next) => {
+  // Custom comparison để tránh re-render không cần thiết
+  return (
+    prev.count === next.count &&
+    prev.error === next.error &&
+    prev.storyError === next.storyError &&
+    prev.storyGroups === next.storyGroups &&
+    prev.onCreateStory === next.onCreateStory
   );
 });
 
@@ -732,6 +738,7 @@ const styles = StyleSheet.create({
     borderColor: AppColors.text,
   },
   filterRow: {
+    flexDirection: 'row',
     gap: 10,
     paddingHorizontal: 18,
   },

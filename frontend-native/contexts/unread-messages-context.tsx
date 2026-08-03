@@ -81,6 +81,7 @@ export function UnreadMessagesProvider({ children }: { children: React.ReactNode
     console.log('[UnreadMessages] Subscribing to chat events for user:', userId);
 
     return subscribeToChatEvents(token, {
+      currentUserId: userId,
       onReceiveMessage: ({ message }) => {
         const isFromOther = Number(message.sender_id) !== Number(userId);
         console.log('[UnreadMessages] Received message event:', {
