@@ -1,11 +1,13 @@
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import "react-native-reanimated";
 
 import { AuthProvider } from "@/contexts/auth-context";
 import { UnreadMessagesProvider } from "@/contexts/unread-messages-context";
 import { AppColors } from "@/constants/theme";
+import { notificationSound } from "@/services/notification-sound";
 
 const navigationTheme = {
   ...DefaultTheme,
@@ -21,6 +23,15 @@ const navigationTheme = {
 };
 
 export default function RootLayout() {
+  // Initialize notification sound service
+  useEffect(() => {
+    notificationSound.initialize();
+
+    return () => {
+      notificationSound.cleanup();
+    };
+  }, []);
+
   return (
     <ThemeProvider value={navigationTheme}>
       <AuthProvider>

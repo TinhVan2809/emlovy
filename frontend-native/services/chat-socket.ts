@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
 import { API_ORIGIN } from '@/services/api';
+import { notificationSound } from '@/services/notification-sound';
 import type { ChatConversation, ChatMessage, SendMessageInput } from '@/types/auth';
 
 type ReceiveMessagePayload = {
@@ -43,8 +44,19 @@ const getChatSocket = (token: string) => {
 export const subscribeToChatEvents = (token: string, handlers: ChatEventHandlers) => {
   const activeSocket = getChatSocket(token);
 
+  // Wrap onReceiveMessage để phát sound khi nhận tin nhắn mới
+  const onReceiveMessageWithSound = (payload: ReceiveMessagePayload) => {
+    // Phát sound notification
+    notificationSound.play().catch((error) => {
+      // Silent fail - không block message handling
+    });
+
+    // Gọi handler gốc
+    handlers.onReceiveMessage?.(payload);
+  };
+
   if (handlers.onReceiveMessage) {
-    activeSocket.on('receive_message', handlers.onReceiveMessage);
+    activeSocket.on('receive_message', onReceiveMessageWithSound);
   }
 
   if (handlers.onConversationUpdated) {
@@ -57,7 +69,7 @@ export const subscribeToChatEvents = (token: string, handlers: ChatEventHandlers
 
   return () => {
     if (handlers.onReceiveMessage) {
-      activeSocket.off('receive_message', handlers.onReceiveMessage);
+      activeSocket.off('receive_message', onReceiveMessageWithSound);
     }
 
     if (handlers.onConversationUpdated) {
