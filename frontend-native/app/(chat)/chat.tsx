@@ -333,6 +333,7 @@ export default function ChatScreen() {
     }
 
     return subscribeToChatEvents(token, {
+      currentUserId: user?.user_id, // ← Thêm currentUserId
       onError: (payload) =>
         setError(payload.message || "Realtime chat bị gián đoạn."),
       onReceiveMessage: ({ message }) => {
@@ -370,7 +371,7 @@ export default function ChatScreen() {
         }
       },
     });
-  }, [loadConversations, selectedConversation?.conversation_id, token]);
+  }, [loadConversations, selectedConversation?.conversation_id, token, user?.user_id]);
 
   useEffect(() => {
     if (!token || !selectedConversation?.conversation_id) {

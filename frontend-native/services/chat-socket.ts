@@ -20,6 +20,7 @@ type ChatEventHandlers = {
   onReceiveMessage?: (payload: ReceiveMessagePayload) => void;
   onConversationUpdated?: (payload: ConversationUpdatedPayload) => void;
   onError?: (payload: { message: string; status?: number; success?: boolean }) => void;
+  currentUserId?: number | null; // ← Thêm để check người gửi
 };
 
 let socket: Socket | null = null;
@@ -46,10 +47,16 @@ export const subscribeToChatEvents = (token: string, handlers: ChatEventHandlers
 
   // Wrap onReceiveMessage để phát sound khi nhận tin nhắn mới
   const onReceiveMessageWithSound = (payload: ReceiveMessagePayload) => {
-    // Phát sound notification
-    notificationSound.play().catch((error) => {
-      // Silent fail - không block message handling
-    });
+    // Chỉ phát sound nếu người nhận KHÔNG phải người gửi
+    const isReceivedMessage = 
+      handlers.currentUserId && 
+      payload.message.sender_id !== handlers.currentUserId;
+
+    if (isReceivedMessage) {
+      notificationSound.play().catch(() => {
+        // Silent fail - không block message handling
+      });
+    }
 
     // Gọi handler gốc
     handlers.onReceiveMessage?.(payload);
