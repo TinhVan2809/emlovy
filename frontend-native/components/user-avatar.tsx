@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors, AppFonts } from "@/constants/theme";
 
@@ -20,7 +21,13 @@ export function UserAvatar({ imageUrl, name, size = 80 }: UserAvatarProps) {
     >
       <View style={styles.core}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} />
+          <Image 
+            source={{ uri: imageUrl }} 
+            style={styles.image}
+            contentFit="cover"
+            transition={200}
+            cachePolicy="memory-disk"
+          />
         ) : (
           <Text
             style={[styles.initial, { fontSize: Math.max(18, size * 0.32) }]}

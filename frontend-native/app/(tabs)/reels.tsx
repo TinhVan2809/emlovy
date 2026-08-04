@@ -43,7 +43,6 @@ import {
   TextInput,
   useWindowDimensions,
   View,
-  Image as Img,
 } from "react-native";
 import {
   SafeAreaView,
@@ -870,7 +869,7 @@ const ReelCard = memo(
                     {authorName}
                   </Text>
                   {reel.author?.is_verified === 1 ? (
-                    <Img
+                    <Image
                       source={require("../../assets/images/verifed.png")}
                       style={styles.verifiedIcon}
                     />

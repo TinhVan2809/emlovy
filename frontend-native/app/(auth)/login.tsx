@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { Link } from "expo-router";
 import { useState, useRef } from "react";
 import {
@@ -11,7 +12,6 @@ import {
   Text,
   TextInput,
   View,
-  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -75,6 +75,9 @@ export default function LoginScreen() {
             <Image
               source={require("../../assets/images/logo.png")}
               style={styles.img}
+              contentFit="contain"
+              transition={200}
+              cachePolicy="memory-disk"
             />
             <Text style={styles.brand}>Welcome back</Text>
             <Text style={styles.heading}>
@@ -200,6 +203,9 @@ export default function LoginScreen() {
               <Image
                 source={require("../../assets/images/google-logo.png")}
                 style={styles.orthersLogo}
+                contentFit="contain"
+                transition={200}
+                cachePolicy="memory-disk"
               />
               <Text>Đăng nhập bằng Google</Text>
             </Pressable>
@@ -207,6 +213,9 @@ export default function LoginScreen() {
               <Image
                 source={require("../../assets/images/apple-logo.png")}
                 style={styles.orthersLogo}
+                contentFit="contain"
+                transition={200}
+                cachePolicy="memory-disk"
               />
               <Text>Đăng nhập bằng Apple</Text>
             </Pressable>
