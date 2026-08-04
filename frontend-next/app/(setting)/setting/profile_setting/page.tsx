@@ -9,12 +9,12 @@ import {
 } from "@remixicon/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { FaRegUser } from "react-icons/fa";
 
 export default function AppSetting() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
 
   const [isEdit, setIsEdit] = useState(false);
 
@@ -40,6 +40,42 @@ export default function AppSetting() {
         : "Chưa cập nhật",
     },
   ];
+
+  const [form, setForm] = useState({
+    name: "",
+  })
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Hàm update tên người dùng
+  const handleEditName = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${port}/api/profile/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(form),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        await refreshUser();
+        setForm({ name: "" });
+        setIsEdit(false);
+      }
+    } catch (_err) {
+      console.log("Error editing the name", _err);
+    }
+  };
 
   return (
     <>
@@ -116,7 +152,7 @@ export default function AppSetting() {
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-xl font-semibold flex items-center gap-1">
-                      {user?.username || "Người dùng emlovy"}{" "}
+                      {user?.name || "Người dùng emlovy"}{" "}
                       <span
                         className="cursor-pointer"
                         onClick={() => setIsEdit(!isEdit)}
@@ -151,12 +187,17 @@ export default function AppSetting() {
           <div className="w-screen h-full backdrop-blur-sm flex justify-center items-center fixed top-0 left-0 z-10000">
             <div className="bg-white shadow-2xl rounded-xl relative">
               <p className="absolute top-0 right-0 text-4xl text-black/50 p-5 cursor-pointer" onClick={() => setIsEdit(!isEdit)}>&times;</p>
-              <form className="flex flex-col md:gap-10 p-10 mt-10">
-                <input type="text" placeholder="Họ tên" className="outline-0  border-b border-b-gray-200 md:w-100"/>
-                <input type="text" placeholder="Email" className="outline-0  border-b border-b-gray-200 md:w-100"/>
-               
+              <form className="flex flex-col md:gap-10 p-10 mt-10" onSubmit={handleEditName}>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Nhập tên của bạn"
+                  className="outline-0 border-b border-b-gray-200 md:w-100"
+                  onChange={handleChange}
+                />
+
                 <div className="flex justify-end">
-                  <button className="w-fit bg-black/90 text-white px-2 py-1 rounded-md hover:bg-amber-400">Cập nhật</button>
+                  <button className="w-fit bg-black/90 text-white px-2 py-1 rounded-md hover:bg-amber-400" type="submit">Cập nhật</button>
                 </div>
               </form>
             </div>
