@@ -4,11 +4,20 @@ const multer = require("multer");
 
 const config = require("../config/env");
 const { createHttpError } = require("../utils/httpError");
+const convertToWebP = require("./convertToWebP");
 
 const uploadDirectory = path.resolve(__dirname, "..", "uploads", "stories");
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "video/mp4", "video/quicktime"]);
+const allowedMimeTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/jpg",
+  "image/heic",
+  "video/mp4",
+  "video/quicktime"
+]);
 
 const storage = multer.diskStorage({
   destination: (_req, _file, callback) => {
@@ -25,19 +34,33 @@ const storage = multer.diskStorage({
 
 const fileFilter = (_req, file, callback) => {
   if (!allowedMimeTypes.has(file.mimetype)) {
-    callback(createHttpError(400, "File story khong duoc ho tro. Hay chon anh hoac video mp4/quicktime."));
+    callback(createHttpError(400, "File story không được hỗ trợ. Hãy chọn ảnh hoặc video mp4/quicktime."));
     return;
   }
 
   callback(null, true);
 };
 
-const storyUpload = multer({
+const upload = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: config.upload.postMediaMaxFileSize,
   },
 });
+
+// Export với middleware chuyển đổi WebP
+// Video sẽ được bỏ qua
+const storyUpload = {
+  single: (fieldName) => [
+    upload.single(fieldName),
+    convertToWebP({ quality: 80, deleteOriginal: true, skipVideos: true })
+  ],
+  
+  array: (fieldName, maxCount) => [
+    upload.array(fieldName, maxCount),
+    convertToWebP({ quality: 80, deleteOriginal: true, skipVideos: true })
+  ],
+};
 
 module.exports = storyUpload;

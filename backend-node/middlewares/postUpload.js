@@ -4,11 +4,20 @@ const multer = require("multer");
 
 const config = require("../config/env");
 const { createHttpError } = require("../utils/httpError");
+const convertToWebP = require("./convertToWebP");
 
 const uploadDirectory = path.resolve(__dirname, "..", "uploads", "posts");
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "video/mp4", "video/quicktime"]);
+const allowedMimeTypes = new Set([
+  "image/jpeg",
+  "image/png", 
+  "image/webp",
+  "image/jpg",
+  "image/heic",
+  "video/mp4",
+  "video/quicktime"
+]);
 
 const storage = multer.diskStorage({
   destination: (_req, _file, callback) => {
@@ -32,12 +41,31 @@ const fileFilter = (_req, file, callback) => {
   callback(null, true);
 };
 
-const postUpload = multer({
+const upload = multer({
   storage,
   fileFilter,
   limits: {
     fileSize: config.upload.postMediaMaxFileSize,
   },
 });
+
+// Export với middleware chuyển đổi WebP
+// Video sẽ được bỏ qua (skipVideos: true)
+const postUpload = {
+  single: (fieldName) => [
+    upload.single(fieldName),
+    convertToWebP({ quality: 80, deleteOriginal: true, skipVideos: true })
+  ],
+  
+  array: (fieldName, maxCount) => [
+    upload.array(fieldName, maxCount),
+    convertToWebP({ quality: 80, deleteOriginal: true, skipVideos: true })
+  ],
+  
+  fields: (fields) => [
+    upload.fields(fields),
+    convertToWebP({ quality: 80, deleteOriginal: true, skipVideos: true })
+  ],
+};
 
 module.exports = postUpload;
