@@ -4,6 +4,10 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import port from "@/api/api";
 import ReelCard from "@/components/ReelCard";
 import ReelCardSkeleton from "@/components/ReelCardSkeleton";
+import {
+  RiArrowUpLine,
+  RiArrowDownLine
+} from "@remixicon/react";
 
 type ReelItem = {
   post_id: number;
@@ -165,6 +169,12 @@ export default function Reels() {
         <div className="">
           {videos.length > 0 && (
             <div className="flex flex-col gap-8">
+              <div className="hidden md:block md:fixed md:top-1/2 md:right-10 md:-translate-y-1/2">
+                <div className="flex flex-col gap-2">
+                  <RiArrowUpLine className="cursor-pointer" />
+                  <RiArrowDownLine className="cursor-pointer" />
+                </div>
+              </div>
               {videos.map((v: ReelItem) => (
                 <ReelCard
                   item={v}

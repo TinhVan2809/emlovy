@@ -502,10 +502,6 @@ export default function CommentSheet({ onClose, post, kind }: Props) {
       const result = await response.json();
 
       if (result.success) {
-        // Socket.IO will handle the update, so we just clear the form.
-        // If replying, we might need to manually update the parent comment's reply list
-        // or refetch. For now, we rely on the 'post:commented' event which should
-        // also be fired for replies.
         setCommentContent("");
         setReplyingTo(null);
 
