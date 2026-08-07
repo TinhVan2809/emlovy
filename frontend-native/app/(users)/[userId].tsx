@@ -430,7 +430,7 @@ function ProfileHeader({
   profile: Profile | null;
 }) {
   const displayName = profile?.name || "Emlovy User";
-  const displayHandle = profile?.username ? `@${profile.username}` : "@emlovy";
+  const displayHandle = profile?.nickname ? `${profile.nickname}` : "@emlovy";
   const displaySignature = profile?.signature ? profile.signature : null;
 
   const avatarUrl = resolveMediaUrl(profile?.avatar_url || profile?.avata);
@@ -441,10 +441,20 @@ function ProfileHeader({
         <UserAvatar imageUrl={avatarUrl} name={displayName} size={86} />
 
         <View style={styles.heroMeta}>
-          <Text numberOfLines={1} style={styles.profileName}>
-            {displayName}
-          </Text>
-          <Text numberOfLines={1} style={styles.profileHandle}>
+          <View style={styles.displayNameContainer}>
+            <Text numberOfLines={1} style={styles.profileName}>
+              {displayName}
+            </Text>
+
+            <View style={styles.verifedImgContainer}>
+              <Image
+                style={styles.verifedImg}
+                source={require("../../assets/images/verifed.png")}
+                contentFit="cover"
+              />
+            </View>
+          </View>
+          <Text numberOfLines={2} style={styles.profileHandle}>
             {displayHandle}
           </Text>
           {isLoadingProfile ? (
@@ -572,9 +582,15 @@ function ProfileHeader({
       </View>
 
       <View style={styles.actions}>
-        <Text style={styles.actionText}>Ảnh</Text>
-        <Text style={styles.actionText}>Reels</Text>
-        <Text style={styles.actionText}>Khác</Text>
+        <Pressable style={styles.actionBtn}>
+          <Text style={styles.actionText}>Ảnh</Text>
+        </Pressable>
+        <Pressable style={styles.actionBtn}>
+          <Text style={styles.actionText}>Reels</Text>
+        </Pressable>
+        <Pressable style={styles.actionBtn}>
+          <Text style={styles.actionText}>Khác</Text>
+        </Pressable>
       </View>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -821,6 +837,19 @@ const styles = StyleSheet.create({
   heroMeta: {
     flex: 1,
   },
+  displayNameContainer: {
+    flexDirection: 'row',
+    alignItems: "center",
+    gap: 3
+  },
+  verifedImgContainer: {
+    width: 17,
+    height: 17,
+  },
+  verifedImg: {
+    flex: 1,
+    width: "100%",
+  },
   heroRow: {
     alignItems: "center",
     flexDirection: "row",
@@ -829,6 +858,13 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     gap: 14,
+  },
+  actionBtn: {
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 20,
   },
   actionText: {},
   infoGrid: {
