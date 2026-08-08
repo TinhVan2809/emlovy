@@ -31,20 +31,22 @@ type PostCardProps = {
 };
 
 const PostImage = memo(({ 
-  uri, 
-  width, 
-  maxHeight, 
-  onPress, 
+  uri,
+  width,
+  maxHeight,
+  onPress,
   backgroundColor,
-  aspectRatio, // ← Thêm prop aspectRatio từ parent
-}: { 
-  uri: string; 
-  width: number; 
-  maxHeight: number; 
-  onPress: () => void; 
+  aspectRatio,
+}: {
+  uri: string | null;
+  width: number;
+  maxHeight: number;
+  onPress: () => void;
   backgroundColor?: string;
-  aspectRatio?: number; // width / height
+  aspectRatio?: number;
 }) => {
+  const imageSource = uri ? { uri } : undefined;
+
   // Tính height ngay từ đầu dựa trên aspectRatio nếu có
   const calculatedHeight = useMemo(() => {
     if (aspectRatio && aspectRatio > 0) {
@@ -69,9 +71,9 @@ const PostImage = memo(({
     >
       <Image
         contentFit="contain"
-        source={{ uri }}
+        source={imageSource}
         onLoad={(e) => {
-          // Chỉ update nếu chưa có aspectRatio hoặc khác biệt đáng kể
+          // Chỉ update nếu chưa có aspectRatio từ server
           if (!aspectRatio) {
             const { width: w, height: h } = e.source;
             if (w && h) {
@@ -151,12 +153,21 @@ const PostCard = memo(function PostCard({
     post.author?.avatar_url || post.author?.avata,
   );
 
-  const imageUrls = useMemo(
+  const images = useMemo(
     () =>
       post.media
         .filter((item) => item.type === "image")
-        .map((item) => resolveMediaUrl(item.media_url))
-        .filter(Boolean) as string[],
+        .map((item) => ({
+          uri: resolveMediaUrl(item.media_url),
+          aspectRatio:
+            item.width && item.height && item.height > 0
+              ? item.width / item.height
+              : undefined,
+        }))
+        .filter(
+          (item): item is { uri: string; aspectRatio: number | undefined } =>
+            Boolean(item.uri),
+        ),
     [post.media],
   );
 
@@ -310,20 +321,21 @@ const PostCard = memo(function PostCard({
         </Modal>
       )}
 
-      {imageUrls.length > 0 ? (
+      {images.length > 0 ? (
         <ScrollView
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           style={styles.mediaFrame}
         >
-          {imageUrls.map((uri, idx) => (
+          {images.map((image, idx) => (
             <PostImage
-              key={uri + String(idx)}
-              uri={uri}
+              key={image.uri + String(idx)}
+              uri={image.uri}
               width={mediaWidth}
               maxHeight={mediaWidth * 1.7}
               backgroundColor={fallbackTone.tone}
+              aspectRatio={image.aspectRatio}
               onPress={() => {
                 setViewerIndex(idx);
                 setViewerVisible(true);
@@ -342,7 +354,7 @@ const PostCard = memo(function PostCard({
 
       <ImageViewer
         visible={viewerVisible}
-        images={imageUrls}
+        images={images.map(img => img.uri)}
         initialIndex={viewerIndex}
         onClose={() => setViewerVisible(false)}
       />

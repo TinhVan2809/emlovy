@@ -70,9 +70,19 @@ async function processFile(file, options) {
     }
   }
 
-  // Nếu file đã là WebP, không cần chuyển đổi
+  // Nếu file đã là WebP, không cần chuyển đổi nhưng vẫn đọc dimensions
   if (file.mimetype === "image/webp") {
-    return file;
+    try {
+      const metadata = await sharp(file.path).metadata();
+      return {
+        ...file,
+        width: metadata.width,
+        height: metadata.height,
+      };
+    } catch (error) {
+      console.error("Error reading WebP metadata:", error);
+      return file;
+    }
   }
 
   const originalPath = file.path;
@@ -101,6 +111,8 @@ async function processFile(file, options) {
       path: webpPath,
       mimetype: "image/webp",
       size: info.size,
+      width: info.width,
+      height: info.height,
       originalMimetype: file.mimetype,
       originalFilename: file.filename,
     };

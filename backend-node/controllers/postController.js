@@ -68,8 +68,8 @@ const mapUploadedMedia = (files = []) =>
       media_url: `/uploads/posts/${file.filename}`,
       type,
       sort_order: index,
-      width: null,
-      height: null,
+      width: file.width || null,
+      height: file.height || null,
       duration: null,
     };
   });
