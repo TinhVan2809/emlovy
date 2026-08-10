@@ -211,7 +211,7 @@ function PostCard({ i }: PostCardProps) {
           <div className="flex justify-between items-center">
             <div
               className="flex items-center gap-3 cursor-pointer"
-              onClick={() => router.push(`/profile/${postData.author?.user_id}`)}
+              onClick={isMyPost ? () => router.push(`/me/${postData.author?.user_id}`) :  () => router.push(`/profile/${postData.author?.user_id}`)}
             >
               <div className="relative w-10 h-10">
                 <Image

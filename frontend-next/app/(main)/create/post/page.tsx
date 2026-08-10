@@ -25,7 +25,7 @@ export default function CreatePost() {
   // const { socket } = useSocket();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Hiển thị tên file đã chọn (nếu cần)
+    // Hiển thị tên file đã chọn
     if (e.target.files) {
       const fileNames = Array.from(e.target.files)
         .map((file) => file.name)
