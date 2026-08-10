@@ -14,6 +14,7 @@ import {
   RiChat3Line,
   RiSendPlaneLine,
   RiBookmarkLine,
+  RiVerifiedBadgeFill
 } from "@remixicon/react";
 import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,7 @@ interface PostAuthor {
   name: string;
   username: string;
   avatar_url?: string;
+  is_verified?: number;
 }
 
 interface Post {
@@ -65,7 +67,11 @@ function PostCard({ i }: PostCardProps) {
   // State lưu post_id
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
 
+  // Kiểm tra post này là có thuộc về người đang đăng nhập
   const isMyPost = postData.author?.user_id === user?.user?.user_id;
+
+  // Kiểm tra tài khoản đã được verifed
+  const isVerifed = postData.author?.is_verified === 1 ? true : false;
 
   // hàm mở PostOptionsMenu
   const onPostOptionsMenu = (postId?: number) => {
@@ -223,8 +229,9 @@ function PostCard({ i }: PostCardProps) {
                 />
               </div>
               <div className="flex flex-col">
-                <p className="font-semibold text-sm hover:underline">
+                <p className="font-semibold text-sm flex items-center gap-1">
                   {postData.author?.name || "Anonymous"}
+                  <span>{isVerifed ? <RiVerifiedBadgeFill size={15} color="#0864f9"/> : ""}</span>
                 </p>
                 <p className="text-xs opacity-50">
                   {new Date(postData.created_at).toLocaleString()}
