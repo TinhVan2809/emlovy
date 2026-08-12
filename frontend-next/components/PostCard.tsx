@@ -22,6 +22,7 @@ import CommentSheet from "./comments-sheet";
 import EditPostModal, { type EditPostData } from "./EditPostModal";
 import { useUser } from "@/context/useUserContext";
 import DeletePost from "./DeletePost";
+import Report from "./Report";
 
 interface PostMedia {
   post_media_id: number;
@@ -72,6 +73,7 @@ function PostCard({ i }: PostCardProps) {
 
   // Kiểm tra tài khoản đã được verifed
   const isVerifed = postData.author?.is_verified === 1 ? true : false;
+
 
   // hàm mở PostOptionsMenu
   const onPostOptionsMenu = (postId?: number) => {
@@ -139,6 +141,7 @@ function PostCard({ i }: PostCardProps) {
 
   // Mở comment
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+
   const onToggleComment = (post: Post | null) => {
     setIsComment((v) => !v);
     setSelectedPost(post);
@@ -149,6 +152,22 @@ function PostCard({ i }: PostCardProps) {
     setIsComment((v) => !v);
     setSelectedPost(null);
   };
+
+    // Báo cáo bài viểt
+  const [isReport, setIsReport] = useState<boolean>(false);
+
+  // Mở báo cáo bài viét
+  const onToggleReport = (post_id: number) => {
+    setIsReport(true)
+    setSelectedPostId(post_id);
+  }
+
+  // Đóng báo cáo bài viết
+  const onCloseReport = () => {
+    setIsReport(false);
+    setSelectedPostId(null);
+    setPostOptionsMenu(false);
+  }
 
   useEffect(() => {
     if (postOptionsMenu || isEditingPost || isDelete) {
@@ -367,7 +386,7 @@ function PostCard({ i }: PostCardProps) {
                 className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
                 onClick={(e) => e.stopPropagation()}
               >
-                <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition">
+                <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition" onClick={()=> onToggleReport(postData.post_id)}>
                   Báo vi phạm
                 </button>
                 <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
@@ -414,6 +433,11 @@ function PostCard({ i }: PostCardProps) {
           onClose={handleCloseDelete}
           onDeleted={handleDeletedPost}
         />
+      )}
+
+      {/* Báo cáo bài viết */}
+      {isReport && (
+        <Report post_id={selectedPostId} onCloseReport={onCloseReport}/>
       )}
     </>
   );
