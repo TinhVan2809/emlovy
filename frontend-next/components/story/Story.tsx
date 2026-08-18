@@ -6,8 +6,12 @@ export default async function Story() {
     headers: {
       Cookie: cookieStore.toString(), // Do server component không thể tự động gửi cookie nên ta forward cookie
     },
+    credentials: "include",
   });
   const data = await resppnse.json();
-  return <div className=""></div>;
+  console.log(data);
+  return <div className="">
+    
+  </div>;
 }
 

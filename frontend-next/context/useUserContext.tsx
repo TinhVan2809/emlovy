@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import port from "@/api/api";
+import { writeAuthToken } from "@/utils/authToken";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,12 +60,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       if (data.success) {
         console.log("dang xuat thanh cong");
+        writeAuthToken(null);
         router.push("/login");
       }
     } catch (error) {
       console.error("Failed to logout:", error);
       // Dù API lỗi vẫn clear state
     } finally {
+      writeAuthToken(null);
       setUser(null);
     }
   }, [router]);

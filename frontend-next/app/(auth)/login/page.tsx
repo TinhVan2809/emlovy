@@ -5,6 +5,7 @@ import Link from "next/link";
 import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/useUserContext";
+import { writeAuthToken } from "@/utils/authToken";
 
 function Login() {
   const { refreshUser } = useUser();
@@ -61,6 +62,7 @@ function Login() {
 
       if (data.data?.user?.status === 1) {
         if (data.success) {
+          writeAuthToken(data.data?.token);
           if (data.data?.user?.role === "customer") {
             await refreshUser();
             await router.push("/");

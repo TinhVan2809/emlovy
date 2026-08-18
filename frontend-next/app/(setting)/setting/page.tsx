@@ -1,5 +1,5 @@
 "use client";
-import { RiArrowLeftLine, RiSearchLine } from "@remixicon/react";
+import { RiArrowLeftLine, RiSearchLine, RiNotification4Line } from "@remixicon/react";
 import { useState } from "react";
 import Image from "next/image";
 import { useUser } from "@/context/useUserContext";
@@ -59,7 +59,7 @@ export default function Setting() {
               <div className="flex flex-col gap-3">
                 <p className="font-semibold">Thông báo</p>
                 <div className="flex gap-4 cursor-pointer hover:bg-gray-200/50 p-3 rounded-md" onClick={() => setSettingTab("notification")}>
-                  <FaRegUserCircle size={22}/>
+                    <RiNotification4Line  size={22}/>
                   <p className="text-sm text-black/50 flex flex-col">
                     <span>Thông báo</span>
                     <span>Thông báo về bài viết, tin nhắn, hệ thống,...</span>

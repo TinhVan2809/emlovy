@@ -4,6 +4,7 @@ import {
   RiCameraLensFill,
   RiAddLargeLine,
   RiSearchLine,
+  RiMessage3Line,
   RiNotification2Line,
 } from "@remixicon/react";
 import { CgDetailsMore } from "react-icons/cg";
@@ -67,6 +68,12 @@ function SidebarLeft() {
           <RiSearchLine /> <span className="hidden lg:block">Tìm kiếm</span>
         </Link>
         <Link
+          href={"/chat"}
+          className="flex items-center lg:gap-4 lg:px-3 lg:py-1.5 lg:rounded-[20px] lg:min-w-60 lg:duration-200 lg:hover:bg-stone-300/40"
+        >
+          <RiMessage3Line /> <span className="hidden lg:block">Tin nhan</span>
+        </Link>
+        <Link
           href={"/notifications"}
           className="flex items-center lg:gap-4 lg:px-3 lg:py-1.5 lg:rounded-[20px] lg:min-w-60 lg:duration-200 lg:hover:bg-stone-300/40"
         >
@@ -89,7 +96,7 @@ function SidebarLeft() {
             }`}
           >
             <ul className="p-2">
-              <li className="px-3 py-2 text-sm rounded-lg hover:bg-gray-100 cursor-pointer">
+              <li className="px-3 py-2 text-sm rounded-lg hover:bg-gray-100 cursor-pointer" onClick={() => router.push("/setting")}>
                 Cài đặt
               </li>
               <li className="px-3 py-2 text-sm rounded-lg hover:bg-gray-100 cursor-pointer">

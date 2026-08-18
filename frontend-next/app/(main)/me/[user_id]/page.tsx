@@ -217,14 +217,8 @@ function Profile({ params }: Props) {
       {isSetting && (
         <div className="fixed z-1000 top-0 left-0 w-full h-screen bg-black/10 flex justify-center items-center">
           <div className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-              Cài đặt trang cá nhân
-            </button>
-            <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-              Cài đặt hệ thống
-            </button>
             <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition" onClick={() => router.push("/setting")}>
-              Cài đặt quyền riêng tư
+              Cài đặt và quyền riêng tư
             </button>
             <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
               Mã QR
