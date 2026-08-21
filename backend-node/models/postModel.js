@@ -385,6 +385,8 @@ const softDelete = async (postId) => {
 };
 
 module.exports = {
+  buildPostSelectFields,
+  hydratePosts,
   findById,
   createWithMedia,
   getFeed,

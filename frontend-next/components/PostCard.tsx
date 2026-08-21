@@ -14,6 +14,7 @@ import {
   RiChat3Line,
   RiSendPlaneLine,
   RiBookmarkLine,
+  RiBookmarkFill,
   RiVerifiedBadgeFill
 } from "@remixicon/react";
 import React, { useState, useCallback, useEffect } from "react";
@@ -95,9 +96,32 @@ function PostCard({ i }: PostCardProps) {
   const [liked, setLiked] = useState<boolean>(postData.liked_by_me ?? false);
   const [likeCount, setLikeCount] = useState<number>(i.like_count ?? 0);
   const [isLiking, setIsLiking] = useState<boolean>(false);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+
+  // Hàm kiểm tra bài viết này đã lưu trước đó chưa
+  useEffect(() => {
+    const checkSaved = async () => {
+      try {
+        const response = await fetch(
+          `${port}/api/post-save/${postData.post_id}/check`,
+          { credentials: "include" },
+        );
+
+        if (!response.ok) return;
+
+        const result = await response.json();
+        setIsSaved(result.success && result.data?.is_saved === true);
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra bài viết đã lưu:", error);
+      }
+    };
+
+    checkSaved();
+  }, [postData.post_id]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLiked(postData.liked_by_me ?? false);
     setLikeCount(postData.like_count ?? 0);
   }, [postData.liked_by_me, postData.like_count]);
@@ -153,7 +177,7 @@ function PostCard({ i }: PostCardProps) {
     setSelectedPost(null);
   };
 
-    // Báo cáo bài viểt
+  // Báo cáo bài viểt
   const [isReport, setIsReport] = useState<boolean>(false);
 
   // Mở báo cáo bài viét
@@ -226,6 +250,32 @@ function PostCard({ i }: PostCardProps) {
     return null;
   }
 
+  // Hàm kiểm tra và lưu/xóa lưu bài viết 
+  const handleSaveThisPost = async (postId: number) => {
+    if (isSaving) return;
+
+    const nextSaved = !isSaved;
+    setIsSaved(nextSaved);
+    setIsSaving(true);
+
+    try {
+      const response = await fetch(`${port}/api/post-save/${postId}`, {
+        method: nextSaved ? "POST" : "DELETE",
+        credentials: "include",
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Không thể cập nhật bài viết đã lưu.");
+      }
+    } catch (error) {
+      setIsSaved(!nextSaved);
+      console.error("Lỗi khi cập nhật bài viết đã lưu:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
       <div
@@ -236,7 +286,7 @@ function PostCard({ i }: PostCardProps) {
           <div className="flex justify-between items-center">
             <div
               className="flex items-center gap-3 cursor-pointer"
-              onClick={isMyPost ? () => router.push(`/me/${postData.author?.user_id}`) :  () => router.push(`/profile/${postData.author?.user_id}`)}
+              onClick={isMyPost ? () => router.push(`/me/${postData.author?.user_id}`) : () => router.push(`/profile/${postData.author?.user_id}`)}
             >
               <div className="relative w-10 h-10">
                 <Image
@@ -250,7 +300,7 @@ function PostCard({ i }: PostCardProps) {
               <div className="flex flex-col">
                 <p className="font-semibold text-sm flex items-center gap-1">
                   {postData.author?.name || "Anonymous"}
-                  <span>{isVerifed ? <RiVerifiedBadgeFill size={15} color="#0864f9"/> : ""}</span>
+                  <span>{isVerifed ? <RiVerifiedBadgeFill size={15} color="#0864f9" /> : ""}</span>
                 </p>
                 <p className="text-xs opacity-50">
                   {new Date(postData.created_at).toLocaleString()}
@@ -336,8 +386,12 @@ function PostCard({ i }: PostCardProps) {
               </span>
             </button>
           </div>
-          <div className="hover:opacity-60 cursor-pointer transition">
-            <RiBookmarkLine size={24} />
+          <div
+            className="hover:opacity-60 cursor-pointer transition"
+            onClick={() => handleSaveThisPost(postData.post_id)}
+            aria-label={isSaved ? "Bỏ lưu bài viết" : "Lưu bài viết"}
+          >
+            {isSaved ? <RiBookmarkFill size={24} /> : <RiBookmarkLine size={24} />}
           </div>
         </div>
       </div>
@@ -386,7 +440,7 @@ function PostCard({ i }: PostCardProps) {
                 className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
                 onClick={(e) => e.stopPropagation()}
               >
-                <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition" onClick={()=> onToggleReport(postData.post_id)}>
+                <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition" onClick={() => onToggleReport(postData.post_id)}>
                   Báo vi phạm
                 </button>
                 <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
@@ -437,7 +491,7 @@ function PostCard({ i }: PostCardProps) {
 
       {/* Báo cáo bài viết */}
       {isReport && (
-        <Report post_id={selectedPostId} onCloseReport={onCloseReport}/>
+        <Report post_id={selectedPostId} onCloseReport={onCloseReport} />
       )}
     </>
   );

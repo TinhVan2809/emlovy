@@ -716,7 +716,7 @@ export default function Chat() {
                                 {message.sender.name}
                               </p>
                             ) : null}
-                            <p className="whitespace-pre-wrap break-words text-sm leading-5">
+                            <p className="whitespace-pre-wrap wrap-break-words text-sm leading-5">
                               {message.content}
                             </p>
                             <p

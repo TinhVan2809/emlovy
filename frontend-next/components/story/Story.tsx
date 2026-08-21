@@ -9,7 +9,6 @@ export default async function Story() {
     credentials: "include",
   });
   const data = await resppnse.json();
-  console.log(data);
   return <div className="">
     
   </div>;

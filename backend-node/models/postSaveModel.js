@@ -36,7 +36,11 @@ const getSavedPosts = async ({ userId, page = 1, limit = 10, viewerId = null }) 
 
   // Query lấy chi tiết các bài viết
   const postIds = savedPostIds.map(row => row.post_id);
-  const placeholders = postIds.map(() => "?").join(", ");
+  const placeholders = postIds.map((_, index) => `:postId${index}`).join(", ");
+  const queryParams = postIds.reduce(
+    (params, postId, index) => ({ ...params, [`postId${index}`]: postId }),
+    { viewerId },
+  );
 
   const rows = await query(
     `
@@ -47,7 +51,7 @@ const getSavedPosts = async ({ userId, page = 1, limit = 10, viewerId = null }) 
       AND p.is_deleted = 0
     ORDER BY FIELD(p.post_id, ${placeholders})
     `,
-    [...postIds, ...postIds]
+    queryParams,
   );
 
   // Hydrate posts với media và thông tin tác giả
