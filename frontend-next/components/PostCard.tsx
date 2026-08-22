@@ -39,7 +39,7 @@ interface PostAuthor {
   is_verified?: number;
 }
 
-interface Post {
+export interface Post {
   post_id: number;
   content: string;
   media?: PostMedia[];
