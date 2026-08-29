@@ -84,7 +84,7 @@ function Saved() {
   return (
     <div className="flex flex-col gap-4 md:gap-8 items-center w-full">
       {!isInitialLoading && savedPosts.length === 0 && (
-        <div className="w-full rounded-xl border border-dashed border-gray-300 py-10 text-center text-sm text-gray-500">
+        <div className="w-full text-center text-sm text-gray-500">
           Chưa có bài viết nào được lưu.
         </div>
       )}
@@ -96,12 +96,6 @@ function Saved() {
       {isLoading && (
         <div className="text-center text-sm text-gray-500 py-4">
           Đang tải thêm...
-        </div>
-      )}
-
-      {!hasMore && savedPosts.length > 0 && (
-        <div className="text-center text-xs text-gray-400 py-4">
-          Bạn đã xem hết bài viết đã lưu.
         </div>
       )}
 

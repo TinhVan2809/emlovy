@@ -16,8 +16,6 @@ import {
   RiBookmarkFill,
   RiFilmFill,
   RiFilmLine,
-  RiPriceTag3Fill,
-  RiPriceTag3Line,
 } from "@remixicon/react";
 import MyPosts, { Post } from "@/components/me/MyPosts";
 import Saved from "@/components/me/Saved";
@@ -194,13 +192,6 @@ function Profile({ params }: Props) {
               <RiBookmarkLine size={26} className="sm:text-sm" />
             )}
           </Link>
-          <Link href={"#"} onClick={() => setTab("tagged")}>
-            {tab === "tagged" ? (
-              <RiPriceTag3Fill size={26} className="sm:text-sm" />
-            ) : (
-              <RiPriceTag3Line size={26} className="sm:text-sm" />
-            )}
-          </Link>
         </div>
       </div>
 
@@ -210,8 +201,6 @@ function Profile({ params }: Props) {
         {tab === "media" && <MyMedia />}
 
         {tab === "saved" && <Saved />}
-
-        {tab === "tagged" && <div className="">co mac ban</div>}
       </div>
 
       {isSetting && (

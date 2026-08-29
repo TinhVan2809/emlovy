@@ -444,9 +444,6 @@ function PostCard({ i }: PostCardProps) {
                   Báo vi phạm
                 </button>
                 <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-                  Lưu bài viết
-                </button>
-                <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
                   Chia sẻ
                 </button>
                 <button
