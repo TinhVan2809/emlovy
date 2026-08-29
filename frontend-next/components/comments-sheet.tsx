@@ -70,8 +70,8 @@ type Pagination = {
   totalPages: number;
   hasMore: boolean;
 };
-type User = {
-  user_id: string;
+type CommentUser = {
+  user_id: number;
   name: string;
   username?: string;
   avatar_url?: string | null;
@@ -90,7 +90,7 @@ function CommentItem({
 }: {
   comment: Comment;
   onReply: (comment: Comment) => void;
-  currentUser: User | null;
+  currentUser: CommentUser | null;
 }) {
   const avatarSrc = comment.author?.avatar_url
     ? `${port}/${comment.author.avatar_url}`

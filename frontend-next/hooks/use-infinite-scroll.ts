@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 interface UseInfiniteScrollOptions {
   /**
@@ -124,7 +124,7 @@ export function useInfiniteScroll({
  */
 export function useScrollDirection() {
   const lastScrollY = useRef(0);
-  const [scrollDirection, setScrollDirection] = useRef<'up' | 'down' | 'idle'>('idle');
+  const scrollDirection = useRef<'up' | 'down' | 'idle'>('idle');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -132,7 +132,7 @@ export function useScrollDirection() {
       const difference = currentScrollY - lastScrollY.current;
 
       if (Math.abs(difference) > 50) {
-        setScrollDirection.current = difference > 0 ? 'down' : 'up';
+        scrollDirection.current = difference > 0 ? 'down' : 'up';
       }
 
       lastScrollY.current = currentScrollY;
@@ -153,7 +153,7 @@ export function useScrollDirection() {
  */
 export function useInView(options?: IntersectionObserverInit) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useCallback(false);
+  const [isInView, setIsInView] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
@@ -173,7 +173,7 @@ export function useInView(options?: IntersectionObserverInit) {
     observer.observe(element);
 
     return () => observer.disconnect();
-  }, [options, setIsInView]);
+  }, [options]);
 
   return { ref, isInView };
 }

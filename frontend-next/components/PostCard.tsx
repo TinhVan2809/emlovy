@@ -93,13 +93,11 @@ function PostCard({ i }: PostCardProps) {
     ? `${port}/${postData.author.avatar_url}`
     : "/Profile-Default.webp";
 
-  const [liked, setLiked] = useState<boolean>(postData.liked_by_me ?? false);
-  const [likeCount, setLikeCount] = useState<number>(i.like_count ?? 0);
+  const [liked, setLiked] = useState<boolean>(() => postData.liked_by_me ?? false);
+  const [likeCount, setLikeCount] = useState<number>(() => postData.like_count ?? 0);
   const [isLiking, setIsLiking] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-
-
   // Hàm kiểm tra bài viết này đã lưu trước đó chưa
   useEffect(() => {
     const checkSaved = async () => {
@@ -121,10 +119,6 @@ function PostCard({ i }: PostCardProps) {
     checkSaved();
   }, [postData.post_id]);
 
-  useEffect(() => {
-    setLiked(postData.liked_by_me ?? false);
-    setLikeCount(postData.like_count ?? 0);
-  }, [postData.liked_by_me, postData.like_count]);
 
   const handleTogglePostLike = useCallback(async () => {
     if (isLiking) return;
@@ -193,14 +187,6 @@ function PostCard({ i }: PostCardProps) {
     setPostOptionsMenu(false);
   }
 
-  useEffect(() => {
-    if (postOptionsMenu || isEditingPost || isDelete) {
-      document.body.style.overflow = "hidden";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [postOptionsMenu, isEditingPost, isDelete]);
 
   // Mở model edit post
   const handleOpenEditPost = () => {
@@ -308,10 +294,61 @@ function PostCard({ i }: PostCardProps) {
               </div>
             </div>
             <div
-              className="cursor-pointer duration-150 hover:bg-gray-100 p-2 rounded-full"
+              className="relative cursor-pointer duration-150 hover:bg-gray-100 p-2 rounded-full"
               onClick={() => onPostOptionsMenu(i.post_id)}
             >
               <RiMoreLine size={20} />
+
+              {postOptionsMenu && (
+                <div
+                  className="absolute z-1000 w-[min(260px,calc(100vw-24px))] rounded-xl overflow-hidden border border-black/5 bg-white shadow-[0_20px_40px_rgba(15,23,42,0.18)] right-0 top-10 lg:left-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {isMyPost ? (
+                    <>
+                      <button
+                        className="w-full p-4 text-left border-b border-black/10 hover:bg-gray-50 transition"
+                        onClick={handleOpenEditPost}
+                      >
+                        Chỉnh sửa bài viết
+                      </button>
+                      <button
+                        className="w-full p-4 text-left border-b border-black/10 text-red-500 hover:bg-gray-50 transition"
+                        onClick={handleOpenDelete}
+                      >
+                        Gỡ bài viết
+                      </button>
+                      <button className="w-full p-4 text-left border-b border-black/10 hover:bg-gray-50 transition">
+                        Chia sẻ
+                      </button>
+                      <button
+                        className="w-full p-4 text-left hover:bg-gray-50 transition"
+                        onClick={() => onPostOptionsMenu()}
+                      >
+                        Hủy
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="w-full p-4 text-left border-b border-black/10 text-red-500 hover:bg-gray-50 transition"
+                        onClick={() => onToggleReport(postData.post_id)}
+                      >
+                        Báo vi phạm
+                      </button>
+                      <button className="w-full p-4 text-left border-b border-black/10 hover:bg-gray-50 transition">
+                        Chia sẻ
+                      </button>
+                      <button
+                        className="w-full p-4 text-left hover:bg-gray-50 transition"
+                        onClick={() => onPostOptionsMenu()}
+                      >
+                        Hủy
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <p className="text-[15px] leading-relaxed text-gray-800">
@@ -396,67 +433,7 @@ function PostCard({ i }: PostCardProps) {
         </div>
       </div>
 
-      {/* Mở postOptionsMenu */}
-      {postOptionsMenu && (
-        <div className="">
-          {isMyPost ? (
-            <div
-              className="w-full h-screen bg-black/40 fixed inset-0 z-1000 flex justify-center items-center p-4"
-              onClick={() => onPostOptionsMenu()}
-            >
-              <div
-                className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  className="p-4 border-b border-black/10 hover:bg-gray-50 transition"
-                  onClick={handleOpenEditPost}
-                >
-                  Chỉnh sửa bài viết
-                </button>
-                <button
-                  className="p-4 border-b text-red-500 border-black/10 hover:bg-gray-50 transition"
-                  onClick={handleOpenDelete}
-                >
-                  Gỡ bài viết
-                </button>
-                <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-                  Chia sẻ
-                </button>
-                <button
-                  className="p-4 hover:bg-gray-50 transition"
-                  onClick={() => onPostOptionsMenu()}
-                >
-                  Hủy
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div
-              className="w-full h-screen bg-black/40 fixed inset-0 z-1000 flex justify-center items-center p-4"
-              onClick={() => onPostOptionsMenu()}
-            >
-              <div
-                className="bg-white flex flex-col w-full max-w-xs rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button className="p-4 text-red-500 font-bold border-b border-black/10 hover:bg-gray-50 transition" onClick={() => onToggleReport(postData.post_id)}>
-                  Báo vi phạm
-                </button>
-                <button className="p-4 border-b border-black/10 hover:bg-gray-50 transition">
-                  Chia sẻ
-                </button>
-                <button
-                  className="p-4 hover:bg-gray-50 transition"
-                  onClick={() => onPostOptionsMenu()}
-                >
-                  Hủy
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+
 
       <EditPostModal
         open={isEditingPost}

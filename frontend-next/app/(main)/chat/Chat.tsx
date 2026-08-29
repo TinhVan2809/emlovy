@@ -292,15 +292,17 @@ export default function Chat() {
         );
         const payload = await readJson<PageData<ChatConversation>>(response);
 
-        if (!response.ok || !payload.success || !payload.data) {
+        const data = payload.data;
+
+        if (!response.ok || !payload.success || !data) {
           throw new Error(payload.message || "Khong the tai hoi thoai.");
         }
 
-        setConversationPagination(payload.data.pagination);
+        setConversationPagination(data.pagination);
         setConversations((current) =>
           replace
-            ? sortConversations(payload.data.items)
-            : sortConversations([...current, ...payload.data.items]),
+            ? sortConversations(data.items)
+            : sortConversations([...current, ...data.items]),
         );
         setError("");
       } catch (loadError) {
@@ -333,15 +335,15 @@ export default function Chat() {
         );
         const payload = await readJson<PageData<ChatMessage>>(response);
 
-        if (!response.ok || !payload.success || !payload.data) {
+        const data = payload.data;
+
+        if (!response.ok || !payload.success || !data) {
           throw new Error(payload.message || "Khong the tai tin nhan.");
         }
 
-        setMessagePagination(payload.data.pagination);
+        setMessagePagination(data.pagination);
         setMessages((current) =>
-          replace
-            ? mergeMessages([], payload.data.items)
-            : mergeMessages(payload.data.items, current),
+          replace ? mergeMessages([], data.items) : mergeMessages(data.items, current),
         );
         setError("");
       } catch (loadError) {
@@ -504,18 +506,20 @@ export default function Chat() {
       (sendError: Error | null, payload?: SendAck) => {
         setIsSending(false);
 
-        if (sendError || !payload?.success || !payload.data) {
+        const responseData = payload?.data;
+
+        if (sendError || !payload?.success || !responseData) {
           setComposerText(content);
           setError(payload?.message || "Khong the gui tin nhan.");
           return;
         }
 
         const nextConversation = touchConversationWithMessage(
-          payload.data.conversation,
-          payload.data.message,
+          responseData.conversation,
+          responseData.message,
         );
 
-        setMessages((current) => mergeMessages(current, [payload.data.message]));
+        setMessages((current) => mergeMessages(current, [responseData.message]));
         setConversations((current) => upsertConversation(current, nextConversation));
         setActiveConversation(nextConversation);
       },

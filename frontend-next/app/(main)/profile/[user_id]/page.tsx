@@ -2,9 +2,9 @@ import port from "@/api/api";
 import Image from "next/image";
 import {
   RiArrowRightUpLine,
-  RiQrCodeLine,
   RiUserAddLine,
 } from "@remixicon/react";
+import QRCode from "@/components/QRCode";
 
 interface Props {
   params: Promise<{ user_id: string }>;
@@ -29,6 +29,7 @@ interface ProfileData {
 async function Profile({ params }: Props) {
   const { user_id } = await params;
 
+
   const response = await fetch(`${port}/api/profile/${user_id}`, {
     method: "GET",
     headers: {
@@ -52,6 +53,11 @@ async function Profile({ params }: Props) {
   const avatarSrc = profile.avatar_url || profile.avata
     ? `${port}/${profile.avatar_url || profile.avata}`
     : "/Profile-Default.webp";
+
+
+
+
+
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -113,9 +119,7 @@ async function Profile({ params }: Props) {
           </div>
 
           <div className="flex gap-3 items-center justify-center md:justify-start">
-            <div className="cursor-pointer border border-gray-400 rounded-md p-1">
-              <RiQrCodeLine size={20} className="opacity-70" />
-            </div>
+            <QRCode user_id={user_id}/>
             <div className="cursor-pointer border border-gray-400 rounded-md p-1">
               <RiUserAddLine size={20} className="opacity-70" />
             </div>
