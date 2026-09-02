@@ -95,7 +95,7 @@ export default function UserQRCode({ user_id }: QRCodeProps) {
 
         const link = document.createElement("a");
         link.href = canvas.toDataURL("image/png");
-        link.download = `qr-code-${user_id}.png`;
+        link.download = `emlovy-qrcode.png`;
         link.click();
     };
 
@@ -112,7 +112,7 @@ export default function UserQRCode({ user_id }: QRCodeProps) {
                             ref={canvasRef}
                             width={300}
                             height={300}
-                            className="w-[300px] h-[300px] rounded-lg bg-white"
+                            className="w-75 h-75 rounded-lg bg-white"
                         />
                         <div className="w-full flex gap-1.5 flex-col">
                             <button

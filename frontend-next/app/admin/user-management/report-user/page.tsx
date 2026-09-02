@@ -1,3 +1,8 @@
-export default function ReportUserPage() {
-  return null;
+
+export default async function ReportUserPage() {
+
+
+  return (
+    null
+  )
 }

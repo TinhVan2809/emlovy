@@ -171,23 +171,6 @@ export default function PostFeed() {
             </div>
           </div>
         )}
-
-        {!hasNextPage && (
-          <div className="flex justify-between w-full">
-            <p className="text-sm opacity-70">&copy; Copyright emlovy - 2026</p>
-            <div className="flex gap-3">
-              <span className="text-sm opacity-70 cursor-pointer hover:underline">
-                APIs
-              </span>
-              <span className="text-sm opacity-70 cursor-pointer hover:underline">
-                Bảo mật
-              </span>
-              <span className="text-sm opacity-70 cursor-pointer hover:underline">
-                Chính sách và quyền riêng tư
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

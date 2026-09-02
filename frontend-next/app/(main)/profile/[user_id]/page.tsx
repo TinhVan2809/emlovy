@@ -54,11 +54,6 @@ async function Profile({ params }: Props) {
     ? `${port}/${profile.avatar_url || profile.avata}`
     : "/Profile-Default.webp";
 
-
-
-
-
-
   return (
     <div className="max-w-5xl mx-auto">
       <div className="grid md:grid-cols-3 items-center gap-5 md:gap-10 py-5 md:py-10">

@@ -5,7 +5,6 @@ import { use, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import {
   RiSettings2Line,
-  RiQrCodeLine,
   RiArrowRightUpLine,
 } from "@remixicon/react";
 import Link from "next/link";
@@ -21,6 +20,7 @@ import MyPosts, { Post } from "@/components/me/MyPosts";
 import Saved from "@/components/me/Saved";
 import MyMedia from "@/components/me/MyMedia";
 import { useRouter } from "next/navigation";
+import QRCode from "@/components/QRCode";
 interface Props {
   params: Promise<{ user_id: string }>;
 }
@@ -150,8 +150,8 @@ function Profile({ params }: Props) {
             </div>
           </div>
           <div className="flex gap-3 items-center justify-center md:justify-start">
-            <div className="cursor-pointer border border-gray-400 rounded-md p-1">
-              <RiQrCodeLine size={20} className="opacity-70" />
+            <div className="cursor-pointer rounded-md p-1">
+              <QRCode user_id={user_id}/> 
             </div>
             <div
               className="cursor-pointer border border-gray-400 rounded-md p-1"

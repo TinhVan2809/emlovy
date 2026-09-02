@@ -1,5 +1,6 @@
 "use client";
 
+import port from "@/api/api";
 import { useUser } from "@/context/useUserContext";
 import { useState } from "react";
 
@@ -26,7 +27,7 @@ export default function Report({ post_id, onCloseReport }: ReportProp) {
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/report", {
+      const response = await fetch(`${port}/api/reports`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -35,6 +36,7 @@ export default function Report({ post_id, onCloseReport }: ReportProp) {
           user_id: user.user_id,
           reason,
         }),
+        credentials: "include",
       });
 
       if (!response.ok) throw new Error("Failed to submit report");

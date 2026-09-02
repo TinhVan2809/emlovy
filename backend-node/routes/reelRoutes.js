@@ -10,6 +10,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const router = express.Router();
 
 router.get("/", optionalAuthenticate, asyncHandler(reelController.getReelsFeed));
+router.get("/random", optionalAuthenticate, asyncHandler(reelController.getRandomReels));
 router.get("/:id/comments", optionalAuthenticate, asyncHandler(reelController.getComments));
 
 router.post(

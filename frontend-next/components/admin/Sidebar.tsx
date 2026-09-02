@@ -75,7 +75,7 @@ function Sidebar() {
                     Nhóm người dùng
                   </li>
                 </NavLink>
-                <NavLink href={"#"} color="text-indigo-400">
+                <NavLink href={"/admin/user-management/report-user"} color="text-indigo-400">
                   <li className="cursor-pointer duration-100 hover:text-indigo-400">
                     Báo cáo người dùng
                   </li>
@@ -102,7 +102,7 @@ function Sidebar() {
                     Top bài viết
                   </li>
                 </NavLink>
-                <NavLink href="#" color="text-indigo-400">
+                <NavLink href={"/admin/post-management/report-post"} color="text-indigo-400">
                   <li className="cursor-pointer duration-100 hover:text-indigo-400">
                     Bài viết bị báo cáo
                   </li>

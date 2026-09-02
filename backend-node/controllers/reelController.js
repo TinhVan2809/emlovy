@@ -151,6 +151,26 @@ const getReelsFeed = async (req, res) => {
   res.status(200).json({ success: true, data });
 };
 
+const getRandomReels = async (req, res) => {
+  const requestedPage = Number.parseInt(req.query.page || "1", 10);
+  const requestedLimit = Number.parseInt(req.query.limit || "10", 10);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
+    ? Math.min(requestedLimit, 50)
+    : 10;
+  const requestedSeed = Number.parseInt(req.query.seed || "", 10);
+  const randomSeed = Number.isSafeInteger(requestedSeed) ? requestedSeed : Date.now();
+  
+  const data = await reelModel.getRandomReels({
+    page,
+    limit,
+    viewerId: req.user?.user_id || null,
+    randomSeed,
+  });
+
+  res.status(200).json({ success: true, data });
+};
+
 const toggleLike = async (req, res) => {
   const user = requireUser(req);
   const reelId = parseReelId(req.params.id);
@@ -259,6 +279,7 @@ module.exports = {
   createReel,
   deleteReel,
   getComments,
+  getRandomReels,
   getReelsFeed,
   toggleLike,
 };

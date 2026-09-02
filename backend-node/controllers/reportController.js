@@ -65,20 +65,34 @@ const getReportsByType = async (req, res) => {
 };
 
 const createReport = async (req, res) => {
-  const { reportType, reportedPostId, reportedUserId, reportedCommentId, reason } = req.body;
+  const {
+    report_type: reportType,
+    reportType: legacyReportType,
+    reported_post_id: reportedPostId,
+    reportedPostId: legacyReportedPostId,
+    reported_user_id: reportedUserId,
+    reportedUserId: legacyReportedUserId,
+    reported_comment_id: reportedCommentId,
+    reportedCommentId: legacyReportedCommentId,
+    reason,
+  } = req.body;
+  const normalizedReportType = reportType || legacyReportType;
+  const normalizedReportedPostId = reportedPostId || legacyReportedPostId;
+  const normalizedReportedUserId = reportedUserId || legacyReportedUserId;
+  const normalizedReportedCommentId = reportedCommentId || legacyReportedCommentId;
   const userId = req.user.user_id; // Reporter is the authenticated user
 
   const validReportTypes = ["post", "user", "comment"];
-  if (!validReportTypes.includes(reportType)) {
+  if (!validReportTypes.includes(normalizedReportType)) {
     throw createHttpError(400, "Loại báo cáo không hợp lệ.");
   }
 
   const newReport = await reportModel.createReport({
     userId,
-    reportType,
-    reportedPostId: reportedPostId || null,
-    reportedUserId: reportedUserId || null,
-    reportedCommentId: reportedCommentId || null,
+    reportType: normalizedReportType,
+    reportedPostId: normalizedReportedPostId || null,
+    reportedUserId: normalizedReportedUserId || null,
+    reportedCommentId: normalizedReportedCommentId || null,
     reason: reason || null,
   });
 

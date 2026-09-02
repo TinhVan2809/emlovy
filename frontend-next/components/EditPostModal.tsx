@@ -62,7 +62,6 @@ function EditPostModal({ open, post, onClose, onSaved }: EditPostModalProps) {
   if (!open || !post) {
     return null;
   }
-
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     setSelectedFiles(files);
