@@ -4,7 +4,7 @@ import { Post, UserInterest, ScoredPost } from "@/types/post";
  * Calculate recommendation score for a post based on:
  * - User interests (personalization)
  * - Post engagement (likes, comments, shares)
- * - Random bonus (exploration factor)
+ * - A small deterministic exploration factor
  */
 export function calculateScore(
   post: Post,
@@ -18,11 +18,11 @@ export function calculateScore(
   const engagement =
     post.like_count * 1 + post.comment_count * 3 + post.share_count * 5;
 
-  // Randomness: Add exploration factor (10% variance)
-  const randomBonus = Math.random() * 10;
+  // Keep ranking stable while the same cached posts are mounted again.
+  const explorationBonus = ((post.post_id * 9301 + 49297) % 233280) / 233280 * 10;
 
   // Final score formula
-  return interest * 10 + engagement + randomBonus;
+  return interest * 10 + engagement + explorationBonus;
 }
 
 /**

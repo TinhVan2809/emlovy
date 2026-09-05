@@ -6,7 +6,7 @@ Hệ thống gợi ý nội dung (Recommendation System) được thiết kế �
 
 1. **Personalization** - Sở thích cá nhân của người dùng
 2. **Engagement** - Mức độ tương tác (likes, comments, shares)
-3. **Randomness** - Yếu tố khám phá (exploration factor)
+3. **Exploration** - Yếu tố khám phá ổn định theo bài viết
 
 ## Workflow
 
@@ -29,12 +29,12 @@ Personalization   Randomness
 ## Score Calculation Formula
 
 ```typescript
-score = interest × 10 + engagement + randomBonus
+score = interest × 10 + engagement + explorationBonus
 
 where:
   interest = User's interest score for post category (0-10)
   engagement = likes × 1 + comments × 3 + shares × 5
-  randomBonus = random(0-10)
+  explorationBonus = deterministic(0-10)
 ```
 
 ### Giải thích công thức:
@@ -47,10 +47,9 @@ where:
   - Comments: Weight = 3 (tương tác trung bình)
   - Shares: Weight = 5 (tương tác cao nhất)
   
-- **Random Bonus (0-10)**: Thêm yếu tố ngẫu nhiên
+- **Exploration Bonus (0-10)**: Yếu tố khám phá ổn định theo `post_id`
   - Giúp khám phá nội dung mới
-  - Tránh echo chamber
-  - ~10% variance trong kết quả
+  - Tránh thứ tự bài viết thay đổi khi component remount
 
 ## Cấu trúc File
 
@@ -256,10 +255,10 @@ const engagement =
 
 ```typescript
 // Giảm randomness
-const randomBonus = Math.random() * 5;  // 0-5 instead of 0-10
+const explorationBonus = deterministic(post.post_id, 5);  // 0-5 instead of 0-10
 
 // Loại bỏ randomness hoàn toàn
-const randomBonus = 0;
+const explorationBonus = 0;
 ```
 
 ### Thêm time decay:
@@ -268,13 +267,13 @@ const randomBonus = 0;
 function calculateScore(post: Post, interests: UserInterest[]) {
   const interest = interests.find(i => i.category === post.category)?.score ?? 0;
   const engagement = post.like_count * 1 + post.comment_count * 3 + post.share_count * 5;
-  const randomBonus = Math.random() * 10;
+  const explorationBonus = deterministic(post.post_id, 10);
   
   // Time decay: Bài cũ giảm điểm
   const hoursSincePosted = (Date.now() - new Date(post.created_at).getTime()) / (1000 * 60 * 60);
   const timeDecay = Math.max(0, 1 - hoursSincePosted / 168); // Giảm dần trong 7 ngày
   
-  return (interest * 10 + engagement + randomBonus) * timeDecay;
+  return (interest * 10 + engagement + explorationBonus) * timeDecay;
 }
 ```
 

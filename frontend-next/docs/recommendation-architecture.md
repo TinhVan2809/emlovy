@@ -407,5 +407,3 @@ Integration Tests
    - Batch processing
 
 ---
-
-Made with ❤️ by Kiro

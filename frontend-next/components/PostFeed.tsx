@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import port from "@/api/api";
 import PostCard from "./PostCard";
 import { useSocket } from "@/context/SocketContext";
+import { useUserInterests } from "@/hooks/useUserInterests";
+import { rankPosts } from "@/utils/recommendation";
 import { Post, PostsPage } from "@/types/post";
 
 async function fetchPostsPage({
@@ -14,6 +16,7 @@ async function fetchPostsPage({
 }): Promise<PostsPage> {
   const res = await fetch(`${port}/api/posts?page=${pageParam}&limit=10`, {
     credentials: "include",
+    cache: "no-store",
   });
   if (!res.ok) throw new Error("Failed to fetch posts");
   const result = await res.json();
@@ -23,6 +26,7 @@ async function fetchPostsPage({
 export default function PostFeed() {
   const { socket } = useSocket();
   const queryClient = useQueryClient();
+  const { interests, isLoading: isLoadingInterests } = useUserInterests();
 
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -34,14 +38,24 @@ export default function PostFeed() {
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ["posts"], // key này = "địa chỉ" cache, dùng lại ở mọi nơi cần đụng tới feed
+    queryKey: ["posts"],
     queryFn: fetchPostsPage,
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.pagination.hasMore ? allPages.length + 1 : undefined,
   });
 
-  const posts = data?.pages.flatMap((page) => page.items) ?? [];
+  // Apply recommendation algorithm
+  const recommendedPosts = useMemo(() => {
+    const allPosts = data?.pages.flatMap((page) => page.items) ?? [];
+
+    if (isLoadingInterests || allPosts.length === 0) {
+      return allPosts;
+    }
+
+    // Rank all fetched posts by recommendation score
+    return rankPosts(allPosts, interests, allPosts.length);
+  }, [data?.pages, interests, isLoadingInterests]);
 
   useEffect(() => {
     if (!socket) return;
@@ -52,9 +66,9 @@ export default function PostFeed() {
         if (!old) return old;
         const [firstPage, ...restPages] = old.pages;
 
-        // chặn trùng key: nếu post đã có trong cache thì bỏ qua
+        // Prevent duplicate posts
         const alreadyExists = firstPage.items.some(
-          (p: Post) => p.post_id === newPost.post_id,
+          (p: Post) => p.post_id === newPost.post_id
         );
         if (alreadyExists) return old;
 
@@ -84,14 +98,14 @@ export default function PostFeed() {
           fetchNextPage();
         }
       },
-      { threshold: 0 },
+      { threshold: 0 }
     );
 
     observer.observe(target);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) {
+  if (isLoading || isLoadingInterests) {
     return (
       <div className="flex flex-col gap-5 md:gap-8 w-full items-center">
         {[1, 2, 3].map((n) => (
@@ -121,7 +135,7 @@ export default function PostFeed() {
 
   return (
     <div className="flex flex-col gap-4 md:gap-8 w-full items-center">
-      {posts.map((post) => (
+      {recommendedPosts.map((post) => (
         <PostCard i={post} key={post.post_id} />
       ))}
       <div
