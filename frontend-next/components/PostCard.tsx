@@ -15,7 +15,9 @@ import {
   RiSendPlaneLine,
   RiBookmarkLine,
   RiBookmarkFill,
-  RiVerifiedBadgeFill
+  RiVerifiedBadgeFill,
+  RiCheckboxCircleFill,
+  RiArrowRightSLine
 } from "@remixicon/react";
 import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -174,6 +176,9 @@ function PostCard({ i }: PostCardProps) {
   // Báo cáo bài viểt
   const [isReport, setIsReport] = useState<boolean>(false);
 
+  // Thông báo báo cáo bài viết thành công
+  const [reportSuccess, setReportSuccess] = useState(false);
+
   // Mở báo cáo bài viét
   const onToggleReport = (post_id: number) => {
     setIsReport(true)
@@ -185,6 +190,11 @@ function PostCard({ i }: PostCardProps) {
     setIsReport(false);
     setSelectedPostId(null);
     setPostOptionsMenu(false);
+    setReportSuccess(false)
+  }
+
+  const onReportSuccess = () => {
+    setReportSuccess(true)
   }
 
 
@@ -465,8 +475,25 @@ function PostCard({ i }: PostCardProps) {
 
       {/* Báo cáo bài viết */}
       {isReport && (
-        <Report post_id={selectedPostId} onCloseReport={onCloseReport} />
+        <Report post_id={selectedPostId} onCloseReport={onCloseReport} onReportSuccess={onReportSuccess} />
       )}
+
+      {reportSuccess && (
+        <div className="w-full h-dvh fixed inset-0 z-10000 bg-gray-100/90 flex justify-center items-center p-0 sm:p-4">
+          <div className="bg-white p-10 rounded-2xl flex flex-col gap-10">
+            <span className="flex gap-1 items-center"><RiCheckboxCircleFill size={25} color="green" /> Cảm ơn bạn đã gửi báo cáo bài viết này.</span>
+
+            <div className="flex flex-col gap-3">
+              <button className="flex items-center justify-between">Liên hệ CSKH <RiArrowRightSLine /></button>
+              <button className="flex items-center justify-between">Xem điều khoản của chúng tôi <RiArrowRightSLine /></button>
+            </div>
+            <button className="w-full rounded-sm bg-blue-600 text-white p-1.5" onClick={onCloseReport}>OK</button>
+
+          </div>
+        </div>
+
+      )}
+
     </>
   );
 }
