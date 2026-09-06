@@ -22,6 +22,7 @@ export type Post = {
   comment_count: number;
   share_count: number;
   category?: string;
+  is_pinned?: boolean;
 };
 
 export type PostsPage = {

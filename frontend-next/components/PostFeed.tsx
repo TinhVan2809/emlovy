@@ -9,6 +9,11 @@ import { useUserInterests } from "@/hooks/useUserInterests";
 import { rankPosts } from "@/utils/recommendation";
 import { Post, PostsPage } from "@/types/post";
 
+type PostsQueryData = {
+  pages: PostsPage[];
+  pageParams: unknown[];
+};
+
 async function fetchPostsPage({
   pageParam,
 }: {
@@ -17,10 +22,13 @@ async function fetchPostsPage({
   const res = await fetch(`${port}/api/posts?page=${pageParam}&limit=10`, {
     credentials: "include",
     cache: "no-store",
+    headers: {
+      "Cache-Control": "no-cache",
+    },
   });
   if (!res.ok) throw new Error("Failed to fetch posts");
   const result = await res.json();
-  return result.data; // { items, pagination }
+  return result.data;
 }
 
 export default function PostFeed() {
@@ -41,6 +49,11 @@ export default function PostFeed() {
     queryKey: ["posts"],
     queryFn: fetchPostsPage,
     initialPageParam: 1,
+    staleTime: 0,
+    gcTime: 1000 * 60 * 5,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.pagination.hasMore ? allPages.length + 1 : undefined,
   });
@@ -61,8 +74,7 @@ export default function PostFeed() {
     if (!socket) return;
 
     const handler = (newPost: Post) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      queryClient.setQueryData(["posts"], (old: any) => {
+      queryClient.setQueryData<PostsQueryData>(["posts"], (old) => {
         if (!old) return old;
         const [firstPage, ...restPages] = old.pages;
 
@@ -82,9 +94,45 @@ export default function PostFeed() {
       });
     };
 
+    const updateHandler = (updatedPost: Post) => {
+      queryClient.setQueryData<PostsQueryData>(["posts"], (old) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page: PostsPage) => ({
+            ...page,
+            items: page.items.map((post) =>
+              post.post_id === updatedPost.post_id ? updatedPost : post
+            ),
+          })),
+        };
+      });
+    };
+
+    const removeHandler = ({ post_id }: { post_id: number }) => {
+      queryClient.setQueryData<PostsQueryData>(["posts"], (old) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page: PostsPage) => ({
+            ...page,
+            items: page.items.filter((post) => post.post_id !== post_id),
+          })),
+        };
+      });
+    };
+
     socket.on("post:created", handler);
+    socket.on("post:updated", updateHandler);
+    socket.on("post:deleted", removeHandler);
+    socket.on("post:hidden", removeHandler);
     return () => {
       socket.off("post:created", handler);
+      socket.off("post:updated", updateHandler);
+      socket.off("post:deleted", removeHandler);
+      socket.off("post:hidden", removeHandler);
     };
   }, [socket, queryClient]);
 
