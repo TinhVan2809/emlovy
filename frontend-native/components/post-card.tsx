@@ -27,6 +27,7 @@ type PostCardProps = {
   onOpenAuthor?: (post: Post) => void;
   onOpenComments?: (post: Post) => void;
   onToggleLike?: (post: Post) => void;
+  onToggleSave?: (post: Post) => void;
   post: Post;
 };
 
@@ -137,6 +138,7 @@ const PostCard = memo(function PostCard({
   onOpenAuthor,
   onOpenComments,
   onToggleLike,
+  onToggleSave,
   post,
 }: PostCardProps) {
   const { width } = useWindowDimensions();
@@ -396,7 +398,13 @@ const PostCard = memo(function PostCard({
           />
         </View>
 
-        <Ionicons color={AppColors.text} name="bookmark-outline" size={22} />
+        <Pressable hitSlop={10} onPress={() => onToggleSave?.(post)}>
+          <Ionicons
+            color={AppColors.text}
+            name={post.is_saved ? "bookmark" : "bookmark-outline"}
+            size={22}
+          />
+        </Pressable>
       </View>
 
       {post.content ? (

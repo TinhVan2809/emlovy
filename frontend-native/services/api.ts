@@ -479,6 +479,18 @@ export const postApi = {
       token,
     });
   },
+  async save(token: string, postId: number) {
+    return request<{ post_id: number; user_id: number; saved_at: string }>(`/post-save/${postId}`, {
+      method: 'POST',
+      token,
+    });
+  },
+  async unsave(token: string, postId: number) {
+    return request<null>(`/post-save/${postId}`, {
+      method: 'DELETE',
+      token,
+    });
+  },
 };
 
 // [Reels]

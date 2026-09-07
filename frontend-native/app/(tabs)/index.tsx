@@ -354,6 +354,48 @@ export default function HomeScreen() {
     [patchPost, token],
   );
 
+  const savingPostIdsRef = useRef(new Set<number>());
+
+  const handleTogglePostSave = useCallback(
+    async (post: Post) => {
+      if (!token) {
+        setError("Bạn cần đăng nhập.");
+        return;
+      }
+
+      if (savingPostIdsRef.current.has(post.post_id)) {
+        return;
+      }
+
+      const shouldSave = !post.is_saved;
+
+      savingPostIdsRef.current.add(post.post_id);
+      patchPost(post.post_id, {
+        is_saved: shouldSave,
+      });
+
+      try {
+        shouldSave
+          ? await postApi.save(token, post.post_id)
+          : await postApi.unsave(token, post.post_id);
+        
+        setError("");
+      } catch (saveError) {
+        patchPost(post.post_id, {
+          is_saved: post.is_saved,
+        });
+        setError(
+          saveError instanceof Error
+            ? saveError.message
+            : "Không thể cập nhật lưu bài viết.",
+        );
+      } finally {
+        savingPostIdsRef.current.delete(post.post_id);
+      }
+    },
+    [patchPost, token],
+  );
+
   const handlePostCommentCountChange = useCallback(
     (postId: number, commentCount: number) => {
       patchPost(postId, { comment_count: commentCount });
@@ -430,6 +472,7 @@ export default function HomeScreen() {
         onOpenAuthor={handleOpenAuthor}
         onOpenComments={handleOpenComments}
         onToggleLike={handleTogglePostLike}
+        onToggleSave={handleTogglePostSave}
         post={item}
       />
     ),
@@ -438,6 +481,7 @@ export default function HomeScreen() {
       handleOpenAuthor,
       handleOpenComments,
       handleTogglePostLike,
+      handleTogglePostSave,
     ],
   );
 
@@ -574,6 +618,7 @@ const FeedPostItem = memo(function FeedPostItem({
   onOpenAuthor,
   onOpenComments,
   onToggleLike,
+  onToggleSave,
   post,
 }: {
   currentUserId?: number | null;
@@ -582,6 +627,7 @@ const FeedPostItem = memo(function FeedPostItem({
   onOpenAuthor: (post: Post) => void;
   onOpenComments: (post: Post) => void;
   onToggleLike: (post: Post) => void;
+  onToggleSave: (post: Post) => void;
   post: Post;
 }) {
   return (
@@ -593,6 +639,7 @@ const FeedPostItem = memo(function FeedPostItem({
         onOpenAuthor={onOpenAuthor}
         onOpenComments={onOpenComments}
         onToggleLike={onToggleLike}
+        onToggleSave={onToggleSave}
         post={post}
       />
     </View>
