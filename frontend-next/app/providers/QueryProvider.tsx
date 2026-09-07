@@ -13,9 +13,13 @@ export default function QueryProvider({
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 1000 * 60 * 5, // 5 phút: trong khoảng này coi data là "fresh"
-            gcTime: 1000 * 60 * 30, // 30 phút: giữ cache trong RAM dù không component nào dùng
-            refetchOnWindowFocus: false, // tránh fetch lại mỗi khi đổi tab/cửa sổ
+            staleTime: 1000 * 30 * 15,
+            gcTime: 1000 * 30 * 30,
+            refetchOnMount: true,
+            refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
+            retry: 2, // Retry 2 lần nếu fetch fail
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
           },
         },
       }),

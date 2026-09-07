@@ -94,6 +94,7 @@ export type Post = {
   is_edited: boolean;
   is_pinned: boolean;
   liked_by_me: boolean;
+  is_saved: boolean;
   created_at: string;
   updated_at: string;
   author: User;

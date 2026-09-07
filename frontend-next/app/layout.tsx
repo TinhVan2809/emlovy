@@ -1,5 +1,6 @@
 import { UserProvider } from "@/context/useUserContext";
 import { SocketProvider } from "@/context/SocketContext";
+import { RecommendationProvider } from "@/context/RecommendationContext";
 import QueryProvider from "./providers/QueryProvider";
 import "./globals.css";
 
@@ -20,7 +21,9 @@ export default function RootLayout({
       <UserProvider>
         <SocketProvider>
           <body>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider>
+              <RecommendationProvider>{children}</RecommendationProvider>
+            </QueryProvider>
           </body>
         </SocketProvider>
       </UserProvider>

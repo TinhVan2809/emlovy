@@ -1,37 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import port from "@/api/api";
 import PostCard from "./PostCard";
 import { useSocket } from "@/context/SocketContext";
+import { useUserInterests } from "@/hooks/useUserInterests";
+import { rankPosts } from "@/utils/recommendation";
+import { Post, PostsPage } from "@/types/post";
 
-type PostMedia = {
-  post_media_id: number;
-  media_url: string;
-  type: string;
-};
-
-type PostAuthor = {
-  user_id: number;
-  name: string;
-  username: string;
-};
-
-type Post = {
-  post_id: number;
-  content: string;
-  media?: PostMedia[];
-  author?: PostAuthor;
-  created_at: string;
-  like_count: number;
-  comment_count: number;
-  share_count: number;
-};
-
-type PostsPage = {
-  items: Post[];
-  pagination: { hasMore: boolean };
+type PostsQueryData = {
+  pages: PostsPage[];
+  pageParams: unknown[];
 };
 
 async function fetchPostsPage({
@@ -41,15 +21,20 @@ async function fetchPostsPage({
 }): Promise<PostsPage> {
   const res = await fetch(`${port}/api/posts?page=${pageParam}&limit=10`, {
     credentials: "include",
+    cache: "no-store",
+    headers: {
+      "Cache-Control": "no-cache",
+    },
   });
   if (!res.ok) throw new Error("Failed to fetch posts");
   const result = await res.json();
-  return result.data; // { items, pagination }
+  return result.data;
 }
 
 export default function PostFeed() {
   const { socket } = useSocket();
   const queryClient = useQueryClient();
+  const { interests, isLoading: isLoadingInterests } = useUserInterests();
 
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -61,27 +46,41 @@ export default function PostFeed() {
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ["posts"], // key này = "địa chỉ" cache, dùng lại ở mọi nơi cần đụng tới feed
+    queryKey: ["posts"],
     queryFn: fetchPostsPage,
     initialPageParam: 1,
+    staleTime: 0,
+    gcTime: 1000 * 60 * 5,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.pagination.hasMore ? allPages.length + 1 : undefined,
   });
 
-  const posts = data?.pages.flatMap((page) => page.items) ?? [];
+  // Apply recommendation algorithm
+  const recommendedPosts = useMemo(() => {
+    const allPosts = data?.pages.flatMap((page) => page.items) ?? [];
+
+    if (isLoadingInterests || allPosts.length === 0) {
+      return allPosts;
+    }
+
+    // Rank all fetched posts by recommendation score
+    return rankPosts(allPosts, interests, allPosts.length);
+  }, [data?.pages, interests, isLoadingInterests]);
 
   useEffect(() => {
     if (!socket) return;
 
     const handler = (newPost: Post) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      queryClient.setQueryData(["posts"], (old: any) => {
+      queryClient.setQueryData<PostsQueryData>(["posts"], (old) => {
         if (!old) return old;
         const [firstPage, ...restPages] = old.pages;
 
-        // chặn trùng key: nếu post đã có trong cache thì bỏ qua
+        // Prevent duplicate posts
         const alreadyExists = firstPage.items.some(
-          (p: Post) => p.post_id === newPost.post_id,
+          (p: Post) => p.post_id === newPost.post_id
         );
         if (alreadyExists) return old;
 
@@ -95,9 +94,45 @@ export default function PostFeed() {
       });
     };
 
+    const updateHandler = (updatedPost: Post) => {
+      queryClient.setQueryData<PostsQueryData>(["posts"], (old) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page: PostsPage) => ({
+            ...page,
+            items: page.items.map((post) =>
+              post.post_id === updatedPost.post_id ? updatedPost : post
+            ),
+          })),
+        };
+      });
+    };
+
+    const removeHandler = ({ post_id }: { post_id: number }) => {
+      queryClient.setQueryData<PostsQueryData>(["posts"], (old) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          pages: old.pages.map((page: PostsPage) => ({
+            ...page,
+            items: page.items.filter((post) => post.post_id !== post_id),
+          })),
+        };
+      });
+    };
+
     socket.on("post:created", handler);
+    socket.on("post:updated", updateHandler);
+    socket.on("post:deleted", removeHandler);
+    socket.on("post:hidden", removeHandler);
     return () => {
       socket.off("post:created", handler);
+      socket.off("post:updated", updateHandler);
+      socket.off("post:deleted", removeHandler);
+      socket.off("post:hidden", removeHandler);
     };
   }, [socket, queryClient]);
 
@@ -111,14 +146,14 @@ export default function PostFeed() {
           fetchNextPage();
         }
       },
-      { threshold: 0 },
+      { threshold: 0 }
     );
 
     observer.observe(target);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) {
+  if (isLoading || isLoadingInterests) {
     return (
       <div className="flex flex-col gap-5 md:gap-8 w-full items-center">
         {[1, 2, 3].map((n) => (
@@ -148,7 +183,7 @@ export default function PostFeed() {
 
   return (
     <div className="flex flex-col gap-4 md:gap-8 w-full items-center">
-      {posts.map((post) => (
+      {recommendedPosts.map((post) => (
         <PostCard i={post} key={post.post_id} />
       ))}
       <div

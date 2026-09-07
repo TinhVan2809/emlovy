@@ -22,6 +22,7 @@ const toPublicPost = (post) => {
     is_edited: Boolean(post.is_edited),
     is_pinned: Boolean(post.is_pinned),
     liked_by_me: Boolean(post.liked_by_me),
+    is_saved: Boolean(post.is_saved),
     created_at: post.created_at,
     updated_at: post.updated_at,
   };
@@ -51,7 +52,17 @@ const buildPostSelectFields = (viewerId = null) => `
             AND l.comment_id IS NULL
         )`
       : "0"
-  } AS liked_by_me
+  } AS liked_by_me,
+  ${
+    viewerId
+      ? `EXISTS(
+          SELECT 1
+          FROM post_save ps
+          WHERE ps.user_id = :viewerId
+            AND ps.post_id = p.post_id
+        )`
+      : "0"
+  } AS is_saved
 `;
 
 const toPostWithAuthor = (row) => {
