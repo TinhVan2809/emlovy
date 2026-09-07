@@ -17,7 +17,7 @@ import {
   RiBookmarkFill,
   RiVerifiedBadgeFill
 } from "@remixicon/react";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import CommentSheet from "./comments-sheet";
 import EditPostModal, { type EditPostData } from "./EditPostModal";
@@ -49,6 +49,7 @@ export interface Post {
   comment_count: number;
   share_count: number;
   liked_by_me?: boolean;
+  is_saved?: boolean;
 }
 
 interface PostCardProps {
@@ -96,28 +97,8 @@ function PostCard({ i }: PostCardProps) {
   const [liked, setLiked] = useState<boolean>(() => postData.liked_by_me ?? false);
   const [likeCount, setLikeCount] = useState<number>(() => postData.like_count ?? 0);
   const [isLiking, setIsLiking] = useState<boolean>(false);
-  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isSaved, setIsSaved] = useState<boolean>(() => postData.is_saved ?? false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  // Hàm kiểm tra bài viết này đã lưu trước đó chưa
-  useEffect(() => {
-    const checkSaved = async () => {
-      try {
-        const response = await fetch(
-          `${port}/api/post-save/${postData.post_id}/check`,
-          { credentials: "include" },
-        );
-
-        if (!response.ok) return;
-
-        const result = await response.json();
-        setIsSaved(result.success && result.data?.is_saved === true);
-      } catch (error) {
-        console.error("Lỗi khi kiểm tra bài viết đã lưu:", error);
-      }
-    };
-
-    checkSaved();
-  }, [postData.post_id]);
 
 
   const handleTogglePostLike = useCallback(async () => {
