@@ -11,13 +11,13 @@
 import dynamic from "next/dynamic";
 
 // Loading spinner component
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center p-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-    </div>
-  );
-}
+// function LoadingSpinner() {
+//   return (
+//     <div className="flex items-center justify-center p-8">
+//       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+//     </div>
+//   );
+// }
 
 // Skeleton cho modal - nhỏ gọn
 function ModalSkeleton() {
@@ -36,22 +36,55 @@ function ModalSkeleton() {
   );
 }
 
-// Skeleton cho delete modal - nhỏ hơn
-function DeleteModalSkeleton() {
+
+// Skeletion cho reel card
+export function ReelCardSkeleton() {
   return (
-    <div className="fixed inset-0 z-1100 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl p-5 max-w-sm w-full animate-pulse shadow-2xl">
-        <div className="h-5 bg-gray-200 rounded w-2/3 mb-3" />
-        <div className="h-4 bg-gray-200 rounded w-full mb-2" />
-        <div className="h-4 bg-gray-200 rounded w-4/5 mb-4" />
-        <div className="flex gap-2 justify-end">
-          <div className="h-9 bg-gray-200 rounded w-16" />
-          <div className="h-9 bg-gray-200 rounded w-16" />
+    <div className="w-full h-screen md:h-auto md:max-w-87.5 lg:max-w-100 md:border md:border-zinc-700 md:rounded-lg overflow-hidden bg-black md:shadow-lg animate-pulse">
+      <div className="relative w-full h-full md:aspect-9/16 bg-zinc-800 flex items-end justify-between p-5">
+        {/* Left side: Author info */}
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-1.5 items-center">
+            <div className="h-9 w-9 rounded-full bg-zinc-700"></div>
+            <div className="h-3 w-24 rounded bg-zinc-700"></div>
+          </div>
+          <div className="h-2 w-40 rounded bg-zinc-700"></div>
+        </div>
+        {/* Right side: Actions */}
+        <div className="flex flex-col gap-5 items-center">
+          <div className="flex flex-col items-center gap-1">
+            <div className="h-7 w-7 rounded-full bg-zinc-700"></div>
+            <div className="h-2 w-4 rounded bg-zinc-700"></div>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="h-7 w-7 rounded-full bg-zinc-700"></div>
+            <div className="h-2 w-4 rounded bg-zinc-700"></div>
+          </div>
+          <div className="h-7 w-7 rounded-full bg-zinc-700"></div>
+          <div className="h-7 w-7 rounded-full bg-zinc-700"></div>
+          <div className="h-7 w-7 rounded-full bg-zinc-700"></div>
         </div>
       </div>
     </div>
   );
 }
+
+// Skeleton cho delete modal - nhỏ hơn
+// function DeleteModalSkeleton() {
+//   return (
+//     <div className="fixed inset-0 z-1100 bg-black/50 flex items-center justify-center p-4">
+//       <div className="bg-white rounded-2xl p-5 max-w-sm w-full animate-pulse shadow-2xl">
+//         <div className="h-5 bg-gray-200 rounded w-2/3 mb-3" />
+//         <div className="h-4 bg-gray-200 rounded w-full mb-2" />
+//         <div className="h-4 bg-gray-200 rounded w-4/5 mb-4" />
+//         <div className="flex gap-2 justify-end">
+//           <div className="h-9 bg-gray-200 rounded w-16" />
+//           <div className="h-9 bg-gray-200 rounded w-16" />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 /**
  * Comments Sheet - Chỉ load khi người dùng click vào comments

@@ -17,7 +17,7 @@ import {
   RiBookmarkFill,
   RiVerifiedBadgeFill,
   RiCheckboxCircleFill,
-  RiArrowRightSLine
+  RiArrowRightSLine,
 } from "@remixicon/react";
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -78,7 +78,6 @@ function PostCard({ i }: PostCardProps) {
   // Kiểm tra tài khoản đã được verifed
   const isVerifed = postData.author?.is_verified === 1 ? true : false;
 
-
   // hàm mở PostOptionsMenu
   const onPostOptionsMenu = (postId?: number) => {
     setPostOptionsMenu((v) => !v);
@@ -96,12 +95,17 @@ function PostCard({ i }: PostCardProps) {
     ? `${port}/${postData.author.avatar_url}`
     : "/Profile-Default.webp";
 
-  const [liked, setLiked] = useState<boolean>(() => postData.liked_by_me ?? false);
-  const [likeCount, setLikeCount] = useState<number>(() => postData.like_count ?? 0);
+  const [liked, setLiked] = useState<boolean>(
+    () => postData.liked_by_me ?? false,
+  );
+  const [likeCount, setLikeCount] = useState<number>(
+    () => postData.like_count ?? 0,
+  );
   const [isLiking, setIsLiking] = useState<boolean>(false);
-  const [isSaved, setIsSaved] = useState<boolean>(() => postData.is_saved ?? false);
+  const [isSaved, setIsSaved] = useState<boolean>(
+    () => postData.is_saved ?? false,
+  );
   const [isSaving, setIsSaving] = useState<boolean>(false);
-
 
   const handleTogglePostLike = useCallback(async () => {
     if (isLiking) return;
@@ -114,10 +118,13 @@ function PostCard({ i }: PostCardProps) {
     setIsLiking(true);
 
     try {
-      const response = await fetch(`${port}/api/posts/${postData.post_id}/like`, {
-        method: nextLiked ? "POST" : "DELETE",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${port}/api/posts/${postData.post_id}/like`,
+        {
+          method: nextLiked ? "POST" : "DELETE",
+          credentials: "include",
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Không thể cập nhật lượt thích.");
@@ -162,22 +169,21 @@ function PostCard({ i }: PostCardProps) {
 
   // Mở báo cáo bài viét
   const onToggleReport = (post_id: number) => {
-    setIsReport(true)
+    setIsReport(true);
     setSelectedPostId(post_id);
-  }
+  };
 
   // Đóng báo cáo bài viết
   const onCloseReport = () => {
     setIsReport(false);
     setSelectedPostId(null);
     setPostOptionsMenu(false);
-    setReportSuccess(false)
-  }
+    setReportSuccess(false);
+  };
 
   const onReportSuccess = () => {
-    setReportSuccess(true)
-  }
-
+    setReportSuccess(true);
+  };
 
   // Mở model edit post
   const handleOpenEditPost = () => {
@@ -189,7 +195,6 @@ function PostCard({ i }: PostCardProps) {
     setIsEditingPost(true);
     setPostOptionsMenu(false);
   };
-
 
   // Cập nhật sau khi edit post
   const handleSavedPost = (updatedPost: EditPostData) => {
@@ -227,7 +232,7 @@ function PostCard({ i }: PostCardProps) {
     return null;
   }
 
-  // Hàm kiểm tra và lưu/xóa lưu bài viết 
+  // Hàm kiểm tra và lưu/xóa lưu bài viết
   const handleSaveThisPost = async (postId: number) => {
     if (isSaving) return;
 
@@ -243,7 +248,9 @@ function PostCard({ i }: PostCardProps) {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.message || "Không thể cập nhật bài viết đã lưu.");
+        throw new Error(
+          result.message || "Không thể cập nhật bài viết đã lưu.",
+        );
       }
     } catch (error) {
       setIsSaved(!nextSaved);
@@ -263,7 +270,11 @@ function PostCard({ i }: PostCardProps) {
           <div className="flex justify-between items-center">
             <div
               className="flex items-center gap-3 cursor-pointer"
-              onClick={isMyPost ? () => router.push(`/me/${postData.author?.user_id}`) : () => router.push(`/profile/${postData.author?.user_id}`)}
+              onClick={
+                isMyPost
+                  ? () => router.push(`/me/${postData.author?.user_id}`)
+                  : () => router.push(`/profile/${postData.author?.user_id}`)
+              }
             >
               <div className="relative w-10 h-10">
                 <Image
@@ -277,7 +288,13 @@ function PostCard({ i }: PostCardProps) {
               <div className="flex flex-col">
                 <p className="font-semibold text-sm flex items-center gap-1">
                   {postData.author?.name || "Anonymous"}
-                  <span>{isVerifed ? <RiVerifiedBadgeFill size={15} color="#0864f9" /> : ""}</span>
+                  <span>
+                    {isVerifed ? (
+                      <RiVerifiedBadgeFill size={15} color="#0864f9" />
+                    ) : (
+                      ""
+                    )}
+                  </span>
                 </p>
                 <p className="text-xs opacity-50">
                   {new Date(postData.created_at).toLocaleString()}
@@ -351,7 +368,9 @@ function PostCard({ i }: PostCardProps) {
             <div className="w-full flex flex-col gap-1">
               <Swiper
                 modules={[Pagination]}
-                pagination={postData.media.length > 1 ? { type: "fraction" } : false}
+                pagination={
+                  postData.media.length > 1 ? { type: "fraction" } : false
+                }
                 grabCursor
                 spaceBetween={0}
                 slidesPerView={1}
@@ -419,12 +438,14 @@ function PostCard({ i }: PostCardProps) {
             onClick={() => handleSaveThisPost(postData.post_id)}
             aria-label={isSaved ? "Bỏ lưu bài viết" : "Lưu bài viết"}
           >
-            {isSaved ? <RiBookmarkFill size={24} /> : <RiBookmarkLine size={24} />}
+            {isSaved ? (
+              <RiBookmarkFill size={24} />
+            ) : (
+              <RiBookmarkLine size={24} />
+            )}
           </div>
         </div>
       </div>
-
-
 
       <EditPostModal
         open={isEditingPost}
@@ -456,25 +477,38 @@ function PostCard({ i }: PostCardProps) {
 
       {/* Báo cáo bài viết */}
       {isReport && (
-        <Report post_id={selectedPostId} onCloseReport={onCloseReport} onReportSuccess={onReportSuccess} />
+        <Report
+          post_id={selectedPostId}
+          onCloseReport={onCloseReport}
+          onReportSuccess={onReportSuccess}
+        />
       )}
 
       {reportSuccess && (
         <div className="w-full h-dvh fixed inset-0 z-10000 bg-gray-100/90 flex justify-center items-center p-0 sm:p-4">
           <div className="bg-white p-10 rounded-2xl flex flex-col gap-10">
-            <span className="flex gap-1 items-center"><RiCheckboxCircleFill size={25} color="green" /> Cảm ơn bạn đã gửi báo cáo bài viết này.</span>
+            <span className="flex gap-1 items-center">
+              <RiCheckboxCircleFill size={25} color="green" /> Cảm ơn bạn đã gửi
+              báo cáo bài viết này.
+            </span>
 
             <div className="flex flex-col gap-3">
-              <button className="flex items-center justify-between">Liên hệ CSKH <RiArrowRightSLine /></button>
-              <button className="flex items-center justify-between">Xem điều khoản của chúng tôi <RiArrowRightSLine /></button>
+              <button className="flex items-center justify-between">
+                Liên hệ CSKH <RiArrowRightSLine />
+              </button>
+              <button className="flex items-center justify-between">
+                Xem điều khoản của chúng tôi <RiArrowRightSLine />
+              </button>
             </div>
-            <button className="w-full rounded-sm bg-blue-600 text-white p-1.5" onClick={onCloseReport}>OK</button>
-
+            <button
+              className="w-full rounded-sm bg-blue-600 text-white p-1.5"
+              onClick={onCloseReport}
+            >
+              OK
+            </button>
           </div>
         </div>
-
       )}
-
     </>
   );
 }

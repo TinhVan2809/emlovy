@@ -3,11 +3,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import port from "@/api/api";
 import ReelCard from "@/components/ReelCard";
-import ReelCardSkeleton from "@/components/ReelCardSkeleton";
-import {
-  RiArrowUpLine,
-  RiArrowDownLine
-} from "@remixicon/react";
+import { ReelCardSkeleton } from "@/components/lazy-components";
+import { RiArrowUpLine, RiArrowDownLine } from "@remixicon/react";
 
 type ReelItem = {
   post_id: number;
@@ -164,55 +161,62 @@ export default function Reels() {
   }, [videos.length]);
 
   return (
-    <div className="gap-8 p-4">
+    <div className="w-full min-h-screen md:gap-8 md:p-4 bg-black md:bg-transparent overflow-x-hidden">
       <div className="flex justify-center">
-        <div className="">
+        <div className="w-full md:w-auto">
           {videos.length > 0 && (
-            <div className="flex flex-col gap-8">
-              <div className="hidden md:block md:fixed md:top-1/2 md:right-10 md:-translate-y-1/2">
-                <div className="flex flex-col gap-2">
-                  <RiArrowUpLine className="cursor-pointer" />
-                  <RiArrowDownLine className="cursor-pointer" />
+            <div className="flex flex-col md:gap-8 snap-y snap-mandatory md:snap-none overflow-y-auto md:overflow-y-visible h-screen md:h-auto">
+              <div className="hidden lg:block lg:fixed lg:top-1/2 lg:right-10 lg:-translate-y-1/2 lg:z-20">
+                <div className="flex flex-col gap-2 bg-white/10 backdrop-blur-sm rounded-full p-2">
+                  <RiArrowUpLine
+                    className="cursor-pointer text-white hover:text-gray-300"
+                    size={24}
+                  />
+                  <RiArrowDownLine
+                    className="cursor-pointer text-white hover:text-gray-300"
+                    size={24}
+                  />
                 </div>
               </div>
               {videos.map((v: ReelItem) => (
-                <ReelCard
-                  item={v}
-                  key={v.post_id}
-                  setVideoRef={setVideoRef}
-                  isMuted={isMuted}
-                  onToggleMute={handleToggleMute}
-                />
+                <div key={v.post_id} className="snap-start md:snap-align-none">
+                  <ReelCard
+                    item={v}
+                    setVideoRef={setVideoRef}
+                    isMuted={isMuted}
+                    onToggleMute={handleToggleMute}
+                  />
+                </div>
               ))}
             </div>
           )}
+        </div>
 
-          {/* Skeleton cho lần tải đầu tiên */}
-          {isLoading && videos.length === 0 && (
-            <div className="flex flex-col gap-8">
-              {[1, 2].map((n) => (
-                <ReelCardSkeleton key={n} />
-              ))}
-            </div>
-          )}
-
-          {/* Thông báo khi không có video */}
-          {!isLoading && videos.length === 0 && (
-            <div className="w-screen h-screen flex justify-center items-center bg-black">
-              <p className="text-white">Chưa có video nào.</p>
-            </div>
-          )}
-
-          {/* Observer Target và Loading Indicator */}
-          <div
-            ref={observerTarget}
-            className="flex justify-center items-center mt-8"
-          >
-            {isLoading && videos.length > 0 && <ReelCardSkeleton />}
-            {!hasMore && videos.length > 0 && (
-              <p className="text-gray-500">Bạn đã xem hết video.</p>
-            )}
+        {/* Skeleton cho lần tải đầu tiên */}
+        {isLoading && videos.length === 0 && (
+          <div className="flex flex-col md:gap-8">
+            {[1, 2].map((n) => (
+              <ReelCardSkeleton key={n} />
+            ))}
           </div>
+        )}
+
+        {/* Thông báo khi không có video */}
+        {!isLoading && videos.length === 0 && (
+          <div className="w-screen h-screen flex justify-center items-center bg-black">
+            <p className="text-white">Chưa có video nào.</p>
+          </div>
+        )}
+
+        {/* Observer Target và Loading Indicator */}
+        <div
+          ref={observerTarget}
+          className="flex justify-center items-center md:mt-8"
+        >
+          {isLoading && videos.length > 0 && <ReelCardSkeleton />}
+          {!hasMore && videos.length > 0 && (
+            <p className="text-gray-500 py-4">Bạn đã xem hết video.</p>
+          )}
         </div>
       </div>
     </div>

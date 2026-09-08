@@ -114,7 +114,7 @@ export default function UserQRCode({ user_id }: QRCodeProps) {
                             height={300}
                             className="w-75 h-75 rounded-lg bg-white"
                         />
-                        <div className="w-full flex gap-1.5 flex-col">
+                        <div className="w-full flex gap-1.5 flex-col mt-3">
                             <button
                                 className="w-full rounded-xl py-2.5 bg-black text-white"
                                 onClick={downloadQR}
