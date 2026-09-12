@@ -142,13 +142,13 @@ function ReelCard({
   return (
     <>
       <div
-        className="max-w-87.5 w-full border rounded-lg overflow-hidden bg-black shadow-lg"
+        className="w-full h-screen md:h-auto md:max-w-87.5 lg:max-w-90 md:border md:rounded-lg overflow-hidden bg-black md:shadow-lg"
         key={v.post_id}
         data-post-id={v.post_id}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="relative group aspect-9/16 bg-zinc-900 flex items-center justify-center overflow-hidden">
+        <div className="relative group w-full h-full md:aspect-9/16 bg-zinc-900 flex items-center justify-center overflow-hidden">
           {v.media && v.media.length > 0 && (
             <video
               ref={handleRef}
@@ -165,23 +165,23 @@ function ReelCard({
             />
           )}
 
-          {/* Overlay controls: appear on hover */}
+          {/* Overlay controls: appear on hover (desktop) or touch (mobile) */}
           <div
             className={`absolute inset-0 z-10 flex flex-col justify-between transition-opacity duration-150 pointer-events-none ${
-              isHovered ? "opacity-100" : "opacity-0"
+              isHovered ? "opacity-100" : "opacity-0 md:opacity-0"
             }`}
           >
-            <div className="flex p-3 justify-between pointer-events-auto">
-              <button className="bg-black/60 text-white p-2 rounded-full shadow-sm">
-                <CiSearch />
+            <div className="flex p-3 md:p-3 justify-between pointer-events-auto">
+              <button className="bg-black/60 text-white p-2 rounded-full shadow-sm hover:bg-black/80 transition-colors">
+                <CiSearch size={20} />
               </button>
               <button
                 onClick={toggleMute}
                 aria-pressed={!isMuted}
                 aria-label={isMuted ? "Unmute" : "Mute"}
-                className="bg-black/60 text-white p-2 rounded-full shadow-sm"
+                className="bg-black/60 text-white p-2 rounded-full shadow-sm hover:bg-black/80 transition-colors"
               >
-                {isMuted ? <VscMute /> : <VscUnmute />}
+                {isMuted ? <VscMute size={20} /> : <VscUnmute size={20} />}
               </button>
             </div>
 
@@ -192,87 +192,97 @@ function ReelCard({
                   togglePlay();
                 }}
                 aria-label={isPlaying ? "Pause" : "Play"}
-                className="bg-white/90 text-black p-3 rounded-full shadow-lg"
+                className="bg-white/90 text-black p-3 md:p-4 rounded-full shadow-lg hover:bg-white transition-all"
               >
-                {isPlaying ? <TbPlayerPauseFilled /> : <TbPlayerPlayFilled />}
+                {isPlaying ? (
+                  <TbPlayerPauseFilled size={24} />
+                ) : (
+                  <TbPlayerPlayFilled size={24} />
+                )}
               </button>
             </div>
 
-            <div className="w-full pointer-events-auto">
+            <div className="w-full pointer-events-auto px-2 md:px-2">
               <input
                 type="range"
                 min={0}
                 max={100}
                 value={Math.min(Math.max(progress || 0, 0), 100)}
                 onChange={handleSeek}
-                className="w-full h-1 accent-white"
+                className="block w-full h-1 accent-white cursor-pointer"
                 aria-label="Seek"
               />
             </div>
           </div>
 
           {/* Author info and Actions */}
-          <div className="absolute right-0 bottom-0 z-1 inset-0 flex justify-end items-end">
-            <div className="flex w-full justify-between items-end">
-              <div className="py-3 px-5 flex flex-col gap-1">
-                <div className="flex gap-1.5 text-white items-center">
-                  <div className="relative h-9 w-9">
+          <div className="absolute right-0 bottom-0 z-1 inset-0 flex justify-end items-end pointer-events-none">
+            <div className="flex w-full justify-between items-end pointer-events-auto">
+              <div className="py-3 px-3 md:px-5 flex flex-col gap-1 max-w-[70%] md:max-w-[65%]">
+                <div className="flex gap-1.5 text-white items-center flex-wrap">
+                  <div className="relative h-8 w-8 md:h-9 md:w-9 shrink-0">
                     <Image
                       src={videoSrc}
                       alt="avatar"
                       fill
-                      className="rounded-full"
+                      className="rounded-full object-cover"
                       loading="eager"
                     />
                   </div>
-                  <span className="text-sm">{v.author?.name}</span>
-                  <button className="text-[12px] px-2 rounded-[20px] border border-0.5">
+                  <span className="text-xs md:text-sm font-medium truncate">
+                    {v.author?.name}
+                  </span>
+                  <button className="text-[11px] md:text-[12px] px-2 py-0.5 rounded-[20px] border border-white hover:bg-white hover:text-black transition-colors hrink-0">
                     Theo dõi
                   </button>
                 </div>
-                <div className="">
-                  <span className="text-white text-sm">{v.content}</span>
+                <div className="overflow-hidden">
+                  <span className="text-white text-xs md:text-sm line-clamp-2">
+                    {v.content}
+                  </span>
                 </div>
               </div>
-              <div className="flex flex-col gap-5 py-7 px-2 justify-center items-center">
+              <div className="flex flex-col gap-3 md:gap-5 py-5 md:py-7 px-2 justify-center items-center rink-0">
                 <div className="flex flex-col items-center">
                   {v.liked_by_me ? (
-                    <IoMdHeart size={30} className="text-red-500" />
+                    <IoMdHeart size={28} className="text-red-500 md:w-7.5 md:h-7.5" />
                   ) : (
                     <CiHeart
-                      size={41}
-                      className="text-white p-1.5 rounded-full hover:bg-white/10"
+                      size={36}
+                      className="text-white p-1.5 rounded-full hover:bg-white/10 transition-colors md:w-10.5 md:h-10.5"
                     />
                   )}
-                  <span className="text-[10px] text-white">{v.like_count}</span>
+                  <span className="text-[10px] text-white font-medium">
+                    {v.like_count}
+                  </span>
                 </div>
                 <div className="flex flex-col items-center">
                   <button onClick={handleToggleCommentSheet}>
                     <IoChatbubbleOutline
-                      size={36}
-                      className="text-white p-1.5 rounded-full hover:bg-white/10"
+                      size={32}
+                      className="text-white p-1.5 rounded-full hover:bg-white/10 transition-colors md:w-9 md:h-9"
                     />
                   </button>
-                  <span className="text-[10px] text-white">
+                  <span className="text-[10px] text-white font-medium">
                     {v.comment_count}
                   </span>
                 </div>
                 <div className="">
                   <PiShareNetworkThin
-                    size={36}
-                    className="text-white p-1.5 rounded-full hover:bg-white/10"
+                    size={32}
+                    className="text-white p-1.5 rounded-full hover:bg-white/10 transition-colors md:w-9 md:h-9"
                   />
                 </div>
                 <div className="">
                   <CiBookmark
-                    size={36}
-                    className="text-white p-1.5 rounded-full hover:bg-white/10"
+                    size={32}
+                    className="text-white p-1.5 rounded-full hover:bg-white/10 transition-colors md:w-9 md:h-9"
                   />
                 </div>
                 <div className="">
                   <RiMoreLine
-                    size={36}
-                    className="text-white p-1.5 rounded-full hover:bg-white/10"
+                    size={32}
+                    className="text-white p-1.5 rounded-full hover:bg-white/10 transition-colors md:w-9 md:h-9"
                   />
                 </div>
               </div>

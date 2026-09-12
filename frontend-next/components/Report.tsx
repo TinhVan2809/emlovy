@@ -2,11 +2,12 @@
 
 import port from "@/api/api";
 import { useUser } from "@/context/useUserContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ReportProp {
   post_id: number | null;
   onCloseReport: () => void;
+  onReportSuccess: () => void;
 }
 
 const REPORT_REASONS = [
@@ -18,7 +19,7 @@ const REPORT_REASONS = [
   "Tôi không muốn xem nội dung này",
 ];
 
-export default function Report({ post_id, onCloseReport }: ReportProp) {
+export default function Report({ post_id, onCloseReport, onReportSuccess }: ReportProp) {
   const { user } = useUser();
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,45 +44,53 @@ export default function Report({ post_id, onCloseReport }: ReportProp) {
 
       const data = await response.json();
       if (data.success) {
-        console.log("Report submitted successfully:", data);
-        onCloseReport();
+        onReportSuccess();
       }
     } catch (error) {
       console.error("Error submitting report:", error);
       alert("Đã xảy ra lỗi khi gửi báo cáo. Vui lòng thử lại.");
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  return (
-    <div className="w-full h-dvh fixed inset-0 z-10000 bg-black/10 flex justify-center items-center p-0 sm:p-4">
-      <div className="bg-white rounded-2xl">
-        <p className="flex items-center justify-center relative p-5 border-b">
-          <span className="font-semibold">Bạn muốn báo cáo bài viết này?</span>
-          <span
-            onClick={onCloseReport}
-            className="cursor-pointer text-3xl flex absolute right-0 px-4"
-          >
-            &times;
-          </span>
-        </p>
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
 
-        <ul>
-          {REPORT_REASONS.map((reason) => (
-            <li key={reason}>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => handleSubmit(reason)}
-                className="w-full text-left cursor-pointer disabled:opacity-50"
-              >
-                {reason}
-              </button>
-            </li>
-          ))}
-        </ul>
+    return () => {
+      document.body.style.overflow = 'unset';
+    }
+  })
+
+  return (
+    <>
+      <div className="w-full h-dvh fixed inset-0 z-10000 bg-gray-100/90 flex justify-center items-center p-0 sm:p-4">
+        <div className="bg-white rounded-2xl">
+          <p className="flex items-center justify-center relative p-5 border-b border-b-black/10">
+            <span className="font-semibold">Bạn muốn báo cáo bài viết này?</span>
+            <span
+              onClick={onCloseReport}
+              className="cursor-pointer text-3xl flex absolute right-0 px-4"
+            >
+              &times;
+            </span>
+          </p>
+
+          <ul>
+            {REPORT_REASONS.map((reason) => (
+              <li key={reason}>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => handleSubmit(reason)}
+                  className="w-full text-left cursor-pointer disabled:opacity-50 p-4 hover:bg-gray-100"
+                >
+                  {reason}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </div>
+
+    </>
   );
 }
