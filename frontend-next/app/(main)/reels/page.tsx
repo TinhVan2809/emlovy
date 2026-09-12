@@ -169,11 +169,11 @@ export default function Reels() {
               <div className="hidden lg:block lg:fixed lg:top-1/2 lg:right-10 lg:-translate-y-1/2 lg:z-20">
                 <div className="flex flex-col gap-2 bg-white/10 backdrop-blur-sm rounded-full p-2">
                   <RiArrowUpLine
-                    className="cursor-pointer text-white hover:text-gray-300"
+                    className="cursor-pointer text-black"
                     size={24}
                   />
                   <RiArrowDownLine
-                    className="cursor-pointer text-white hover:text-gray-300"
+                    className="cursor-pointer text-black"
                     size={24}
                   />
                 </div>
@@ -192,31 +192,12 @@ export default function Reels() {
           )}
         </div>
 
-        {/* Skeleton cho lần tải đầu tiên */}
-        {isLoading && videos.length === 0 && (
-          <div className="flex flex-col md:gap-8">
-            {[1, 2].map((n) => (
-              <ReelCardSkeleton key={n} />
-            ))}
-          </div>
-        )}
-
-        {/* Thông báo khi không có video */}
-        {!isLoading && videos.length === 0 && (
-          <div className="w-screen h-screen flex justify-center items-center bg-black">
-            <p className="text-white">Chưa có video nào.</p>
-          </div>
-        )}
-
         {/* Observer Target và Loading Indicator */}
         <div
           ref={observerTarget}
           className="flex justify-center items-center md:mt-8"
         >
           {isLoading && videos.length > 0 && <ReelCardSkeleton />}
-          {!hasMore && videos.length > 0 && (
-            <p className="text-gray-500 py-4">Bạn đã xem hết video.</p>
-          )}
         </div>
       </div>
     </div>

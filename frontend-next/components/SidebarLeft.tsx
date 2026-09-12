@@ -26,7 +26,7 @@ function SidebarLeft() {
     : "/Profile-Default.webp";
 
   return (
-    <div className="flex w-full bg-white py-2 fixed z-1000 bottom-0 lg:w-auto lg:bg-auto lg:flex-col lg:justify-between lg:h-screen  lg:top-0 lg:py-6 lg:px-5">
+    <div className="flex w-full bg-white py-2 fixed z-10 bottom-0 lg:w-auto lg:bg-auto lg:flex-col lg:justify-between lg:h-screen  lg:top-0 lg:py-6 lg:px-5">
       <div className="hidden lg:px-3 lg:block">
         <div
           className="flex items-center gap-1 cursor-pointer"
@@ -89,11 +89,10 @@ function SidebarLeft() {
       <div className="px-3 hidden lg:flex lg:flex-col">
         <div className="relative">
           <div
-            className={`absolute bottom-12 left-0 w-56 rounded-xl shadow-2xl bg-white transition-all duration-200 ease-in-out transform origin-bottom ${
-              isMenu
+            className={`absolute bottom-12 left-0 w-56 rounded-xl shadow-2xl bg-white transition-all duration-200 ease-in-out transform origin-bottom ${isMenu
                 ? "opacity-100 scale-100"
                 : "opacity-0 scale-95 pointer-events-none"
-            }`}
+              }`}
           >
             <ul className="p-2">
               <li className="px-3 py-2 text-sm rounded-lg hover:bg-gray-100 cursor-pointer" onClick={() => router.push("/setting")}>

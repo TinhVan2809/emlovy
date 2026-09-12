@@ -142,7 +142,7 @@ function ReelCard({
   return (
     <>
       <div
-        className="w-full h-screen md:h-auto md:max-w-87.5 lg:max-w-100 md:border md:rounded-lg overflow-hidden bg-black md:shadow-lg"
+        className="w-full h-screen md:h-auto md:max-w-87.5 lg:max-w-90 md:border md:rounded-lg overflow-hidden bg-black md:shadow-lg"
         key={v.post_id}
         data-post-id={v.post_id}
         onMouseEnter={() => setIsHovered(true)}
@@ -202,14 +202,14 @@ function ReelCard({
               </button>
             </div>
 
-            <div className="w-full pointer-events-auto px-2 md:px-0">
+            <div className="w-full pointer-events-auto px-2 md:px-2">
               <input
                 type="range"
                 min={0}
                 max={100}
                 value={Math.min(Math.max(progress || 0, 0), 100)}
                 onChange={handleSeek}
-                className="w-full h-1 accent-white cursor-pointer"
+                className="block w-full h-1 accent-white cursor-pointer"
                 aria-label="Seek"
               />
             </div>
