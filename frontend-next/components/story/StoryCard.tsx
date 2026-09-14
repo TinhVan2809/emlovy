@@ -51,7 +51,7 @@ export default function StoryCard({ group, onOpen, onCreateStory }: StoryCardPro
             }`}>
                 <span className="block rounded-full bg-white p-0.5">
                     <div className="relative h-16 w-16">
-                        <Image alt="story" className="rounded-full object-cover" fill loading="eager" src={avatar}/>
+                        <Image alt="story" className="rounded-full object-center" fill loading="eager" src={avatar}/>
                     </div>
                 </span>
                 {group.is_own && (

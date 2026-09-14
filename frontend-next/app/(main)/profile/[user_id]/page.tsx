@@ -1,10 +1,9 @@
 import port from "@/api/api";
 import Image from "next/image";
-import {
-  RiArrowRightUpLine,
-  RiUserAddLine,
-} from "@remixicon/react";
+import { RiArrowRightUpLine, RiUserAddLine } from "@remixicon/react";
 import QRCode from "@/components/QRCode";
+
+import FollowButton from "@/components/FollowButton";
 
 interface Props {
   params: Promise<{ user_id: string }>;
@@ -18,6 +17,7 @@ interface ProfileData {
   avata?: string;
   signature?: string;
   email?: string;
+  is_following: boolean;
   stats?: {
     posts?: number;
     followers?: number;
@@ -28,7 +28,6 @@ interface ProfileData {
 
 async function Profile({ params }: Props) {
   const { user_id } = await params;
-
 
   const response = await fetch(`${port}/api/profile/${user_id}`, {
     method: "GET",
@@ -50,9 +49,10 @@ async function Profile({ params }: Props) {
     );
   }
 
-  const avatarSrc = profile.avatar_url || profile.avata
-    ? `${port}/${profile.avatar_url || profile.avata}`
-    : "/Profile-Default.webp";
+  const avatarSrc =
+    profile.avatar_url || profile.avata
+      ? `${port}/${profile.avatar_url || profile.avata}`
+      : "/Profile-Default.webp";
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -73,6 +73,7 @@ async function Profile({ params }: Props) {
             <span>{profile.name || "Người dùng"}</span>
             <span className="text-sm opacity-50">
               {profile.nickname || profile.username || ""}
+              {profile.email ? <p>{profile.email}</p> : null}
             </span>
           </div>
         </div>
@@ -114,7 +115,7 @@ async function Profile({ params }: Props) {
           </div>
 
           <div className="flex gap-3 items-center justify-center md:justify-start">
-            <QRCode user_id={user_id}/>
+            <QRCode user_id={user_id} />
             <div className="cursor-pointer border border-gray-400 rounded-md p-1">
               <RiUserAddLine size={20} className="opacity-70" />
             </div>
@@ -123,15 +124,27 @@ async function Profile({ params }: Props) {
             </div>
           </div>
 
-          <div className="flex justify-center md:justify-start">
-            <p>{profile.signature || "Chưa có tiểu sử"}</p>
+          <div className="flex flex-col justify-center md:justify-start px-20 md:p-0">
+            {profile?.signature ? (
+              <p className="text-sm, opacity-10">{profile.signature}</p>
+            ) : (
+              <p className="text-sm text-[#272727]">Tieu su trong nhu này</p>
+            )}
+            <div className="flex gap-1.5 mt-1 justify-center md:justify-start">
+              <FollowButton
+                userId={user_id}
+                initialFollowStatus={profile.is_following}
+                variant="text"
+              />
+              <button className="px-4 py-1 md:px-20 md:py-1.5 rounded-md bg-[#e7eaee] shadow-2xl">
+                Nhắn tin
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-2 border-t border-gray-200 pt-6 text-sm text-gray-600">
-        {profile.email ? <p>Email: {profile.email}</p> : null}
-      </div>
+      <div className="mt-2 border-t border-gray-200 pt-6 text-sm text-gray-600"></div>
     </div>
   );
 }
