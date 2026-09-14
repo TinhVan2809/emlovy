@@ -2,17 +2,30 @@ const reportModel = require("../models/reportModel");
 const { createHttpError } = require("../utils/httpError");
 
 const getReports = async (req, res) => {
-  const reports = await reportModel.getReports();
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const type = req.query.type || null;
+  const status = req.query.status || null;
 
-  if (!reports || reports.length === 0) {
-    throw createHttpError(404, "Không tìm thấy reports.");
+  const result = await reportModel.getReports(page, limit, type, status);
+
+  if (!result.reports || result.reports.length === 0) {
+    return res.status(200).json({
+      success: true,
+      message: "Không có reports nào.",
+      data: {
+        reports: [],
+        pagination: result.pagination,
+      },
+    });
   }
 
   res.status(200).json({
     success: true,
     message: "Lấy danh sách reports thành công.",
     data: {
-      reports,
+      reports: result.reports,
+      pagination: result.pagination,
     },
   });
 };

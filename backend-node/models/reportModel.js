@@ -78,7 +78,32 @@ const toPublicReport = (row) => {
 
 const hydrateReports = (rows) => rows.map(toPublicReport);
 
-const getReports = async () => {
+const getReports = async (page = 1, limit = 10, type = null, status = null) => {
+  const offset = (page - 1) * limit;
+  
+  let whereClause = '';
+  const params = { limit, offset };
+  
+  if (type) {
+    whereClause += ' WHERE r.report_type = :type';
+    params.type = type;
+  }
+  
+  if (status) {
+    whereClause += whereClause ? ' AND r.status = :status' : ' WHERE r.status = :status';
+    params.status = status;
+  }
+
+  // Get total count
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM reports r
+    ${whereClause}
+  `;
+  const countResult = await query(countQuery, params);
+  const total = countResult[0].total;
+
+  // Get paginated data
   const rows = await query(
     `
       SELECT ${reportSelectFields}
@@ -87,10 +112,24 @@ const getReports = async () => {
       LEFT JOIN posts p ON p.post_id = r.reported_post_id AND r.report_type = 'post'
       LEFT JOIN users cu ON cu.user_id = r.reported_user_id AND r.report_type = 'user'
       LEFT JOIN comments cm ON cm.id = r.reported_comment_id AND r.report_type = 'comment'
+      ${whereClause}
       ORDER BY r.created_at DESC
+      LIMIT :limit OFFSET :offset
     `,
+    params
   );
-  return hydrateReports(rows);
+  
+  return {
+    reports: hydrateReports(rows),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
 };
 
 // Lấy danh sách báo cáo theo loại
