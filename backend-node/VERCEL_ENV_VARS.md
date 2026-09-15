@@ -14,6 +14,7 @@ BCRYPT_SALT_ROUNDS=12
 ### CORS
 ```
 CORS_ORIGIN=https://emlovy.vercel.app
+FRONTEND_URL=https://emlovy.vercel.app
 ```
 *Lưu ý: Thêm các domain khác nếu cần, cách nhau bởi dấu phẩy*
 
@@ -48,8 +49,9 @@ NODE_ENV=production
 1. **DB_NAME**: Phải là database đã được import schema Emlovy, hiện tại là `emlovy`
 2. **DB_PASS**: Không có dấu ngoặc kép
 3. **CORS_ORIGIN**: Phải bao gồm protocol (`https://`)
-4. **DB_CONNECTION_LIMIT**: Nên giảm xuống 5 cho Vercel Serverless (tránh too many connections)
-5. **DB_SSL**: Đặt `true` khi dùng Aiven MySQL
+4. **FRONTEND_URL**: Đặt đúng origin của frontend production, không thêm dấu `/` cuối URL
+5. **DB_CONNECTION_LIMIT**: Nên giảm xuống 5 cho Vercel Serverless (tránh too many connections)
+6. **DB_SSL**: Đặt `true` khi dùng Aiven MySQL
 
 ## 📝 Cách thêm trên Vercel
 

@@ -4,6 +4,17 @@ const config = require("../config/env");
 const userModel = require("../models/userModel");
 const { createHttpError } = require("../utils/httpError");
 
+const getOrigin = (req) => {
+  const origin = req.headers.origin;
+
+  if (origin) {
+    return origin.replace(/\/$/, "");
+  }
+
+  const referer = req.headers.referer;
+  return referer ? referer.replace(/\/$/, "").split("/").slice(0, 3).join("/") : "";
+};
+
 const authenticate = async (req, _res, next) => {
   try {
     const authorizationHeader = req.headers.authorization || "";
@@ -11,8 +22,13 @@ const authenticate = async (req, _res, next) => {
 
     // Chống CSRF: Nếu dùng cookie, bắt buộc phải kiểm tra Origin
     if (isCookieAuth && req.method !== "GET") {
-      const origin = req.headers.origin || req.headers.referer;
-      if (!origin || !origin.includes(config.app.frontendUrl || "localhost")) {
+      const origin = getOrigin(req);
+      const allowedOrigins = [
+        ...config.cors.origins,
+        config.app.frontendUrl,
+      ].filter(Boolean).map((configuredOrigin) => configuredOrigin.replace(/\/$/, ""));
+
+      if (!origin || !allowedOrigins.includes(origin)) {
         throw createHttpError(403, "Cảnh báo bảo mật: Yêu cầu không hợp lệ (CSRF).");
       }
     }

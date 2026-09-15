@@ -61,6 +61,7 @@ const config = Object.freeze({
   isProduction: process.env.NODE_ENV === "production",
   app: Object.freeze({
     port: readInteger("PORT", 8080, { min: 1, max: 65535 }),
+    frontendUrl: readOptionalString("FRONTEND_URL", "http://localhost:3000").replace(/\/$/, ""),
   }),
   auth: Object.freeze({
     jwtSecret: readRequiredString("JWT_SECRET"),

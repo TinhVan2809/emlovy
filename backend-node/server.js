@@ -48,6 +48,7 @@ const createApp = () => {
   // Fall back to common localhost origins for development
   const allowedOrigins = [
     ...(config.cors.origins || []),
+    config.app.frontendUrl,
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
@@ -387,9 +388,13 @@ const startServer = async () => {
     const app = createApp();
 
     const httpServer = http.createServer(app);
+    const socketOrigins = [
+      ...config.cors.origins,
+      config.app.frontendUrl,
+    ].filter(Boolean);
     const io = new Server(httpServer, {
       cors: {
-        origin: config.cors.origins.length > 0 ? config.cors.origins : true,
+        origin: socketOrigins.length > 0 ? socketOrigins : true,
         methods: ["GET", "POST", "PATCH", "DELETE"],
       },
     });
