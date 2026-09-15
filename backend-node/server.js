@@ -53,18 +53,25 @@ const createApp = () => {
     "http://localhost:8081",
     "http://localhost",
     "http://127.0.0.1",
-    "https://emlovy.vercel.app",
   ].filter(Boolean);
 
   const corsOptions = {
     origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
+      
+      // Allow all Vercel deployment URLs
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      // Check against allowed origins list
       if (allowedOrigins.indexOf(origin) !== -1) {
         return callback(null, true);
-      } else {
-        console.log("Blocked by CORS:", origin);
-        return callback(new Error(`Not allowed by CORS: ${origin}`));
       }
+      
+      console.log("Blocked by CORS:", origin);
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
