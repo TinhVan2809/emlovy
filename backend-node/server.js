@@ -90,9 +90,22 @@ const createApp = () => {
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie", "Cache-Control"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   };
 
   app.use(cors(corsOptions));
+
+  // Handle preflight requests for all routes
+  app.options('*', cors(corsOptions));
+
+  // Debug middleware - log all requests
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    console.log('Origin:', req.get('Origin'));
+    console.log('Headers:', req.headers);
+    next();
+  });
 
   app.use(cookieParser());
   app.use(express.json());
