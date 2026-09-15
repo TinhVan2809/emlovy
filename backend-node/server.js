@@ -40,6 +40,11 @@ const STORY_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;
 const createApp = () => {
   const app = express();
 
+  // Debug: Log environment
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('CORS_ORIGIN from env:', process.env.CORS_ORIGIN);
+  console.log('config.cors.origins:', config.cors.origins);
+
   // Fall back to common localhost origins for development
   const allowedOrigins = [
     ...(config.cors.origins || []),
@@ -55,18 +60,27 @@ const createApp = () => {
     "http://127.0.0.1",
   ].filter(Boolean);
 
+  console.log('Allowed origins:', allowedOrigins);
+
   const corsOptions = {
     origin: function (origin, callback) {
+      console.log('CORS request from origin:', origin);
+      
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        console.log('No origin - allowing');
+        return callback(null, true);
+      }
       
       // Allow all Vercel deployment URLs
       if (origin.endsWith('.vercel.app')) {
+        console.log('Vercel domain - allowing:', origin);
         return callback(null, true);
       }
       
       // Check against allowed origins list
       if (allowedOrigins.indexOf(origin) !== -1) {
+        console.log('In allowed list - allowing:', origin);
         return callback(null, true);
       }
       
