@@ -10,7 +10,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthPage = AUTH_ROUTES.some(route => pathname.startsWith(route));
-  const isProtectedPage = pathname === '/' || PROTECTED_ROUTE_PREFIXES.some(prefix => pathname.startsWith(prefix));
+  const isProtectedPage = PROTECTED_ROUTE_PREFIXES.some(prefix => pathname.startsWith(prefix));
 
   // 1. Nếu cố gắng truy cập trang bảo vệ mà không có token
   if (isProtectedPage && !token) {
