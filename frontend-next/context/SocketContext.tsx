@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import port from '@/api/api';
-import { AUTH_TOKEN_CHANGED_EVENT, readAuthToken } from '@/utils/authToken';
+import { AUTH_TOKEN_CHANGED_EVENT, hasAuthSession } from '@/utils/authToken';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -18,30 +18,31 @@ const SocketContext = createContext<SocketContextType>({
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const syncAuthToken = () => setAuthToken(readAuthToken());
+    const syncAuthSession = () => setHasSession(hasAuthSession());
 
-    syncAuthToken();
-    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAuthToken);
-    window.addEventListener('storage', syncAuthToken);
+    syncAuthSession();
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAuthSession);
 
     return () => {
-      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAuthToken);
-      window.removeEventListener('storage', syncAuthToken);
+      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, syncAuthSession);
     };
   }, []);
 
   useEffect(() => {
-    if (authToken === null) {
+    if (hasSession === null) {
+      return;
+    }
+
+    if (!hasSession) {
       return;
     }
 
     const socketInstance = io(port, {
       withCredentials: true,
       transports: ['websocket'],
-      auth: authToken ? { token: authToken } : undefined,
     });
 
     socketInstance.on('connect', () => {
@@ -56,7 +57,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => {
       socketInstance.disconnect();
     };
-  }, [authToken]);
+  }, [hasSession]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

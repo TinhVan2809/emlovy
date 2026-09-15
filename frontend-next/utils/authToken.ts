@@ -1,23 +1,38 @@
-export const AUTH_TOKEN_STORAGE_KEY = "emlovy_auth_token";
 export const AUTH_TOKEN_CHANGED_EVENT = "emlovy:auth-token-changed";
+export const AUTH_SESSION_COOKIE = "emlovy_session";
 
-export const readAuthToken = () => {
-  if (typeof window === "undefined") {
-    return "";
+const syncAuthSessionCookie = (isAuthenticated: boolean) => {
+  if (typeof document === "undefined") {
+    return;
   }
 
-  return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) || "";
+  if (isAuthenticated) {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${AUTH_SESSION_COOKIE}=1; Path=/; SameSite=Lax${secure}`;
+  } else {
+    document.cookie = `${AUTH_SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+  }
 };
 
-export const writeAuthToken = (token?: string | null) => {
+export const hasAuthSession = () => {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  return document.cookie.split("; ").some((cookie) =>
+    cookie.startsWith(`${AUTH_SESSION_COOKIE}=`),
+  );
+};
+
+export const syncAuthSession = (isAuthenticated: boolean) => {
   if (typeof window === "undefined") {
     return;
   }
 
-  if (token) {
-    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  if (isAuthenticated) {
+    syncAuthSessionCookie(true);
   } else {
-    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    syncAuthSessionCookie(false);
   }
 
   window.dispatchEvent(new Event(AUTH_TOKEN_CHANGED_EVENT));

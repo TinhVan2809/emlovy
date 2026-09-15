@@ -168,9 +168,17 @@ const getSocketToken = (socket) => {
 
   const authorizationHeader = socket.handshake.headers?.authorization || "";
 
-  return authorizationHeader.startsWith("Bearer ")
-    ? authorizationHeader.slice("Bearer ".length)
-    : "";
+  if (authorizationHeader.startsWith("Bearer ")) {
+    return authorizationHeader.slice("Bearer ".length);
+  }
+
+  const cookieHeader = socket.handshake.headers?.cookie || "";
+  const tokenCookie = cookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith("token="));
+
+  return tokenCookie ? decodeURIComponent(tokenCookie.slice("token=".length)) : "";
 };
 
 const attachSocketUser = async (socket) => {

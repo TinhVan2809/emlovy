@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { AUTH_SESSION_COOKIE } from "@/utils/authToken";
 
 const publicPaths = new Set(["/login", "/register"]);
 
@@ -25,7 +26,7 @@ const isProtectedPath = (pathname: string) => {
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (!isProtectedPath(pathname) || request.cookies.has("token")) {
+  if (!isProtectedPath(pathname) || request.cookies.has(AUTH_SESSION_COOKIE)) {
     return NextResponse.next();
   }
 
