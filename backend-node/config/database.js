@@ -1,25 +1,33 @@
 const mysql = require("mysql2/promise");
 const config = require("./env");
 
-const pool = mysql.createPool({
-  host: config.database.host,
-  port: config.database.port,
-  user: config.database.user,
-  password: config.database.password,
-  database: config.database.name,
-  waitForConnections: true,
-  connectionLimit: config.database.connectionLimit,
-  queueLimit: config.database.queueLimit,
-  connectTimeout: config.database.connectTimeout,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
-  charset: "utf8mb4",
-  namedPlaceholders: true,
-  multipleStatements: false,
-});
+// Lazy initialization - pool will be created on first use
+let pool = null;
+
+const getPool = () => {
+  if (!pool) {
+    pool = mysql.createPool({
+      host: config.database.host,
+      port: config.database.port,
+      user: config.database.user,
+      password: config.database.password,
+      database: config.database.name,
+      waitForConnections: true,
+      connectionLimit: config.database.connectionLimit,
+      queueLimit: config.database.queueLimit,
+      connectTimeout: config.database.connectTimeout,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
+      charset: "utf8mb4",
+      namedPlaceholders: true,
+      multipleStatements: false,
+    });
+  }
+  return pool;
+};
 
 const checkDatabaseConnection = async () => {
-  const connection = await pool.getConnection();
+  const connection = await getPool().getConnection();
 
   try {
     await connection.ping();
@@ -29,19 +37,19 @@ const checkDatabaseConnection = async () => {
 };
 
 const execute = async (sql, params = []) => {
-  const [result] = await pool.execute(sql, params);
+  const [result] = await getPool().execute(sql, params);
 
   return result;
 };
 
 const query = async (sql, params = []) => {
-  const [rows] = await pool.query(sql, params);
+  const [rows] = await getPool().query(sql, params);
 
   return rows;
 };
 
 const withTransaction = async (callback) => {
-  const connection = await pool.getConnection();
+  const connection = await getPool().getConnection();
 
   try {
     await connection.beginTransaction();
@@ -62,10 +70,17 @@ const withTransaction = async (callback) => {
   }
 };
 
-const closeDatabaseConnection = () => pool.end();
+const closeDatabaseConnection = () => {
+  if (pool) {
+    return pool.end();
+  }
+  return Promise.resolve();
+};
 
 module.exports = {
-  pool,
+  get pool() {
+    return getPool();
+  },
   execute,
   query,
   withTransaction,
