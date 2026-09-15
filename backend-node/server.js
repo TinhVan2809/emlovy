@@ -96,9 +96,6 @@ const createApp = () => {
 
   app.use(cors(corsOptions));
 
-  // Handle preflight requests for all routes
-  app.options('*', cors(corsOptions));
-
   // Debug middleware - log all requests
   app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
