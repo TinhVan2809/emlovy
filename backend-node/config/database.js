@@ -16,6 +16,7 @@ const getPool = () => {
       connectionLimit: config.database.connectionLimit,
       queueLimit: config.database.queueLimit,
       connectTimeout: config.database.connectTimeout,
+      ssl: config.database.ssl ? { rejectUnauthorized: false } : undefined,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0,
       charset: "utf8mb4",

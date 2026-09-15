@@ -23,10 +23,11 @@ DB_HOST=emlovy-tinhlu263-f103.c.aivencloud.com
 DB_PORT=17137
 DB_USER=avnadmin
 DB_PASS=your-aiven-password-here
-DB_NAME=defaultdb
+DB_NAME=emlovy
 DB_CONNECTION_LIMIT=5
 DB_QUEUE_LIMIT=0
 DB_CONNECT_TIMEOUT=10000
+DB_SSL=true
 ```
 
 ### Upload Limits
@@ -44,10 +45,11 @@ NODE_ENV=production
 
 ## 🚨 Lưu ý quan trọng
 
-1. **DB_NAME**: Phải là `defaultdb` (database mặc định của Aiven) hoặc database bạn đã tạo
+1. **DB_NAME**: Phải là database đã được import schema Emlovy, hiện tại là `emlovy`
 2. **DB_PASS**: Không có dấu ngoặc kép
 3. **CORS_ORIGIN**: Phải bao gồm protocol (`https://`)
 4. **DB_CONNECTION_LIMIT**: Nên giảm xuống 5 cho Vercel Serverless (tránh too many connections)
+5. **DB_SSL**: Đặt `true` khi dùng Aiven MySQL
 
 ## 📝 Cách thêm trên Vercel
 
@@ -130,8 +132,8 @@ vercel env pull .env.production
 
 **Giải pháp:**
 1. Kiểm tra database name trong Aiven Console
-2. Thường là `defaultdb` cho Aiven MySQL
-3. Hoặc tạo database mới với tên `emlovy`
+2. Thường là `emlovy` cho Aiven MySQL
+3. Hoặc tạo database mới với tên khác rồi cập nhật `DB_NAME`
 
 ## 🔐 Security Best Practices
 

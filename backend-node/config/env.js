@@ -22,6 +22,16 @@ const readOptionalString = (key, defaultValue = "") => {
   return value === undefined ? defaultValue : value;
 };
 
+const readBoolean = (key, defaultValue = false) => {
+  const value = process.env[key];
+
+  if (value === undefined || value === "") {
+    return defaultValue;
+  }
+
+  return ["1", "true", "yes"].includes(value.trim().toLowerCase());
+};
+
 const readInteger = (key, defaultValue, { min, max } = {}) => {
   const rawValue = process.env[key];
 
@@ -84,6 +94,7 @@ const config = Object.freeze({
     connectionLimit: readInteger("DB_CONNECTION_LIMIT", 10, { min: 1 }),
     queueLimit: readInteger("DB_QUEUE_LIMIT", 0, { min: 0 }),
     connectTimeout: readInteger("DB_CONNECT_TIMEOUT", 10000, { min: 1000 }),
+    ssl: readBoolean("DB_SSL"),
   }),
 });
 
