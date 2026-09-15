@@ -53,6 +53,7 @@ const createApp = () => {
     "http://localhost:8081",
     "http://localhost",
     "http://127.0.0.1",
+    "https://emlovy.vercel.app",
   ].filter(Boolean);
 
   const corsOptions = {
@@ -416,11 +417,15 @@ const startServer = async () => {
   }
 };
 
+// Export app instance for Vercel serverless functions
+const app = createApp();
+
 if (require.main === module) {
   startServer();
 }
 
 module.exports = {
+  app,
   createApp,
   startServer,
 };
