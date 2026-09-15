@@ -8,11 +8,19 @@ const getOrigin = (req) => {
   const origin = req.headers.origin;
 
   if (origin) {
-    return origin.replace(/\/$/, "");
+    return normalizeOrigin(origin);
   }
 
   const referer = req.headers.referer;
-  return referer ? referer.replace(/\/$/, "").split("/").slice(0, 3).join("/") : "";
+  return referer ? normalizeOrigin(referer) : "";
+};
+
+const normalizeOrigin = (value) => {
+  try {
+    return new URL(value.trim()).origin;
+  } catch (_error) {
+    return value.trim().replace(/\/$/, "");
+  }
 };
 
 const authenticate = async (req, _res, next) => {
@@ -26,7 +34,7 @@ const authenticate = async (req, _res, next) => {
       const allowedOrigins = [
         ...config.cors.origins,
         config.app.frontendUrl,
-      ].filter(Boolean).map((configuredOrigin) => configuredOrigin.replace(/\/$/, ""));
+      ].filter(Boolean).map(normalizeOrigin);
 
       if (!origin || !allowedOrigins.includes(origin)) {
         throw createHttpError(403, "Cảnh báo bảo mật: Yêu cầu không hợp lệ (CSRF).");

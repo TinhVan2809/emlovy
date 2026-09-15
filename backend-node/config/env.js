@@ -56,12 +56,31 @@ const readInteger = (key, defaultValue, { min, max } = {}) => {
   return value;
 };
 
+const normalizeOrigin = (value) => {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return new URL(value.trim()).origin;
+  } catch (_error) {
+    return value.trim().replace(/\/$/, "");
+  }
+};
+
+const configuredCorsOrigins = readOptionalString("CORS_ORIGIN")
+  .split(",")
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
 const config = Object.freeze({
   nodeEnv: process.env.NODE_ENV || "development",
   isProduction: process.env.NODE_ENV === "production",
   app: Object.freeze({
     port: readInteger("PORT", 8080, { min: 1, max: 65535 }),
-    frontendUrl: readOptionalString("FRONTEND_URL", "http://localhost:3000").replace(/\/$/, ""),
+    frontendUrl: normalizeOrigin(
+      readOptionalString("FRONTEND_URL", configuredCorsOrigins[0] || "http://localhost:3000"),
+    ),
   }),
   auth: Object.freeze({
     jwtSecret: readRequiredString("JWT_SECRET"),
@@ -69,10 +88,7 @@ const config = Object.freeze({
     bcryptSaltRounds: readInteger("BCRYPT_SALT_ROUNDS", 12, { min: 8, max: 15 }),
   }),
   cors: Object.freeze({
-    origins: readOptionalString("CORS_ORIGIN")
-      .split(",")
-      .map((origin) => origin.trim())
-      .filter(Boolean),
+    origins: configuredCorsOrigins,
   }),
   upload: Object.freeze({
     avatarMaxFileSize: readInteger("AVATAR_MAX_FILE_SIZE", 2 * 1024 * 1024, {
